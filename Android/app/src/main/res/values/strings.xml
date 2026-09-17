@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Smart Solar Microgrid Trading System</string>
+    <string name="app_subtitle">Android Application</string>
+    <string name="status_foundation_ready">Common project foundation is ready</string>
+
+    <!-- Future Feature Module Boundaries -->
+    <string name="module_prosumer_account">Prosumer Account Control</string>
+    <string name="module_reservation_qr">Reservation &amp; QR Dispatch</string>
+    <string name="module_dashboard_maps">Dashboard &amp; Maps</string>
+    <string name="module_operator_mode">Operator Mode</string>
+    <string name="module_status_disabled">Pending individual feature development</string>
+</resources>
