@@ -1,0 +1,6 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio and local tooling files
+.vs/
