@@ -4,3 +4,7 @@
 
 # Visual Studio and local tooling files
 .vs/
+
+# Local development environment values
+.env
+!.env.example

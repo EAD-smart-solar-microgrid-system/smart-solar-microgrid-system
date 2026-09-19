@@ -13,6 +13,28 @@ using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.Repositories;
 using SmartSolarMicrogrid.Api.Services;
 
+var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+    ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+if (string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase))
+{
+    // Load local development values before ASP.NET Core builds IConfiguration.
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+    while (directory is not null)
+    {
+        var envFilePath = Path.Combine(directory.FullName, ".env");
+
+        if (File.Exists(envFilePath))
+        {
+            DotNetEnv.Env.NoClobber().Load(envFilePath);
+            break;
+        }
+
+        directory = directory.Parent;
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<MongoDbSettings>(
