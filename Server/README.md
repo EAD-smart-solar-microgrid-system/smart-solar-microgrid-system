@@ -21,7 +21,11 @@ The current foundation includes the health controller and service only. Assignme
 ## Required software
 
 - .NET 8 SDK (the project targets `net8.0`)
-- A local MongoDB server is optional for the current health endpoint and will be required when repositories are added.
+- A local MongoDB server for station repository operations
+
+The expected local MongoDB development server listens on `localhost:27017`.
+On Windows, a standard installation normally registers the `MongoDB` service.
+MongoDB Compass is optional; it is not required by the API.
 
 ## Restore dependencies
 
@@ -61,6 +65,27 @@ MongoDB settings are in `SmartSolarMicrogrid.Api/appsettings.json` under the `Mo
 ```
 
 The application creates a standard `MongoClient`, exposes `IMongoDatabase`, and registers `MongoDbContext` through dependency injection. Creating these objects does not make the health endpoint depend on a live MongoDB connection.
+
+The general API probe remains available at `GET /api/health` and reports whether the API is running. The separate `GET /api/health/mongodb` probe sends a MongoDB `ping` and returns `503 Service Unavailable` when MongoDB cannot be reached; MongoDB availability does not make `/api/health` fail.
+
+### Local development configuration
+
+Copy `SmartSolarMicrogrid.Api/.env.example` to `SmartSolarMicrogrid.Api/.env` for local development. The real `.env` file is ignored by Git; `.env.example` is safe to commit. It contains the local values `MongoDb__ConnectionString=mongodb://localhost:27017` and `MongoDb__DatabaseName=SmartSolarMicrogridDb`.
+
+The API loads `.env` only when the environment is `Development`, before `WebApplication.CreateBuilder` builds the normal ASP.NET Core configuration. Double underscores map to configuration section separators, so `MongoDb__ConnectionString` becomes `MongoDb:ConnectionString` and binds to `MongoDbSettings` normally. Existing operating-system environment variables are not overwritten by `.env`; command-line and normal ASP.NET Core environment-variable configuration precedence remain in effect. Production/IIS should use real environment variables or secure deployment configuration instead of depending on a physical `.env` file. The `.env` file is not copied to build or publish output.
+
+MongoDB must be running on port `27017` for persistence tests.
+
+The `SolarStationInfo` collection is obtained through the repository and is not manually created at application startup. MongoDB creates the `SmartSolarMicrogridDb` database and `SolarStationInfo` collection automatically when the first station document is successfully inserted. The API does not seed station data on startup.
+
+To verify the local installation before running station tests:
+
+```powershell
+Get-Service MongoDB
+Get-NetTCPConnection -LocalPort 27017 -State Listen
+```
+
+Both checks should show a running MongoDB service and a listener on port `27017`. If MongoDB is not installed, install the MongoDB Community Server for Windows, start the `MongoDB` service, and repeat those checks. Do not add credentials to this development configuration.
 
 Never commit database usernames, passwords, Atlas connection strings, or other secrets. Use local user secrets, environment variables, or an ignored local configuration file when credentials are needed.
 
