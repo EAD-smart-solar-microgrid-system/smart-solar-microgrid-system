@@ -41,8 +41,6 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
-builder.Services.AddScoped<IEnergyBookingSlotRepository, EnergyBookingSlotRepository>();
-builder.Services.AddScoped<IEnergyBookingSlotService, EnergyBookingSlotService>();
 builder.Services.AddSingleton<IActiveReservationChecker, UnavailableActiveReservationChecker>();
 
 builder.Services.AddControllers();

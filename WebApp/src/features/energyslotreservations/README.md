@@ -2,5 +2,5 @@
 
 - **Feature Name**: Energy Slot Reservation Management
 - **Assigned Team Member**: Member 4
-- **Status**: Web UI implemented for energy booking slot management (stations, slot CRUD, availability).
-- **Description**: Backoffice and Grid Operator interface for viewing and managing `EnergyBookingSlots` through the C# Web API. Reservation create/update/cancel flows remain Member 2 server responsibilities.
+- **Status**: Boundary established; implementation deferred to feature development phase.
+- **Description**: Handles monitoring, slot availability checks, reservation approvals, and lifecycle management for solar prosumer energy transfers.
