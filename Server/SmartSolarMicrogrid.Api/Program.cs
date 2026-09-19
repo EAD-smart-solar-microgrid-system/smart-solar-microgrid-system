@@ -6,6 +6,7 @@
  */
 
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Configuration;
 using SmartSolarMicrogrid.Api.Data;
@@ -121,5 +122,38 @@ if (!app.Environment.IsDevelopment())
 app.UseCors("DevelopmentCorsPolicy");
 app.UseAuthorization();
 app.MapControllers();
+
+try
+{
+    var database = app.Services.GetRequiredService<IMongoDatabase>();
+    using var connectionCheckTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+    await database.RunCommandAsync<BsonDocument>(
+        new BsonDocument("ping", 1),
+        cancellationToken: connectionCheckTimeout.Token);
+
+    var databaseName = app.Services
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
+        .Value
+        .DatabaseName;
+
+    Console.WriteLine(
+        $"MongoDB connected successfully. Database: {databaseName}.");
+}
+catch (OperationCanceledException)
+{
+    Console.Error.WriteLine(
+        "MongoDB connection failed: the startup connection check timed out.");
+}
+catch (MongoException)
+{
+    Console.Error.WriteLine(
+        "MongoDB connection failed. Check Atlas Network Access, credentials, cluster status, and URI encoding.");
+}
+catch (Exception)
+{
+    Console.Error.WriteLine(
+        "MongoDB connection failed during startup verification.");
+}
 
 app.Run();
