@@ -126,7 +126,7 @@ app.MapControllers();
 try
 {
     var database = app.Services.GetRequiredService<IMongoDatabase>();
-    using var connectionCheckTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+    using var connectionCheckTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
     await database.RunCommandAsync<BsonDocument>(
         new BsonDocument("ping", 1),
@@ -143,7 +143,7 @@ try
 catch (OperationCanceledException)
 {
     Console.Error.WriteLine(
-        "MongoDB connection failed: the startup connection check timed out.");
+        "MongoDB connection failed: the startup connection check timed out after 30 seconds. Check Atlas Network Access, credentials, cluster status, and URI encoding.");
 }
 catch (MongoException)
 {
