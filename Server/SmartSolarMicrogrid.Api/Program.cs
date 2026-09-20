@@ -64,7 +64,10 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
+builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
+builder.Services.AddScoped<IProsumerService, ProsumerService>();
 builder.Services.AddSingleton<IActiveReservationChecker, UnavailableActiveReservationChecker>();
+builder.Services.AddSingleton<ICurrentProsumerAccessor, UnavailableCurrentProsumerAccessor>();
 
 builder.Services.AddControllers();
 
