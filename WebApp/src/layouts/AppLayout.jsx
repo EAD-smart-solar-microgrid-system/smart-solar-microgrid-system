@@ -21,9 +21,23 @@ export const AppLayout = () => {
               <span className="text-warning">&#9728;</span>
               <span>Smart Solar Microgrid Trading System</span>
             </Link>
-            <span className="navbar-text small text-white-50 border-start ps-3 d-none d-sm-inline">
-              Web Application Portal
-            </span>
+            <ul className="navbar-nav ms-auto flex-row flex-wrap gap-1">
+              <li className="nav-item">
+                <Link className="nav-link py-1" to={ROUTES.HOME}>
+                  Home
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link py-1" to={ROUTES.ENERGY_SLOT_RESERVATIONS}>
+                  Energy Slots
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link py-1" to={ROUTES.RESERVATION_MONITORING}>
+                  Monitoring
+                </Link>
+              </li>
+            </ul>
           </div>
         </nav>
       </header>

@@ -12,6 +12,7 @@ export const ROUTES = Object.freeze({
   PROSUMER_MANAGEMENT: '/prosumer-management',
   MICROGRID_NODES: '/microgrid-nodes',
   ENERGY_SLOT_RESERVATIONS: '/energy-slot-reservations',
+  RESERVATION_MONITORING: '/reservation-monitoring',
   NOT_FOUND: '*',
 });
 

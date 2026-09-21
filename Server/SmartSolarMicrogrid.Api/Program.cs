@@ -66,6 +66,14 @@ builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
 builder.Services.AddScoped<IProsumerService, ProsumerService>();
+builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<ISlotAvailabilityChecker, EnergyBookingSlotAvailabilityChecker>();
+builder.Services.AddScoped<IEnergyBookingSlotRepository, EnergyBookingSlotRepository>();
+builder.Services.AddScoped<IEnergyBookingSlotService, EnergyBookingSlotService>();
+builder.Services.AddScoped<IReservationMonitoringService, ReservationMonitoringService>();
+builder.Services.AddScoped<IMember4DashboardService, Member4DashboardService>();
+builder.Services.AddScoped<INearbyStationsService, NearbyStationsService>();
 builder.Services.AddSingleton<IActiveReservationChecker, UnavailableActiveReservationChecker>();
 builder.Services.AddSingleton<ICurrentProsumerAccessor, UnavailableCurrentProsumerAccessor>();
 

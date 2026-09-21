@@ -214,16 +214,35 @@ public sealed class ProsumerService : IProsumerService
     private async Task<string?> GetCurrentNicAsync(CancellationToken cancellationToken)
     {
         // Normalize the identity supplied by the future authentication integration.
-        return NormalizeNic(await _currentProsumerAccessor
+        var normalized = NormalizeNic(await _currentProsumerAccessor
             .GetCurrentProsumerNicAsync(cancellationToken));
+
+        return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 
-    private static string? NormalizeNic(string? nic)
+    public static string NormalizeNic(string? nic)
     {
         // Normalize the primary business identifier consistently before repository calls.
         return string.IsNullOrWhiteSpace(nic)
-            ? null
+            ? string.Empty
             : nic.Trim().ToUpperInvariant();
+    }
+
+    public static bool IsValidNic(string? nic)
+    {
+        // Accept the common Sri Lankan NIC formats used by reservation validation.
+        var normalized = NormalizeNic(nic);
+        if (string.IsNullOrEmpty(normalized))
+        {
+            return false;
+        }
+
+        return System.Text.RegularExpressions.Regex.IsMatch(
+                   normalized,
+                   @"^\d{9}[VX]$")
+               || System.Text.RegularExpressions.Regex.IsMatch(
+                   normalized,
+                   @"^\d{12}$");
     }
 
     private static string? NormalizeOptionalText(string? value)
@@ -238,7 +257,7 @@ public sealed class ProsumerService : IProsumerService
         string? email)
     {
         // Apply registration validation without inventing a strict national NIC format.
-        if (nic is null)
+        if (string.IsNullOrWhiteSpace(nic))
         {
             return "Nic is required.";
         }

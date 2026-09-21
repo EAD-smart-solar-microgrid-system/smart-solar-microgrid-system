@@ -1,6 +1,7 @@
 # Build output
 [Bb]in/
 [Oo]bj/
+_build_verify_monitoring/
 
 # Visual Studio and local tooling files
 .vs/
