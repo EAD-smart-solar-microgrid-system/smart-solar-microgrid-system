@@ -59,7 +59,7 @@ public sealed class ReservationService : IReservationService
                 "The referenced solar prosumer profile was not found.");
         }
 
-        if (prosumer.Status == ProsumerStatus.Deactivated)
+        if (prosumer.AccountStatus == ProsumerAccountStatus.Deactivated)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Validation,
