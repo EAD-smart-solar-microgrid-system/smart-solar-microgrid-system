@@ -5,13 +5,37 @@
  * Purpose: Configure dependency injection and the ASP.NET Core request pipeline.
  */
 
+using System.Security.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Configuration;
 using SmartSolarMicrogrid.Api.Data;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.Repositories;
 using SmartSolarMicrogrid.Api.Services;
+
+var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+    ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+if (string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase))
+{
+    // Load local development values before ASP.NET Core builds IConfiguration.
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+    while (directory is not null)
+    {
+        var envFilePath = Path.Combine(directory.FullName, ".env");
+
+        if (File.Exists(envFilePath))
+        {
+            DotNetEnv.Env.NoClobber().Load(envFilePath);
+            break;
+        }
+
+        directory = directory.Parent;
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +48,13 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
         .GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
         .Value;
 
-    return new MongoClient(settings.ConnectionString);
+    var mongoClientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
+    mongoClientSettings.SslSettings = new SslSettings
+    {
+        EnabledSslProtocols = SslProtocols.Tls12
+    };
+
+    return new MongoClient(mongoClientSettings);
 });
 
 builder.Services.AddSingleton<IMongoDatabase>(serviceProvider =>
@@ -41,9 +71,12 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
-builder.Services.AddScoped<IEnergyBookingSlotRepository, EnergyBookingSlotRepository>();
-builder.Services.AddScoped<IEnergyBookingSlotService, EnergyBookingSlotService>();
-builder.Services.AddSingleton<IActiveReservationChecker, UnavailableActiveReservationChecker>();
+builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
+builder.Services.AddScoped<IProsumerService, ProsumerService>();
+builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<ISlotAvailabilityChecker, UnavailableSlotAvailabilityChecker>();
+builder.Services.AddScoped<IActiveReservationChecker, ActiveReservationChecker>();
 
 builder.Services.AddControllers();
 
@@ -101,5 +134,38 @@ if (!app.Environment.IsDevelopment())
 app.UseCors("DevelopmentCorsPolicy");
 app.UseAuthorization();
 app.MapControllers();
+
+try
+{
+    var database = app.Services.GetRequiredService<IMongoDatabase>();
+    using var connectionCheckTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+    await database.RunCommandAsync<BsonDocument>(
+        new BsonDocument("ping", 1),
+        cancellationToken: connectionCheckTimeout.Token);
+
+    var databaseName = app.Services
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
+        .Value
+        .DatabaseName;
+
+    Console.WriteLine(
+        $"MongoDB connected successfully. Database: {databaseName}.");
+}
+catch (OperationCanceledException)
+{
+    Console.Error.WriteLine(
+        "MongoDB connection failed: the startup connection check timed out.");
+}
+catch (MongoException)
+{
+    Console.Error.WriteLine(
+        "MongoDB connection failed. Check Atlas Network Access, credentials, cluster status, and URI encoding.");
+}
+catch (Exception)
+{
+    Console.Error.WriteLine(
+        "MongoDB connection failed during startup verification.");
+}
 
 app.Run();
