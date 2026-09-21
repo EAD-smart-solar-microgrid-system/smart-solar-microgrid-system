@@ -2,11 +2,11 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: ProsumerService.cs
- * Purpose: Enforce business validations, life-cycle transitions, and DTO mappings for solar prosumers.
+ * Purpose: Apply Prosumer validation, account-state rules, and DTO/model mapping.
  */
 
-using System.Text.RegularExpressions;
-using MongoDB.Bson;
+using System.ComponentModel.DataAnnotations;
+using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Common.Enums;
 using SmartSolarMicrogrid.Api.DTOs.Prosumers;
 using SmartSolarMicrogrid.Api.Models;
@@ -16,353 +16,276 @@ namespace SmartSolarMicrogrid.Api.Services;
 
 public sealed class ProsumerService : IProsumerService
 {
-    private static readonly Regex OldNicRegex = new(@"^\d{9}[VX]$", RegexOptions.Compiled);
-    private static readonly Regex NewNicRegex = new(@"^\d{12}$", RegexOptions.Compiled);
-    private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", RegexOptions.Compiled);
-    private static readonly Regex PhoneRegex = new(@"^(0\d{9}|\+94\d{9})$", RegexOptions.Compiled);
-
+    private readonly ICurrentProsumerAccessor _currentProsumerAccessor;
     private readonly IProsumerRepository _prosumerRepository;
 
-    public ProsumerService(IProsumerRepository prosumerRepository)
+    public ProsumerService(
+        IProsumerRepository prosumerRepository,
+        ICurrentProsumerAccessor currentProsumerAccessor)
     {
-        // Store the prosumer repository used to persist prosumer domain entities.
+        // Store persistence and current-identity dependencies used by account operations.
         _prosumerRepository = prosumerRepository;
+        _currentProsumerAccessor = currentProsumerAccessor;
     }
 
-    public async Task<ProsumerServiceResult<IReadOnlyList<ProsumerResponse>>> GetAllAsync(
-        string? statusFilter = null,
+    public async Task<ProsumerServiceResult<ProsumerResponse>> RegisterAsync(
+        RegisterProsumerRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Query prosumers from the repository with optional lifecycle status filtering.
-        ProsumerStatus? parsedStatus = null;
+        // Validate and normalize public registration data before creating server fields.
+        var nic = NormalizeNic(request.Nic);
+        var validationMessage = ValidateRegistration(nic, request.FullName, request.Email);
 
-        if (!string.IsNullOrWhiteSpace(statusFilter))
-        {
-            if (!Enum.TryParse<ProsumerStatus>(statusFilter.Trim(), true, out var statusVal)
-                || !Enum.IsDefined(statusVal))
-            {
-                return ProsumerServiceResult<IReadOnlyList<ProsumerResponse>>.Failure(
-                    ProsumerServiceErrorType.Validation,
-                    "Invalid status filter. Permitted values are Pending, Active, or Deactivated.");
-            }
-
-            parsedStatus = statusVal;
-        }
-
-        var prosumers = await _prosumerRepository.GetAllAsync(parsedStatus, cancellationToken);
-        var responses = prosumers.Select(MapToResponse).ToList();
-
-        return ProsumerServiceResult<IReadOnlyList<ProsumerResponse>>.Success(responses);
-    }
-
-    public async Task<ProsumerServiceResult<ProsumerResponse>> GetByNicAsync(
-        string nic,
-        CancellationToken cancellationToken = default)
-    {
-        // Normalize the provided National Identity Card and retrieve the matching prosumer profile.
-        var normalizedNic = NormalizeNic(nic);
-
-        if (string.IsNullOrEmpty(normalizedNic) || !IsValidNic(normalizedNic))
+        if (validationMessage is not null)
         {
             return ProsumerServiceResult<ProsumerResponse>.Failure(
                 ProsumerServiceErrorType.Validation,
-                "A valid Sri Lankan National Identity Card (NIC) is required.");
+                validationMessage);
         }
 
-        var prosumer = await _prosumerRepository.GetByNicAsync(normalizedNic, cancellationToken);
+        var existingProsumer = await _prosumerRepository.GetByNicAsync(nic!, cancellationToken);
 
-        if (prosumer is null)
-        {
-            return ProsumerServiceResult<ProsumerResponse>.Failure(
-                ProsumerServiceErrorType.NotFound,
-                "The requested prosumer profile was not found.");
-        }
-
-        return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(prosumer));
-    }
-
-    public async Task<ProsumerServiceResult<ProsumerResponse>> CreateAsync(
-        CreateProsumerRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        // Validate prosumer profile fields and prevent duplicate NIC registration.
-        var normalizedNic = NormalizeNic(request.Nic);
-
-        var validationError = ValidateProsumerFields(
-            normalizedNic,
-            request.FullName,
-            request.Email,
-            request.Phone,
-            request.Address,
-            requireNic: true);
-
-        if (validationError is not null)
-        {
-            return ProsumerServiceResult<ProsumerResponse>.Failure(
-                ProsumerServiceErrorType.Validation,
-                validationError);
-        }
-
-        var exists = await _prosumerRepository.ExistsByNicAsync(normalizedNic, cancellationToken);
-
-        if (exists)
+        if (existingProsumer is not null)
         {
             return ProsumerServiceResult<ProsumerResponse>.Failure(
                 ProsumerServiceErrorType.Conflict,
-                "A prosumer with this National Identity Card (NIC) already exists.");
+                "A Prosumer account with this NIC already exists.");
         }
 
         var now = DateTime.UtcNow;
         var prosumer = new Prosumer
         {
-            Id = ObjectId.GenerateNewId().ToString(),
-            Nic = normalizedNic,
-            FullName = request.FullName.Trim(),
-            Email = request.Email.Trim(),
-            Phone = CleanPhone(request.Phone),
-            Address = request.Address.Trim(),
-            Role = "Solar Prosumer",
-            Status = ProsumerStatus.Pending,
+            Nic = nic!,
+            FullName = request.FullName!.Trim(),
+            Email = request.Email!.Trim(),
+            PhoneNumber = NormalizeOptionalText(request.PhoneNumber),
+            Address = NormalizeOptionalText(request.Address),
+            AccountStatus = ProsumerAccountStatus.PendingActivation,
             CreatedAt = now,
             UpdatedAt = now
         };
 
-        var created = await _prosumerRepository.CreateAsync(prosumer, cancellationToken);
+        try
+        {
+            var createdProsumer = await _prosumerRepository.CreateAsync(
+                prosumer,
+                cancellationToken);
 
-        return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(created));
+            return ProsumerServiceResult<ProsumerResponse>.Success(
+                MapToResponse(createdProsumer));
+        }
+        catch (MongoWriteException exception) when (exception.WriteError?.Code == 11000)
+        {
+            // Convert a concurrent NIC uniqueness race into the public conflict response.
+            return ProsumerServiceResult<ProsumerResponse>.Failure(
+                ProsumerServiceErrorType.Conflict,
+                "A Prosumer account with this NIC already exists.");
+        }
     }
 
-    public async Task<ProsumerServiceResult<ProsumerResponse>> UpdateDetailsAsync(
-        string nic,
-        UpdateProsumerRequest request,
+    public async Task<ProsumerServiceResult<ProsumerResponse>> GetCurrentAsync(
         CancellationToken cancellationToken = default)
     {
-        // Enforce immutable NIC constraint and validate updated contact and profile information.
-        var normalizedNic = NormalizeNic(nic);
+        // Resolve the authenticated identity instead of accepting a client-provided NIC.
+        var nic = await GetCurrentNicAsync(cancellationToken);
 
-        if (string.IsNullOrEmpty(normalizedNic) || !IsValidNic(normalizedNic))
+        if (nic is null)
         {
-            return ProsumerServiceResult<ProsumerResponse>.Failure(
-                ProsumerServiceErrorType.Validation,
-                "A valid Sri Lankan National Identity Card (NIC) is required.");
+            return UnauthorizedResult();
         }
 
-        var validationError = ValidateProsumerFields(
-            normalizedNic,
-            request.FullName,
-            request.Email,
-            request.Phone,
-            request.Address,
-            requireNic: false);
+        var prosumer = await _prosumerRepository.GetByNicAsync(nic, cancellationToken);
 
-        if (validationError is not null)
-        {
-            return ProsumerServiceResult<ProsumerResponse>.Failure(
-                ProsumerServiceErrorType.Validation,
-                validationError);
-        }
-
-        var existing = await _prosumerRepository.GetByNicAsync(normalizedNic, cancellationToken);
-
-        if (existing is null)
+        if (prosumer is null)
         {
             return ProsumerServiceResult<ProsumerResponse>.Failure(
                 ProsumerServiceErrorType.NotFound,
-                "The requested prosumer profile was not found.");
+                "The authenticated Prosumer profile was not found.");
         }
 
-        existing.FullName = request.FullName.Trim();
-        existing.Email = request.Email.Trim();
-        existing.Phone = CleanPhone(request.Phone);
-        existing.Address = request.Address.Trim();
-        existing.UpdatedAt = DateTime.UtcNow;
-
-        var updated = await _prosumerRepository.UpdateDetailsAsync(existing, cancellationToken);
-
-        if (updated is null)
-        {
-            return ProsumerServiceResult<ProsumerResponse>.Failure(
-                ProsumerServiceErrorType.NotFound,
-                "The requested prosumer profile was not found.");
-        }
-
-        return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(updated));
+        return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(prosumer));
     }
 
-    public async Task<ProsumerServiceResult<ProsumerResponse>> ChangeStatusAsync(
-        string nic,
-        UpdateProsumerStatusRequest request,
+    public async Task<ProsumerServiceResult<ProsumerResponse>> UpdateCurrentAsync(
+        UpdateProsumerProfileRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Verify prosumer existence and validate permitted lifecycle status transitions.
-        var normalizedNic = NormalizeNic(nic);
+        // Resolve the authenticated profile and validate only editable fields.
+        var nic = await GetCurrentNicAsync(cancellationToken);
 
-        if (string.IsNullOrEmpty(normalizedNic) || !IsValidNic(normalizedNic))
+        if (nic is null)
+        {
+            return UnauthorizedResult();
+        }
+
+        var validationMessage = ValidateProfile(request.FullName, request.Email);
+
+        if (validationMessage is not null)
         {
             return ProsumerServiceResult<ProsumerResponse>.Failure(
                 ProsumerServiceErrorType.Validation,
-                "A valid Sri Lankan National Identity Card (NIC) is required.");
+                validationMessage);
         }
 
-        if (string.IsNullOrWhiteSpace(request.Status))
-        {
-            return ProsumerServiceResult<ProsumerResponse>.Failure(
-                ProsumerServiceErrorType.Validation,
-                "Status is required.");
-        }
+        var prosumer = await _prosumerRepository.GetByNicAsync(nic, cancellationToken);
 
-        if (!Enum.TryParse<ProsumerStatus>(request.Status.Trim(), true, out var requestedStatus)
-            || !Enum.IsDefined(requestedStatus))
-        {
-            return ProsumerServiceResult<ProsumerResponse>.Failure(
-                ProsumerServiceErrorType.Validation,
-                "Status must be Pending, Active, or Deactivated.");
-        }
-
-        var existing = await _prosumerRepository.GetByNicAsync(normalizedNic, cancellationToken);
-
-        if (existing is null)
+        if (prosumer is null)
         {
             return ProsumerServiceResult<ProsumerResponse>.Failure(
                 ProsumerServiceErrorType.NotFound,
-                "The requested prosumer profile was not found.");
+                "The authenticated Prosumer profile was not found.");
         }
 
-        if (existing.Status == requestedStatus)
+        prosumer.FullName = request.FullName!.Trim();
+        prosumer.Email = request.Email!.Trim();
+        prosumer.PhoneNumber = NormalizeOptionalText(request.PhoneNumber);
+        prosumer.Address = NormalizeOptionalText(request.Address);
+        prosumer.UpdatedAt = DateTime.UtcNow;
+
+        var updatedProsumer = await _prosumerRepository.UpdateProfileAsync(
+            prosumer,
+            cancellationToken);
+
+        if (updatedProsumer is null)
         {
-            return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(existing));
+            return ProsumerServiceResult<ProsumerResponse>.Failure(
+                ProsumerServiceErrorType.NotFound,
+                "The authenticated Prosumer profile was not found.");
         }
 
-        var updated = await _prosumerRepository.UpdateStatusAsync(
-            normalizedNic,
-            requestedStatus,
+        return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(updatedProsumer));
+    }
+
+    public async Task<ProsumerServiceResult<ProsumerResponse>> RequestDeactivationAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // Move an active profile to a request state without deleting or directly deactivating it.
+        var nic = await GetCurrentNicAsync(cancellationToken);
+
+        if (nic is null)
+        {
+            return UnauthorizedResult();
+        }
+
+        var prosumer = await _prosumerRepository.GetByNicAsync(nic, cancellationToken);
+
+        if (prosumer is null)
+        {
+            return ProsumerServiceResult<ProsumerResponse>.Failure(
+                ProsumerServiceErrorType.NotFound,
+                "The authenticated Prosumer profile was not found.");
+        }
+
+        if (prosumer.AccountStatus == ProsumerAccountStatus.DeactivationRequested)
+        {
+            return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(prosumer));
+        }
+
+        if (prosumer.AccountStatus == ProsumerAccountStatus.PendingActivation)
+        {
+            return ProsumerServiceResult<ProsumerResponse>.Failure(
+                ProsumerServiceErrorType.Conflict,
+                "A PendingActivation account cannot request deactivation.");
+        }
+
+        if (prosumer.AccountStatus == ProsumerAccountStatus.Deactivated)
+        {
+            return ProsumerServiceResult<ProsumerResponse>.Failure(
+                ProsumerServiceErrorType.Conflict,
+                "A Deactivated account cannot request deactivation.");
+        }
+
+        var updatedProsumer = await _prosumerRepository.UpdateStatusAsync(
+            nic,
+            ProsumerAccountStatus.DeactivationRequested,
             DateTime.UtcNow,
             cancellationToken);
 
-        if (updated is null)
+        if (updatedProsumer is null)
         {
             return ProsumerServiceResult<ProsumerResponse>.Failure(
                 ProsumerServiceErrorType.NotFound,
-                "The requested prosumer profile was not found.");
+                "The authenticated Prosumer profile was not found.");
         }
 
-        return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(updated));
+        return ProsumerServiceResult<ProsumerResponse>.Success(MapToResponse(updatedProsumer));
     }
 
-    public static string NormalizeNic(string? nic)
+    private async Task<string?> GetCurrentNicAsync(CancellationToken cancellationToken)
     {
-        // Safely trim whitespace and convert NIC alphabetic characters to uppercase.
-        if (string.IsNullOrWhiteSpace(nic))
-        {
-            return string.Empty;
-        }
-
-        return nic.Trim().ToUpperInvariant();
+        // Normalize the identity supplied by the future authentication integration.
+        return NormalizeNic(await _currentProsumerAccessor
+            .GetCurrentProsumerNicAsync(cancellationToken));
     }
 
-    public static bool IsValidNic(string normalizedNic)
+    private static string? NormalizeNic(string? nic)
     {
-        // Validate against 9-digit old format with V/X or 12-digit new numeric format.
-        if (string.IsNullOrWhiteSpace(normalizedNic))
-        {
-            return false;
-        }
-
-        return OldNicRegex.IsMatch(normalizedNic) || NewNicRegex.IsMatch(normalizedNic);
+        // Normalize the primary business identifier consistently before repository calls.
+        return string.IsNullOrWhiteSpace(nic)
+            ? null
+            : nic.Trim().ToUpperInvariant();
     }
 
-    private static string? ValidateProsumerFields(
-        string normalizedNic,
+    private static string? NormalizeOptionalText(string? value)
+    {
+        // Trim optional profile text and represent whitespace-only input as absent.
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string? ValidateRegistration(
+        string? nic,
         string? fullName,
-        string? email,
-        string? phone,
-        string? address,
-        bool requireNic)
+        string? email)
     {
-        // Enforce enterprise business rules for prosumer registration and profile modifications.
-        if (requireNic)
+        // Apply registration validation without inventing a strict national NIC format.
+        if (nic is null)
         {
-            if (string.IsNullOrWhiteSpace(normalizedNic))
-            {
-                return "National Identity Card (NIC) is required.";
-            }
-
-            if (!IsValidNic(normalizedNic))
-            {
-                return "Invalid NIC format. Enter 9 digits followed by V/X (e.g., 123456789V) or 12 digits (e.g., 199912345678).";
-            }
+            return "Nic is required.";
         }
 
-        var trimmedName = fullName?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(trimmedName))
+        return ValidateProfile(fullName, email);
+    }
+
+    private static string? ValidateProfile(string? fullName, string? email)
+    {
+        // Validate required profile fields and use a standard reasonable email check.
+        if (string.IsNullOrWhiteSpace(fullName))
         {
-            return "Full name is required.";
+            return "FullName is required.";
         }
 
-        if (trimmedName.Length < 2)
+        if (string.IsNullOrWhiteSpace(email))
         {
-            return "Full name must be at least 2 characters.";
+            return "Email is required.";
         }
 
-        var trimmedEmail = email?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(trimmedEmail))
+        if (!new EmailAddressAttribute().IsValid(email.Trim()))
         {
-            return "Email address is required.";
-        }
-
-        if (!EmailRegex.IsMatch(trimmedEmail))
-        {
-            return "Please enter a valid email address (e.g., user@example.com).";
-        }
-
-        var cleanedPhone = CleanPhone(phone);
-        if (string.IsNullOrWhiteSpace(cleanedPhone))
-        {
-            return "Phone number is required.";
-        }
-
-        if (!PhoneRegex.IsMatch(cleanedPhone))
-        {
-            return "Invalid phone format. Enter 10 digits starting with 0 (e.g., 0712345678) or +94 followed by 9 digits (e.g., +94712345678).";
-        }
-
-        var trimmedAddress = address?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(trimmedAddress))
-        {
-            return "Address is required.";
-        }
-
-        if (trimmedAddress.Length < 5)
-        {
-            return "Address must be at least 5 characters.";
+            return "Email must be a valid email address.";
         }
 
         return null;
     }
 
-    private static string CleanPhone(string? phone)
+    private static ProsumerServiceResult<ProsumerResponse> UnauthorizedResult()
     {
-        // Strip spaces and hyphens from the phone number while preserving country code prefix.
-        if (string.IsNullOrWhiteSpace(phone))
-        {
-            return string.Empty;
-        }
-
-        return Regex.Replace(phone.Trim(), @"[\s-]", string.Empty);
+        // Return the safe boundary response until Member 1 identity integration is available.
+        return ProsumerServiceResult<ProsumerResponse>.Failure(
+            ProsumerServiceErrorType.Unauthorized,
+            "An authenticated Prosumer identity is required.");
     }
 
     private static ProsumerResponse MapToResponse(Prosumer prosumer)
     {
-        // Convert the internal MongoDB prosumer document into a clean external DTO.
+        // Map persistence data to the public response without exposing credentials.
         return new ProsumerResponse
         {
             Nic = prosumer.Nic,
             FullName = prosumer.FullName,
             Email = prosumer.Email,
-            Phone = prosumer.Phone,
+            PhoneNumber = prosumer.PhoneNumber,
             Address = prosumer.Address,
-            Role = prosumer.Role,
-            Status = prosumer.Status.ToString(),
+            AccountStatus = prosumer.AccountStatus.ToString(),
             CreatedAt = prosumer.CreatedAt,
             UpdatedAt = prosumer.UpdatedAt
         };

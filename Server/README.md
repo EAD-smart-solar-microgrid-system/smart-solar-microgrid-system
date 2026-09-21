@@ -16,16 +16,12 @@ The intended request flow is:
 - Models represent MongoDB/domain data.
 - DTOs represent API input and output separately from database models.
 
-The current foundation includes the health controller and service only. Assignment features are intentionally not implemented yet.
+The current foundation includes health, station management, and Prosumer account-control APIs. Authentication and client user interfaces remain separate assignment work.
 
 ## Required software
 
 - .NET 8 SDK (the project targets `net8.0`)
-- A local MongoDB server for station repository operations
-
-The expected local MongoDB development server listens on `localhost:27017`.
-On Windows, a standard installation normally registers the `MongoDB` service.
-MongoDB Compass is optional; it is not required by the API.
+- A MongoDB Atlas deployment for persistence
 
 ## Restore dependencies
 
@@ -64,28 +60,19 @@ MongoDB settings are in `SmartSolarMicrogrid.Api/appsettings.json` under the `Mo
 }
 ```
 
-The application creates a standard `MongoClient`, exposes `IMongoDatabase`, and registers `MongoDbContext` through dependency injection. Creating these objects does not make the health endpoint depend on a live MongoDB connection.
+This is a non-secret fallback value. Development Atlas credentials belong only in the ignored `.env` file, which overrides it through normal environment-variable configuration. The application creates one standard `MongoClient`, exposes `IMongoDatabase`, and registers `MongoDbContext` through dependency injection. Creating these objects does not make the general health endpoint depend on a live MongoDB connection.
 
 The general API probe remains available at `GET /api/health` and reports whether the API is running. The separate `GET /api/health/mongodb` probe sends a MongoDB `ping` and returns `503 Service Unavailable` when MongoDB cannot be reached; MongoDB availability does not make `/api/health` fail.
 
 ### Local development configuration
 
-Copy `SmartSolarMicrogrid.Api/.env.example` to `SmartSolarMicrogrid.Api/.env` for local development. The real `.env` file is ignored by Git; `.env.example` is safe to commit. It contains the local values `MongoDb__ConnectionString=mongodb://localhost:27017` and `MongoDb__DatabaseName=SmartSolarMicrogridDb`.
+Copy `SmartSolarMicrogrid.Api/.env.example` to `SmartSolarMicrogrid.Api/.env` for local development. The real `.env` file is ignored by Git; `.env.example` is safe to commit. Set `MongoDb__ConnectionString` to the Atlas SRV URI and `MongoDb__DatabaseName` to `SmartSolarMicrogridDb`. Never commit Atlas credentials.
 
 The API loads `.env` only when the environment is `Development`, before `WebApplication.CreateBuilder` builds the normal ASP.NET Core configuration. Double underscores map to configuration section separators, so `MongoDb__ConnectionString` becomes `MongoDb:ConnectionString` and binds to `MongoDbSettings` normally. Existing operating-system environment variables are not overwritten by `.env`; command-line and normal ASP.NET Core environment-variable configuration precedence remain in effect. Production/IIS should use real environment variables or secure deployment configuration instead of depending on a physical `.env` file. The `.env` file is not copied to build or publish output.
 
-MongoDB must be running on port `27017` for persistence tests.
+The Atlas cluster must be running, the development IP must be allowed in Atlas Network Access, and the database user must have sufficient read/write access for persistence tests.
 
 The `SolarStationInfo` collection is obtained through the repository and is not manually created at application startup. MongoDB creates the `SmartSolarMicrogridDb` database and `SolarStationInfo` collection automatically when the first station document is successfully inserted. The API does not seed station data on startup.
-
-To verify the local installation before running station tests:
-
-```powershell
-Get-Service MongoDB
-Get-NetTCPConnection -LocalPort 27017 -State Listen
-```
-
-Both checks should show a running MongoDB service and a listener on port `27017`. If MongoDB is not installed, install the MongoDB Community Server for Windows, start the `MongoDB` service, and repeat those checks. Do not add credentials to this development configuration.
 
 Never commit database usernames, passwords, Atlas connection strings, or other secrets. Use local user secrets, environment variables, or an ignored local configuration file when credentials are needed.
 
@@ -127,10 +114,28 @@ Deactivation is also a service-layer rule. Before changing `Active` to `Inactive
 
 Member 1's future authentication and role-based authorization must protect these management endpoints after that work is merged. JWT, login, users, and hard-coded temporary roles are intentionally not implemented here.
 
+## Member 3 - Prosumer Account Control
+
+Prosumer profiles are stored in the `UsersDetail` MongoDB collection. NIC is normalized by trimming whitespace and converting to uppercase, then stored as the MongoDB `_id`. This makes NIC the primary business identifier and gives the database uniqueness enforcement without a separate index.
+
+The Prosumer model contains `Nic`, `FullName`, `Email`, optional `PhoneNumber`, optional `Address`, `AccountStatus`, `CreatedAt`, and `UpdatedAt`. It does not store passwords, JWTs, or session tokens.
+
+The public registration endpoint is `POST /api/prosumers/register`. New profiles receive the server-controlled `PendingActivation` status and UTC timestamps. Duplicate NIC values return `409 Conflict`; the client cannot choose account status or timestamps.
+
+Authenticated self-service routes are:
+
+- `GET /api/prosumers/me`
+- `PUT /api/prosumers/me`
+- `POST /api/prosumers/me/deactivation-request`
+
+The current implementation deliberately returns `401 Unauthorized` for these routes until Member 1 supplies the authenticated Prosumer NIC through `ICurrentProsumerAccessor`. It never trusts a NIC from a query string or request body.
+
+Profile updates can change only full name, email, phone number, and address. NIC, account status, and timestamps remain server-controlled. A deactivation request changes `Active` to `DeactivationRequested`; it does not delete the document or immediately set `Deactivated`. Pending activation and already deactivated accounts cannot request deactivation. Future activation approval and reactivation are Backoffice responsibilities and are not implemented here.
+
 ## Initial API infrastructure
 
 - `GET /api/health` returns HTTP 200 with the API status.
 - MongoDB configuration and dependency injection registration are prepared.
 - Development CORS and Development-only Swagger are configured.
 
-Prosumer accounts, authentication, users, reservations, energy booking slots, QR verification, maps, Android functionality, and the Web UI are outside this phase.
+Authentication, Backoffice activation/reactivation, reservations, energy booking slots, QR verification, maps, Android functionality, and the Web UI are outside this phase.

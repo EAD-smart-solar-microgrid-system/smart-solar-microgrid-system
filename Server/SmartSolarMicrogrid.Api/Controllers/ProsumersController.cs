@@ -2,7 +2,7 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: ProsumersController.cs
- * Purpose: Expose public REST endpoints for administrative prosumer management and lifecycle governance.
+ * Purpose: Expose Prosumer registration and authenticated self-service routes.
  */
 
 using Microsoft.AspNetCore.Mvc;
@@ -13,45 +13,32 @@ using SmartSolarMicrogrid.Api.Services;
 namespace SmartSolarMicrogrid.Api.Controllers;
 
 [ApiController]
-[Route("api/admin/prosumers")]
+[Route("api/prosumers")]
 public sealed class ProsumersController : ControllerBase
 {
     private readonly IProsumerService _prosumerService;
 
     public ProsumersController(IProsumerService prosumerService)
     {
-        // Store the prosumer service that enforces prosumer validation and lifecycle rules.
+        // Store the service that owns Prosumer validation and account-state rules.
         _prosumerService = prosumerService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ProsumerResponse>>> GetAll(
-        [FromQuery] string? status,
+    [HttpPost("register")]
+    [ProducesResponseType(typeof(ProsumerResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ProsumerResponse>> Register(
+        [FromBody] RegisterProsumerRequest? request,
         CancellationToken cancellationToken)
     {
-        // Retrieve prosumers, optionally filtering by Pending, Active, or Deactivated status.
-        var result = await _prosumerService.GetAllAsync(status, cancellationToken);
-
-        if (!result.Succeeded)
-        {
-            return CreateErrorResult(result);
-        }
-
-        return Ok(result.Value!);
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<ProsumerResponse>> Create(
-        [FromBody] CreateProsumerRequest? request,
-        CancellationToken cancellationToken)
-    {
-        // Validate request body and register a new prosumer profile.
+        // Register a public Prosumer profile without accepting client-controlled status or timestamps.
         if (request is null)
         {
             return BadRequest(new ErrorResponse("Request body is required."));
         }
 
-        var result = await _prosumerService.CreateAsync(request, cancellationToken);
+        var result = await _prosumerService.RegisterAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -61,19 +48,15 @@ public sealed class ProsumersController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
-    [HttpPut("{nic}")]
-    public async Task<ActionResult<ProsumerResponse>> Update(
-        string nic,
-        [FromBody] UpdateProsumerRequest? request,
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(ProsumerResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProsumerResponse>> GetCurrent(
         CancellationToken cancellationToken)
     {
-        // Update contact and address details of an existing prosumer while keeping NIC immutable.
-        if (request is null)
-        {
-            return BadRequest(new ErrorResponse("Request body is required."));
-        }
-
-        var result = await _prosumerService.UpdateDetailsAsync(nic, request, cancellationToken);
+        // Return the profile resolved from the authenticated identity abstraction.
+        var result = await _prosumerService.GetCurrentAsync(cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -83,19 +66,41 @@ public sealed class ProsumersController : ControllerBase
         return Ok(result.Value);
     }
 
-    [HttpPatch("{nic}/status")]
-    public async Task<ActionResult<ProsumerResponse>> UpdateStatus(
-        string nic,
-        [FromBody] UpdateProsumerStatusRequest? request,
+    [HttpPut("me")]
+    [ProducesResponseType(typeof(ProsumerResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProsumerResponse>> UpdateCurrent(
+        [FromBody] UpdateProsumerProfileRequest? request,
         CancellationToken cancellationToken)
     {
-        // Change the prosumer lifecycle status between Pending, Active, and Deactivated.
+        // Update only editable fields for the authenticated Prosumer profile.
         if (request is null)
         {
             return BadRequest(new ErrorResponse("Request body is required."));
         }
 
-        var result = await _prosumerService.ChangeStatusAsync(nic, request, cancellationToken);
+        var result = await _prosumerService.UpdateCurrentAsync(request, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return CreateErrorResult(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("me/deactivation-request")]
+    [ProducesResponseType(typeof(ProsumerResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ProsumerResponse>> RequestDeactivation(
+        CancellationToken cancellationToken)
+    {
+        // Request a state transition without deleting or directly deactivating the profile.
+        var result = await _prosumerService.RequestDeactivationAsync(cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -107,17 +112,23 @@ public sealed class ProsumersController : ControllerBase
 
     private ActionResult CreateErrorResult<T>(ProsumerServiceResult<T> result)
     {
-        // Map service error types into standard API ErrorResponse models.
-        var message = result.ErrorMessage ?? "The prosumer request could not be completed.";
+        // Translate expected service outcomes into consistent public HTTP responses.
+        var message = result.ErrorMessage ?? "The Prosumer request could not be completed.";
 
-        return result.ErrorType switch
+        switch (result.ErrorType)
         {
-            ProsumerServiceErrorType.Validation => BadRequest(new ErrorResponse(message)),
-            ProsumerServiceErrorType.NotFound => NotFound(new ErrorResponse(message)),
-            ProsumerServiceErrorType.Conflict => Conflict(new ErrorResponse(message)),
-            _ => StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new ErrorResponse("The prosumer request could not be completed."))
-        };
+            case ProsumerServiceErrorType.Validation:
+                return BadRequest(new ErrorResponse(message));
+            case ProsumerServiceErrorType.Unauthorized:
+                return Unauthorized(new ErrorResponse(message));
+            case ProsumerServiceErrorType.NotFound:
+                return NotFound(new ErrorResponse(message));
+            case ProsumerServiceErrorType.Conflict:
+                return Conflict(new ErrorResponse(message));
+            default:
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new ErrorResponse("The Prosumer request could not be completed."));
+        }
     }
 }
