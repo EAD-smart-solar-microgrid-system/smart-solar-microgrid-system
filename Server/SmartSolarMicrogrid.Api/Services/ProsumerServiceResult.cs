@@ -2,7 +2,7 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: ProsumerServiceResult.cs
- * Purpose: Carry prosumer service outcomes to controllers without using exceptions for expected errors.
+ * Purpose: Carry Prosumer service outcomes to controllers without exposing persistence details.
  */
 
 namespace SmartSolarMicrogrid.Api.Services;
@@ -10,6 +10,7 @@ namespace SmartSolarMicrogrid.Api.Services;
 public enum ProsumerServiceErrorType
 {
     Validation,
+    Unauthorized,
     NotFound,
     Conflict
 }
@@ -38,7 +39,7 @@ public sealed class ProsumerServiceResult<T>
 
     public static ProsumerServiceResult<T> Success(T value)
     {
-        // Create a successful result containing the prosumer service response payload.
+        // Create a successful result containing the service response value.
         return new ProsumerServiceResult<T>(true, value, null, null);
     }
 
@@ -46,7 +47,7 @@ public sealed class ProsumerServiceResult<T>
         ProsumerServiceErrorType errorType,
         string errorMessage)
     {
-        // Create an expected failure result for the controller to map to an appropriate HTTP status.
+        // Create a controlled failure result for public HTTP response mapping.
         return new ProsumerServiceResult<T>(false, default, errorType, errorMessage);
     }
 }

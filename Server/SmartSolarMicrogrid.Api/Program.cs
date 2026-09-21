@@ -5,7 +5,6 @@
  * Purpose: Configure dependency injection and the ASP.NET Core request pipeline.
  */
 
-using System.Security.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -48,13 +47,7 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
         .GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
         .Value;
 
-    var mongoClientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
-    mongoClientSettings.SslSettings = new SslSettings
-    {
-        EnabledSslProtocols = SslProtocols.Tls12
-    };
-
-    return new MongoClient(mongoClientSettings);
+    return new MongoClient(settings.ConnectionString);
 });
 
 builder.Services.AddSingleton<IMongoDatabase>(serviceProvider =>
@@ -73,10 +66,8 @@ builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
 builder.Services.AddScoped<IProsumerService, ProsumerService>();
-builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
-builder.Services.AddScoped<IReservationService, ReservationService>();
-builder.Services.AddScoped<ISlotAvailabilityChecker, UnavailableSlotAvailabilityChecker>();
-builder.Services.AddScoped<IActiveReservationChecker, ActiveReservationChecker>();
+builder.Services.AddSingleton<IActiveReservationChecker, UnavailableActiveReservationChecker>();
+builder.Services.AddSingleton<ICurrentProsumerAccessor, UnavailableCurrentProsumerAccessor>();
 
 builder.Services.AddControllers();
 
