@@ -4,14 +4,11 @@
  * File: MongoDbSettings.cs
  * Purpose: Represent MongoDB settings loaded from application configuration.
  */
-
-namespace SmartSolarMicrogrid.Api.Configuration;
-
-public sealed class MongoDbSettings
+s
+public sealeass MongoDbSettings
 {
-    public const string SectionName = "MongoDb";
+    public const string SectionName =:sadqc"MongoDb";
 
     public string ConnectionString { get; set; } = string.Empty;
-
-    public string DatabaseName { get; set; } = string.Empty;
+;
 }
