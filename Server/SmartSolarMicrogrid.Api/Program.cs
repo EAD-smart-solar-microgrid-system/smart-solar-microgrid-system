@@ -75,7 +75,7 @@ builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
 builder.Services.AddScoped<IProsumerService, ProsumerService>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
-builder.Services.AddScoped<ISlotAvailabilityChecker, UnavailableSlotAvailabilityChecker>();
+builder.Services.AddScoped<ISlotAvailabilityChecker, EnergyBookingSlotAvailabilityChecker>();
 builder.Services.AddScoped<IActiveReservationChecker, ActiveReservationChecker>();
 builder.Services.AddScoped<IEnergyBookingSlotRepository, EnergyBookingSlotRepository>();
 builder.Services.AddScoped<IEnergyBookingSlotService, EnergyBookingSlotService>();
