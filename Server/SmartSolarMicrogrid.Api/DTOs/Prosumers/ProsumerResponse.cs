@@ -23,5 +23,4 @@ public sealed class ProsumerResponse
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
-}
+    public DateTime UpdatedAt { get; guu
