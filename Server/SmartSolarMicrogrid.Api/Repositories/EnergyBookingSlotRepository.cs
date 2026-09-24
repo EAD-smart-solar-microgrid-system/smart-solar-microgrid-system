@@ -88,4 +88,13 @@ public sealed class EnergyBookingSlotRepository : IEnergyBookingSlotRepository
             },
             cancellationToken);
     }
+
+    public async Task<bool> DeleteAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        // Remove one energy booking slot document by id.
+        var result = await _slots.DeleteOneAsync(slot => slot.Id == id, cancellationToken);
+        return result.DeletedCount > 0;
+    }
 }

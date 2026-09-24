@@ -32,4 +32,8 @@ public interface IEnergyBookingSlotRepository
         bool isAvailable,
         DateTime updatedAt,
         CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteAsync(
+        string id,
+        CancellationToken cancellationToken = default);
 }
