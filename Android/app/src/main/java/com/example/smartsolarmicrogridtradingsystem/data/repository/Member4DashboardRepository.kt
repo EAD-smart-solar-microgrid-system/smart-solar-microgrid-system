@@ -4,6 +4,7 @@ import com.example.smartsolarmicrogridtradingsystem.core.network.ApiCallback
 import com.example.smartsolarmicrogridtradingsystem.core.network.ApiClient
 import com.example.smartsolarmicrogridtradingsystem.core.network.HttpMethod
 import com.example.smartsolarmicrogridtradingsystem.core.network.NetworkResult
+import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.NearbyStationDto
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.ProsumerDashboardDto
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.ReservationMonitoringListDto
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.StationReferenceDto
@@ -82,6 +83,50 @@ class Member4DashboardRepository {
                                 ex,
                                 "Unable to parse reservation monitoring response."
                             )
+                        )
+                    }
+                }
+
+                override fun onError(error: NetworkResult<Nothing>) {
+                    callback.onError(error)
+                }
+            }
+        )
+    }
+
+    /**
+     * Loads nearby stations for the Member 4 Google Maps screen.
+     */
+    fun getNearbyStations(
+        latitude: Double,
+        longitude: Double,
+        radiusKm: Double,
+        bearerToken: String?,
+        callback: ApiCallback<List<NearbyStationDto>>
+    ) {
+        val query = buildQuery(
+            mapOf(
+                "latitude" to latitude.toString(),
+                "longitude" to longitude.toString(),
+                "radiusKm" to radiusKm.toString()
+            )
+        )
+        val endpoint = "member4/stations/nearby?$query"
+
+        ApiClient.sendRequest(
+            method = HttpMethod.GET,
+            endpoint = endpoint,
+            bearerToken = bearerToken,
+            callback = object : ApiCallback<String> {
+                override fun onSuccess(result: NetworkResult.Success<String>) {
+                    try {
+                        val stations = NearbyStationDto.fromJsonPayload(result.responseBody)
+                        callback.onSuccess(
+                            NetworkResult.Success(result.statusCode, stations)
+                        )
+                    } catch (ex: Exception) {
+                        callback.onError(
+                            NetworkResult.NetworkError(ex, "Unable to parse nearby stations response.")
                         )
                     }
                 }
