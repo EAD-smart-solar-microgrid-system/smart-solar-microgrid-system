@@ -20,7 +20,7 @@ public sealed class EnergyBookingSlotAvailabilityChecker : ISlotAvailabilityChec
         _slotRepository = slotRepository;
     }
 
-    public async Task<bool?> IsSlotAvailableAsync(
+    public async Task<SlotAvailabilityStatus> CheckSlotAvailabilityAsync(
         string stationId,
         string slotId,
         DateTime reservationDateTime,
@@ -29,34 +29,34 @@ public sealed class EnergyBookingSlotAvailabilityChecker : ISlotAvailabilityChec
         // Reject invalid station identifiers before querying MongoDB.
         if (string.IsNullOrWhiteSpace(stationId) || !ObjectId.TryParse(stationId, out _))
         {
-            return false;
+            return SlotAvailabilityStatus.Unavailable;
         }
 
-        // Reject invalid slot identifiers before querying MongoDB.
+        // Reject invalid slot identifiers as not found rather than a generic unavailable conflict.
         if (string.IsNullOrWhiteSpace(slotId) || !ObjectId.TryParse(slotId, out _))
         {
-            return false;
+            return SlotAvailabilityStatus.NotFound;
         }
 
         // Load the requested booking slot from the EnergyBookingSlots collection.
         var slot = await _slotRepository.GetByIdAsync(slotId.Trim(), cancellationToken);
 
-        // Treat a missing slot as unavailable for the reservation request.
+        // Missing slots must surface as NotFound so reservation clients get HTTP 404.
         if (slot is null)
         {
-            return false;
+            return SlotAvailabilityStatus.NotFound;
         }
 
         // Ensure the slot belongs to the station referenced by the reservation.
         if (!string.Equals(slot.StationId, stationId.Trim(), StringComparison.Ordinal))
         {
-            return false;
+            return SlotAvailabilityStatus.Unavailable;
         }
 
         // Enforce the Member 4 availability flag before accepting the reservation time.
         if (!slot.IsAvailable)
         {
-            return false;
+            return SlotAvailabilityStatus.Unavailable;
         }
 
         // Confirm the reservation instant falls inside the slot's configured UTC window.
@@ -66,10 +66,10 @@ public sealed class EnergyBookingSlotAvailabilityChecker : ISlotAvailabilityChec
 
         if (reservationUtc < slotStartUtc || reservationUtc > slotEndUtc)
         {
-            return false;
+            return SlotAvailabilityStatus.Unavailable;
         }
 
-        return true;
+        return SlotAvailabilityStatus.Available;
     }
 
     private static DateTime NormalizeToUtc(DateTime value)

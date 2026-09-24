@@ -29,4 +29,8 @@ public interface IEnergyBookingSlotService
         string slotId,
         UpdateSlotAvailabilityRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<StationServiceResult<object?>> DeleteAsync(
+        string slotId,
+        CancellationToken cancellationToken = default);
 }

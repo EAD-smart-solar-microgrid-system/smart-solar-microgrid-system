@@ -253,6 +253,39 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
         return StationServiceResult<EnergyBookingSlotResponse>.Success(MapToResponse(updatedSlot));
     }
 
+    public async Task<StationServiceResult<object?>> DeleteAsync(
+        string slotId,
+        CancellationToken cancellationToken = default)
+    {
+        // Validate the slot identifier and remove the booking slot when it exists.
+        if (!ObjectId.TryParse(slotId, out _))
+        {
+            return StationServiceResult<object?>.Failure(
+                StationServiceErrorType.Validation,
+                "The slot id must be a valid MongoDB ObjectId.");
+        }
+
+        var existingSlot = await _slotRepository.GetByIdAsync(slotId, cancellationToken);
+
+        if (existingSlot is null)
+        {
+            return StationServiceResult<object?>.Failure(
+                StationServiceErrorType.NotFound,
+                "The requested energy booking slot was not found.");
+        }
+
+        var deleted = await _slotRepository.DeleteAsync(existingSlot.Id, cancellationToken);
+
+        if (!deleted)
+        {
+            return StationServiceResult<object?>.Failure(
+                StationServiceErrorType.NotFound,
+                "The requested energy booking slot was not found.");
+        }
+
+        return StationServiceResult<object?>.Success(null);
+    }
+
     private static string? ValidateSlotInput(
         DateTime slotStartUtc,
         DateTime slotEndUtc,
