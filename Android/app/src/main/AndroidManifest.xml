@@ -23,6 +23,18 @@
         android:theme="@style/Theme.SmartSolarMicrogridTradingSystem"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".feature.dashboardmaps.ui.ReservationDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.dashboardmaps.ui.ReservationSearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.dashboardmaps.ui.BookingListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.dashboardmaps.ui.DashboardActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
