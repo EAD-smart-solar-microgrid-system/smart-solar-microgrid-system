@@ -10,7 +10,9 @@ export const SlotList = ({
   slots,
   onEdit,
   onToggleAvailability,
+  onDelete,
   togglingSlotId,
+  deletingSlotId,
   actionDisabled,
 }) => {
   return (
@@ -32,6 +34,8 @@ export const SlotList = ({
         <tbody>
           {slots.map((slot) => {
             const isToggling = togglingSlotId === slot.id;
+            const isDeleting = deletingSlotId === slot.id;
+            const rowBusy = isToggling || isDeleting;
             return (
               <tr key={slot.id}>
                 <td>{formatSlotDateTime(slot.slotStartUtc)}</td>
@@ -50,7 +54,7 @@ export const SlotList = ({
                       type="button"
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => onEdit(slot)}
-                      disabled={actionDisabled || isToggling}
+                      disabled={actionDisabled || rowBusy}
                     >
                       Edit
                     </button>
@@ -58,7 +62,7 @@ export const SlotList = ({
                       type="button"
                       className={`btn btn-sm ${slot.isAvailable ? 'btn-outline-warning' : 'btn-outline-success'}`}
                       onClick={() => onToggleAvailability(slot)}
-                      disabled={actionDisabled || isToggling}
+                      disabled={actionDisabled || rowBusy}
                       aria-busy={isToggling}
                     >
                       {isToggling
@@ -66,6 +70,15 @@ export const SlotList = ({
                         : slot.isAvailable
                           ? 'Mark unavailable'
                           : 'Mark available'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={() => onDelete(slot)}
+                      disabled={actionDisabled || rowBusy}
+                      aria-busy={isDeleting}
+                    >
+                      {isDeleting ? 'Deleting…' : 'Delete'}
                     </button>
                   </div>
                 </td>
