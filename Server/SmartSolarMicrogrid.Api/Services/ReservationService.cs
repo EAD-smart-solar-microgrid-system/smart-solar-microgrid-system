@@ -112,24 +112,16 @@ public sealed class ReservationService : IReservationService
                 "A conflicting reservation already exists for this station slot at the requested time.");
         }
 
-        var slotAvailability = await _slotAvailabilityChecker.IsSlotAvailableAsync(
+        var slotAvailability = await _slotAvailabilityChecker.CheckSlotAvailabilityAsync(
             request.StationId,
             request.SlotId.Trim(),
             requestedUtc,
             cancellationToken);
 
-        if (!slotAvailability.HasValue)
+        var slotAvailabilityError = MapSlotAvailabilityFailure(slotAvailability);
+        if (slotAvailabilityError is not null)
         {
-            return ReservationServiceResult<ReservationResponse>.Failure(
-                ReservationServiceErrorType.DependencyUnavailable,
-                "Slot availability verification is unavailable because Member 4's battery storage slot service is not yet integrated.");
-        }
-
-        if (!slotAvailability.Value)
-        {
-            return ReservationServiceResult<ReservationResponse>.Failure(
-                ReservationServiceErrorType.Conflict,
-                "The requested battery storage slot is currently occupied or unavailable.");
+            return slotAvailabilityError;
         }
 
         var reservationType = ReservationType.DropOff;
@@ -235,24 +227,16 @@ public sealed class ReservationService : IReservationService
                 "A conflicting reservation already exists for this station slot at the requested time.");
         }
 
-        var slotAvailability = await _slotAvailabilityChecker.IsSlotAvailableAsync(
+        var slotAvailability = await _slotAvailabilityChecker.CheckSlotAvailabilityAsync(
             existing.StationId,
             targetSlot,
             requestedUtc,
             cancellationToken);
 
-        if (!slotAvailability.HasValue)
+        var slotAvailabilityError = MapSlotAvailabilityFailure(slotAvailability);
+        if (slotAvailabilityError is not null)
         {
-            return ReservationServiceResult<ReservationResponse>.Failure(
-                ReservationServiceErrorType.DependencyUnavailable,
-                "Slot availability verification is unavailable because Member 4's battery storage slot service is not yet integrated.");
-        }
-
-        if (!slotAvailability.Value)
-        {
-            return ReservationServiceResult<ReservationResponse>.Failure(
-                ReservationServiceErrorType.Conflict,
-                "The requested battery storage slot is currently occupied or unavailable.");
+            return slotAvailabilityError;
         }
 
         if (!string.IsNullOrWhiteSpace(request.ReservationType)
@@ -460,6 +444,25 @@ public sealed class ReservationService : IReservationService
         }
 
         return null;
+    }
+
+    private static ReservationServiceResult<ReservationResponse>? MapSlotAvailabilityFailure(
+        SlotAvailabilityStatus status)
+    {
+        // Translate Member 4 slot-check outcomes into reservation HTTP-mappable errors.
+        return status switch
+        {
+            SlotAvailabilityStatus.Available => null,
+            SlotAvailabilityStatus.NotFound => ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.NotFound,
+                "The requested energy booking slot was not found."),
+            SlotAvailabilityStatus.ServiceUnavailable => ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.DependencyUnavailable,
+                "Slot availability verification is unavailable because Member 4's battery storage slot service is not yet integrated."),
+            _ => ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Conflict,
+                "The requested battery storage slot is currently occupied or unavailable.")
+        };
     }
 
     private static ReservationResponse MapToResponse(EnergyReservation reservation)
