@@ -30,7 +30,7 @@
     <string name="filter_prosumer_id">Prosumer ID (NIC)</string>
     <string name="filter_station_id">Station ID</string>
     <string name="filter_status">Status</string>
-    <string name="filter_search">Search</string>
+    <string name="filter_search">Reservation ID, station ID, slot ID, or NIC</string>
 
     <string name="action_load">Load dashboard</string>
     <string name="action_retry">Retry</string>
