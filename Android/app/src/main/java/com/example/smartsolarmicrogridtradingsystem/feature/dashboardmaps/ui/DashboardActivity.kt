@@ -89,6 +89,9 @@ class DashboardActivity : BaseActivity() {
             intent.putExtra(EXTRA_PROSUMER_ID, resolveProsumerId())
             startActivity(intent)
         }
+        findViewById<MaterialButton>(R.id.btnOpenNearbyMap).setOnClickListener {
+            startActivity(Intent(this, NearbyStationsMapActivity::class.java))
+        }
 
         refreshStationCache()
         if (!resolveProsumerId().isNullOrBlank()) {

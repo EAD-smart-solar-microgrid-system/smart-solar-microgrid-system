@@ -31,6 +31,8 @@ class StationCacheHelper private constructor(context: Context) : SQLiteOpenHelpe
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // No destructive upgrades yet; add sequential migrations when the cache schema changes.
+        if (oldVersion < 2) {
+            db.execSQL(StationCacheContract.StationEntry.SQL_ADD_SCHEDULE_JSON)
+        }
     }
 }

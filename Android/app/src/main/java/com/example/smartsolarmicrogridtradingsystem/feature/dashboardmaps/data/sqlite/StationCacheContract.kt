@@ -9,7 +9,7 @@ import android.provider.BaseColumns
 object StationCacheContract {
 
     const val DATABASE_NAME = "member4_station_cache.db"
-    const val DATABASE_VERSION = 1
+    const val DATABASE_VERSION = 2
 
     object StationEntry : BaseColumns {
         const val TABLE_NAME = "cached_stations"
@@ -20,6 +20,7 @@ object StationCacheContract {
         const val COLUMN_STATUS = "status"
         const val COLUMN_CAPACITY_KW = "capacity_kw"
         const val COLUMN_BATTERY_SLOT_CAPACITY = "battery_slot_capacity"
+        const val COLUMN_SCHEDULE_JSON = "schedule_json"
         const val COLUMN_LAST_SYNCED = "last_synced"
 
         const val SQL_CREATE_TABLE = """
@@ -31,8 +32,13 @@ object StationCacheContract {
                 $COLUMN_STATUS TEXT NOT NULL,
                 $COLUMN_CAPACITY_KW REAL NOT NULL,
                 $COLUMN_BATTERY_SLOT_CAPACITY INTEGER NOT NULL,
+                $COLUMN_SCHEDULE_JSON TEXT NOT NULL DEFAULT '[]',
                 $COLUMN_LAST_SYNCED INTEGER NOT NULL
             );
+        """
+
+        const val SQL_ADD_SCHEDULE_JSON = """
+            ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_SCHEDULE_JSON TEXT NOT NULL DEFAULT '[]';
         """
     }
 }
