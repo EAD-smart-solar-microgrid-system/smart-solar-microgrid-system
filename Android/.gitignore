@@ -28,3 +28,4 @@ local.properties
 # Environment variables and secrets
 .env
 .env.*
+secrets.properties

@@ -6,13 +6,14 @@
  */
 
 using Microsoft.AspNetCore.Mvc;
+// Imports MVC types used below to configure API validation and return bad-request responses.
 using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Configuration;
 using SmartSolarMicrogrid.Api.Data;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.Repositories;
-using SmartSolarMicrogrid.Api.Services;
+using SmartSolarMicrogrid.Api.Services;  // Imports the application service classes and interfaces.
 
 var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
     ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");

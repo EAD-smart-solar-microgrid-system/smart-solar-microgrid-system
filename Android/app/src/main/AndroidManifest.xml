@@ -5,6 +5,9 @@
     <!-- Network permissions required for REST API communication and connectivity checking -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Member 4 nearby stations map: current location -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!-- 
         Note on Cleartext Traffic:
@@ -22,6 +25,27 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SmartSolarMicrogridTradingSystem"
         android:usesCleartextTraffic="true">
+
+        <!-- Google Maps API key is injected from git-ignored Android/secrets.properties -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
+        <activity
+            android:name=".feature.dashboardmaps.ui.NearbyStationsMapActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.dashboardmaps.ui.ReservationDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.dashboardmaps.ui.ReservationSearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.dashboardmaps.ui.BookingListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.dashboardmaps.ui.DashboardActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
