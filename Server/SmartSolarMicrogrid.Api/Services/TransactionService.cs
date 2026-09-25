@@ -21,10 +21,7 @@ public class TransactionService : ITransactionService
 
     public async Task<TransactionResult> VerifyQrAsync(VerifyQrRequest request)
     {
-        // Simple logic: In a real system, the QR token might be an encrypted JWT.
-        // Here we assume the QR token is saved directly in the reservation (Member 2).
-        var allReservations = await _reservationRepo.GetAllAsync();
-        var reservation = allReservations.FirstOrDefault(r => r.QrToken == request.QrToken);
+        // Look up the reservation by the QR token issued by Member 2 booking workflows.
         var reservation = await _reservationRepo.GetByQrTokenAsync(request.QrToken);
 
         if (reservation == null)
@@ -56,7 +53,6 @@ public class TransactionService : ITransactionService
         reservation.Status = ReservationStatus.Completed;
         reservation.UpdatedAt = DateTime.UtcNow;
 
-        await _reservationRepo.UpdateAsync(reservationId, reservation);
         await _reservationRepo.UpdateAsync(reservation);
 
         return new TransactionResult(true, "Transaction Completed", reservation.Id);

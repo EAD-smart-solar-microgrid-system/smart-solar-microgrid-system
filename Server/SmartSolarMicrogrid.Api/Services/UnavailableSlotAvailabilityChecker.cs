@@ -9,13 +9,13 @@ namespace SmartSolarMicrogrid.Api.Services;
 
 public sealed class UnavailableSlotAvailabilityChecker : ISlotAvailabilityChecker
 {
-    public Task<bool?> IsSlotAvailableAsync(
+    public Task<SlotAvailabilityStatus> CheckSlotAvailabilityAsync(
         string stationId,
         string slotId,
         DateTime reservationDateTime,
         CancellationToken cancellationToken = default)
     {
-        // Return null to honestly signal that Member 4's dynamic slot availability service is not yet deployed.
-        return Task.FromResult<bool?>(null);
+        // Signal that Member 4's dynamic slot availability service is not yet deployed.
+        return Task.FromResult(SlotAvailabilityStatus.ServiceUnavailable);
     }
 }

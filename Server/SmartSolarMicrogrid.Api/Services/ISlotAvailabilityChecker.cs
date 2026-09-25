@@ -9,7 +9,7 @@ namespace SmartSolarMicrogrid.Api.Services;
 
 public interface ISlotAvailabilityChecker
 {
-    Task<bool?> IsSlotAvailableAsync(
+    Task<SlotAvailabilityStatus> CheckSlotAvailabilityAsync(
         string stationId,
         string slotId,
         DateTime reservationDateTime,

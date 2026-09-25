@@ -46,7 +46,6 @@ public class AdminUsersController : ControllerBase
         return NoContent();
     }
 
-    [Patch("{id}/status")]
     [HttpPatch("{id}/status")]
     public async Task<IActionResult> UpdateUserStatus(string id, [FromBody] UpdateWebUserStatusRequest request)
     {

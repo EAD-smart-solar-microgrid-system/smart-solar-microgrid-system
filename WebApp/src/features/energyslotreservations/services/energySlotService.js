@@ -174,10 +174,36 @@ export const updateSlotAvailability = async (slotId, isAvailable, options = {}) 
   return response;
 };
 
+/**
+ * Deletes an energy booking slot by id.
+ *
+ * @param {string} slotId - MongoDB slot identifier
+ * @param {object} [options={}] - Additional request options
+ * @returns {Promise<object>} httpClient result
+ */
+export const deleteSlot = async (slotId, options = {}) => {
+  if (!slotId) {
+    return {
+      success: false,
+      data: null,
+      error: 'The slot identifier is missing.',
+      status: 400,
+      validationErrors: null,
+      isNetworkError: false,
+      isAuthError: false,
+      isForbidden: false,
+    };
+  }
+
+  const endpoint = `slots/${encodeURIComponent(slotId)}`;
+  return httpClient.delete(endpoint, options);
+};
+
 export default {
   getStations,
   getSlotsByStationId,
   createSlot,
   updateSlot,
   updateSlotAvailability,
+  deleteSlot,
 };

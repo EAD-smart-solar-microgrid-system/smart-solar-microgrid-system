@@ -68,6 +68,22 @@ public sealed class EnergyBookingSlotsController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpDelete("{slotId}")]
+    public async Task<IActionResult> Delete(
+        string slotId,
+        CancellationToken cancellationToken)
+    {
+        // Remove one energy booking slot after service validation.
+        var result = await _slotService.DeleteAsync(slotId, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return CreateErrorResult(result);
+        }
+
+        return NoContent();
+    }
+
     private ActionResult CreateErrorResult<T>(StationServiceResult<T> result)
     {
         // Translate expected service outcomes into simple public HTTP error responses.

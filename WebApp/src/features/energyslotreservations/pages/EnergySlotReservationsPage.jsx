@@ -15,6 +15,7 @@ import { SlotList } from '../components/SlotList.jsx';
 import { SlotFormModal } from '../components/SlotFormModal.jsx';
 import {
   createSlot,
+  deleteSlot,
   getSlotsByStationId,
   getStations,
   updateSlot,
@@ -43,6 +44,7 @@ export const EnergySlotReservationsPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [toggleError, setToggleError] = useState(null);
   const [togglingSlotId, setTogglingSlotId] = useState(null);
+  const [deletingSlotId, setDeletingSlotId] = useState(null);
 
   const [modalMode, setModalMode] = useState(null);
   const [editingSlotId, setEditingSlotId] = useState(null);
@@ -219,6 +221,31 @@ export const EnergySlotReservationsPage = () => {
     await loadSlots(selectedStationId);
   };
 
+  const handleDeleteSlot = async (slot) => {
+    const confirmed = window.confirm(
+      'Delete this energy booking slot? This cannot be undone.'
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setToggleError(null);
+    setSuccessMessage('');
+    setDeletingSlotId(slot.id);
+
+    const response = await deleteSlot(slot.id);
+
+    setDeletingSlotId(null);
+
+    if (!response.success) {
+      setToggleError(response.error || 'The slot could not be deleted.');
+      return;
+    }
+
+    setSuccessMessage('Energy slot deleted successfully.');
+    await loadSlots(selectedStationId);
+  };
+
   const slotsSectionReady = Boolean(selectedStationId) && !slotsLoading && !slotsError;
 
   return (
@@ -344,7 +371,9 @@ export const EnergySlotReservationsPage = () => {
                   slots={slots}
                   onEdit={openEditModal}
                   onToggleAvailability={handleToggleAvailability}
+                  onDelete={handleDeleteSlot}
                   togglingSlotId={togglingSlotId}
+                  deletingSlotId={deletingSlotId}
                   actionDisabled={formSubmitting}
                 />
               )}
