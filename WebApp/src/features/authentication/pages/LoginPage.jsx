@@ -14,6 +14,8 @@ export const LoginPage = () => {
     e.preventDefault();
     setError(null);
     try {
+      await login(username, password);
+      navigate(ROUTES.HOME);
       const userData = await login(username, password);
       if (userData?.role === 'Backoffice') {
         navigate(ROUTES.USER_MANAGEMENT);

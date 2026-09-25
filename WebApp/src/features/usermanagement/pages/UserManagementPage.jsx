@@ -21,8 +21,17 @@ export const UserManagementPage = () => {
     fetchUsers();
   }, [token]);
 
+  const handleCreate = async (e) => {
   const handleCreateOrUpdate = async (e) => {
     e.preventDefault();
+    const res = await fetch(`${appConfig.apiBaseUrl}/admin/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(form)
+    });
+    if (res.ok) {
+      setForm({ username: '', password: '', role: 'GridOperator' });
+      fetchUsers();
     setError('');
     setSuccessMsg('');
 
@@ -39,6 +48,7 @@ export const UserManagementPage = () => {
         fetchUsers();
       } else setError("Failed to update user");
     } else {
+      setError("Failed to create user");
       // Create
       const res = await fetch(`${appConfig.apiBaseUrl}/admin/users`, {
         method: 'POST',
@@ -81,8 +91,14 @@ export const UserManagementPage = () => {
       {error && <div className="alert alert-danger">{error}</div>}
       {successMsg && <div className="alert alert-success">{successMsg}</div>}
       
+      <div className="card mb-4">
       <div className="card mb-4 shadow-sm">
         <div className="card-body">
+          <h5 className="card-title">Create New User</h5>
+          <form onSubmit={handleCreate} className="d-flex gap-2">
+            <input type="text" className="form-control" placeholder="Username" value={form.username} onChange={e => setForm({...form, username: e.target.value})} required />
+            <input type="password" className="form-control" placeholder="Password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
+            <select className="form-select" value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
           <h5 className="card-title">{editingId ? 'Edit User' : 'Create New User'}</h5>
           <form onSubmit={handleCreateOrUpdate} className="d-flex flex-wrap gap-2 align-items-center">
             <input type="text" className="form-control w-auto" placeholder="Username" value={form.username} onChange={e => setForm({...form, username: e.target.value})} required />
@@ -93,12 +109,14 @@ export const UserManagementPage = () => {
               <option value="GridOperator">Grid Operator</option>
               <option value="Backoffice">Backoffice</option>
             </select>
+            <button type="submit" className="btn btn-primary">Create</button>
             <button type="submit" className="btn btn-primary">{editingId ? 'Update' : 'Create'}</button>
             {editingId && <button type="button" className="btn btn-secondary" onClick={cancelEdit}>Cancel</button>}
           </form>
         </div>
       </div>
 
+      <table className="table table-bordered">
       <table className="table table-bordered table-hover bg-white shadow-sm">
         <thead className="table-light">
           <tr>
@@ -111,12 +129,16 @@ export const UserManagementPage = () => {
         <tbody>
           {users.map(u => (
             <tr key={u.id}>
+              <td>{u.username}</td>
+              <td>{u.role}</td>
+              <td>
               <td className="align-middle">{u.username}</td>
               <td className="align-middle">{u.role}</td>
               <td className="align-middle">
                 <span className={`badge ${u.status === 'Active' ? 'bg-success' : 'bg-danger'}`}>{u.status}</span>
               </td>
               <td>
+                <button className={`btn btn-sm ${u.status === 'Active' ? 'btn-danger' : 'btn-success'}`} onClick={() => toggleStatus(u.id, u.status)}>
                 <button className="btn btn-sm btn-outline-primary me-2" onClick={() => startEdit(u)}>Edit</button>
                 <button className={`btn btn-sm ${u.status === 'Active' ? 'btn-outline-danger' : 'btn-outline-success'}`} onClick={() => toggleStatus(u.id, u.status)}>
                   {u.status === 'Active' ? 'Deactivate' : 'Activate'}
