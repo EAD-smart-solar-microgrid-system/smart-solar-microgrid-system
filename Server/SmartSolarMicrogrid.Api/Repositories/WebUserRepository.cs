@@ -14,10 +14,8 @@ public class WebUserRepository : IWebUserRepository
 {
     private readonly IMongoCollection<WebUser> _collection;
 
-    public WebUserRepository(MongoDbService dbService)
     public WebUserRepository(MongoDbContext dbContext)
     {
-        _collection = dbService.GetCollection<WebUser>("UsersDetail");
         _collection = dbContext.Database.GetCollection<WebUser>("UsersDetail");
     }
 
