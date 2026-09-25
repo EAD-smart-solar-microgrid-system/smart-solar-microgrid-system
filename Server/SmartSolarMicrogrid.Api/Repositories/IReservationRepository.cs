@@ -16,6 +16,10 @@ public interface IReservationRepository
         string id,
         CancellationToken cancellationToken = default);
 
+    Task<EnergyReservation?> GetByQrTokenAsync(
+        string qrToken,
+        CancellationToken cancellationToken = default);
+
     Task<EnergyReservation> CreateAsync(
         EnergyReservation reservation,
         CancellationToken cancellationToken = default);

@@ -14,6 +14,9 @@ using SmartSolarMicrogrid.Api.Data;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.Repositories;
 using SmartSolarMicrogrid.Api.Services;  // Imports the application service classes and interfaces.
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
     ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
@@ -78,6 +81,25 @@ builder.Services.AddScoped<INearbyStationsService, NearbyStationsService>();
 builder.Services.AddSingleton<IActiveReservationChecker, UnavailableActiveReservationChecker>();
 builder.Services.AddSingleton<ICurrentProsumerAccessor, UnavailableCurrentProsumerAccessor>();
 
+builder.Services.AddScoped<IWebUserRepository, WebUserRepository>();
+builder.Services.AddScoped<IWebUserService, WebUserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var key = builder.Configuration["Jwt:Key"] ?? "super_secret_key_for_smart_solar_microgrid_12345";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true
+        };
+    });
+
 builder.Services.AddControllers();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -132,6 +154,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("DevelopmentCorsPolicy");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

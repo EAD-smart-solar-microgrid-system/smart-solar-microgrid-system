@@ -23,6 +23,15 @@ public sealed class ReservationRepository : IReservationRepository
         _reservations = databaseContext.Database.GetCollection<EnergyReservation>(CollectionName);
     }
 
+    public async Task<EnergyReservation?> GetByQrTokenAsync(
+        string qrToken,
+        CancellationToken cancellationToken = default)
+    {
+        return await _reservations
+            .Find(reservation => reservation.QrToken == qrToken)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<EnergyReservation?> GetByIdAsync(
         string id,
         CancellationToken cancellationToken = default)
