@@ -8,6 +8,7 @@
     <!-- Member 4 nearby stations map: current location -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <!-- 
         Note on Cleartext Traffic:
@@ -45,6 +46,12 @@
             android:exported="false" />
         <activity
             android:name=".feature.dashboardmaps.ui.DashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.operatormode.ui.OperatorLoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.operatormode.ui.OperatorDashboardActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.ui.DashboardActivity
+import com.example.smartsolarmicrogridtradingsystem.feature.operatormode.ui.OperatorLoginActivity
 import com.example.smartsolarmicrogridtradingsystem.shared.component.BaseActivity
 import com.google.android.material.card.MaterialCardView
 
@@ -27,6 +28,11 @@ class MainActivity : BaseActivity() {
         val dashboardCard = findViewById<MaterialCardView>(R.id.cardDashboardMaps)
         dashboardCard.setOnClickListener {
             startActivity(Intent(this, DashboardActivity::class.java))
+        }
+
+        val operatorCard = findViewById<MaterialCardView>(R.id.cardOperatorMode)
+        operatorCard.setOnClickListener {
+            startActivity(Intent(this, OperatorLoginActivity::class.java))
         }
     }
 }
