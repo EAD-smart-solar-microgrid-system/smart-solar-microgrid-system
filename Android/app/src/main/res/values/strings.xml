@@ -162,4 +162,21 @@
     <string name="error_qr_generate_failed">Failed to generate QR credential.</string>
     <string name="error_qr_render_failed">Failed to render QR barcode.</string>
     <string name="action_qr_done">Done</string>
+
+    <!-- Member 1 Operator Mode -->
+    <string name="operator_login_title">Grid Operator Login</string>
+    <string name="operator_login_subtitle">Authenticate operational credentials</string>
+    <string name="operator_username_hint">Username</string>
+    <string name="operator_password_hint">Password</string>
+    <string name="operator_login_action">Sign In</string>
+    <string name="operator_dashboard_title">Operator Mode</string>
+    <string name="operator_dashboard_subtitle">Verify prosumer energy transfer &amp; dispatch</string>
+    <string name="operator_scan_action">Scan Prosumer QR</string>
+    <string name="operator_scan_hint">Scan prosumer transaction QR code to verify server data</string>
+    <string name="operator_verified_title">Verified Transfer Job</string>
+    <string name="operator_verified_subtitle">Review server details before finalizing</string>
+    <string name="operator_finalize_action">Finalize Energy Transfer</string>
+    <string name="operator_clear_action">Clear / Next Scan</string>
+    <string name="operator_status_completed">Transfer Completed</string>
+    <string name="operator_logout_action">Sign Out</string>
 </resources>
