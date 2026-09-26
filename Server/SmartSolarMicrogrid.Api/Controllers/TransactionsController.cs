@@ -2,7 +2,7 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: TransactionsController.cs
- * Purpose: Controller for Grid Operator transactions.
+ * Purpose: Controller for Grid Operator transactions and QR verification.
  */
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
@@ -26,6 +26,7 @@ public class TransactionsController : ControllerBase
     [HttpPost("verify-qr")]
     public async Task<IActionResult> VerifyQr([FromBody] VerifyQrRequest request)
     {
+        // Verify scanned QR token against server reservation database and return transfer details
         var result = await _transactionService.VerifyQrAsync(request);
         if (!result.Success) return BadRequest(new { message = result.Message });
         return Ok(result);
@@ -34,6 +35,7 @@ public class TransactionsController : ControllerBase
     [HttpPost("{id}/complete")]
     public async Task<IActionResult> CompleteTransaction(string id)
     {
+        // Finalize approved energy transfer reservation and mark job completed
         var result = await _transactionService.CompleteTransactionAsync(id);
         if (!result.Success) return BadRequest(new { message = result.Message });
         return Ok(result);

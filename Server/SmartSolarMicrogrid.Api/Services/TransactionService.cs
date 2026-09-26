@@ -21,7 +21,7 @@ public class TransactionService : ITransactionService
 
     public async Task<TransactionResult> VerifyQrAsync(VerifyQrRequest request)
     {
-        // Look up the reservation by the QR token issued by Member 2 booking workflows.
+        // Look up the reservation by the QR token issued by Member 2 booking workflows
         var reservation = await _reservationRepo.GetByQrTokenAsync(request.QrToken);
 
         if (reservation == null)
@@ -34,11 +34,28 @@ public class TransactionService : ITransactionService
             return new TransactionResult(false, $"Reservation is in {reservation.Status} state, expected Approved.");
         }
 
-        return new TransactionResult(true, "QR Verified", reservation.Id, reservation.ProsumerNic, reservation.StationId);
+        // Validate whether the QR token has expired against the authoritative post-slot window
+        if (reservation.QrExpiresAt.HasValue && reservation.QrExpiresAt.Value < DateTime.UtcNow)
+        {
+            return new TransactionResult(false, "QR Token has expired. Please request a new token from the prosumer application.");
+        }
+
+        return new TransactionResult(
+            Success: true,
+            Message: "QR Verified",
+            ReservationId: reservation.Id,
+            ProsumerNic: reservation.ProsumerNic,
+            StationId: reservation.StationId,
+            SlotId: reservation.SlotId,
+            ReservationDateTime: reservation.ReservationDateTime,
+            ReservationType: reservation.ReservationType.ToString(),
+            Status: reservation.Status.ToString()
+        );
     }
 
     public async Task<TransactionResult> CompleteTransactionAsync(string reservationId)
     {
+        // Validate reservation existence by identifier
         var reservation = await _reservationRepo.GetByIdAsync(reservationId);
         if (reservation == null)
         {
@@ -50,11 +67,22 @@ public class TransactionService : ITransactionService
             return new TransactionResult(false, $"Cannot complete reservation in {reservation.Status} state.");
         }
 
+        // Transition reservation status to Completed and record update timestamp
         reservation.Status = ReservationStatus.Completed;
         reservation.UpdatedAt = DateTime.UtcNow;
 
         await _reservationRepo.UpdateAsync(reservation);
 
-        return new TransactionResult(true, "Transaction Completed", reservation.Id);
+        return new TransactionResult(
+            Success: true,
+            Message: "Transaction Completed",
+            ReservationId: reservation.Id,
+            ProsumerNic: reservation.ProsumerNic,
+            StationId: reservation.StationId,
+            SlotId: reservation.SlotId,
+            ReservationDateTime: reservation.ReservationDateTime,
+            ReservationType: reservation.ReservationType.ToString(),
+            Status: reservation.Status.ToString()
+        );
     }
 }
