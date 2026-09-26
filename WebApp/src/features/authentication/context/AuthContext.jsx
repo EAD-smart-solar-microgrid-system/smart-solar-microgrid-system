@@ -1,12 +1,17 @@
-import React, { createContext, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import appConfig from '../../../config/appConfig';
-
-export const AuthContext = createContext();
+import { AuthContext } from './AuthContextValue.js';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+  };
 
   useEffect(() => {
     if (token) {
@@ -26,7 +31,7 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(false);
       });
     } else {
-      setIsLoading(false);
+      Promise.resolve().then(() => setIsLoading(false));
     }
   }, [token]);
 
@@ -40,18 +45,11 @@ export const AuthProvider = ({ children }) => {
     const data = await res.json();
     setToken(data.token);
     setUser({ username: data.username, role: data.role });
-    
     const userData = { username: data.username, role: data.role };
     setUser(userData);
     localStorage.setItem('token', data.token);
     
     return userData;
-  };
-
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
   };
 
   return (

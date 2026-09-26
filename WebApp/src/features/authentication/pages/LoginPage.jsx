@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/AuthContextValue.js';
 import { ROUTES } from '../../../constants/routes';
 
 export const LoginPage = () => {
@@ -22,28 +22,28 @@ export const LoginPage = () => {
       } else {
         navigate(ROUTES.HOME);
       }
-    } catch (err) {
+    } catch {
       setError("Invalid username or password");
     }
   };
 
   return (
-    <div className="row justify-content-center mt-5">
+    <div className="legacy-page flex justify-center py-6 sm:py-10">
       <div className="col-md-4">
-        <div className="card shadow-sm">
+        <div className="card w-full max-w-md">
           <div className="card-body">
-            <h4 className="card-title text-center mb-4">Login</h4>
+            <h1 className="mb-4 text-center text-xl font-bold text-slate-950">Sign in</h1>
             {error && <div className="alert alert-danger">{error}</div>}
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label">Username</label>
-                <input type="text" className="form-control" value={username} onChange={e => setUsername(e.target.value)} required />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="login-username" className="form-label">Username</label>
+                <input id="login-username" type="text" className="form-control" value={username} onChange={e => setUsername(e.target.value)} required />
               </div>
-              <div className="mb-3">
-                <label className="form-label">Password</label>
-                <input type="password" className="form-control" value={password} onChange={e => setPassword(e.target.value)} required />
+              <div>
+                <label htmlFor="login-password" className="form-label">Password</label>
+                <input id="login-password" type="password" className="form-control" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
-              <button type="submit" className="btn btn-primary w-100">Login</button>
+              <button type="submit" className="btn btn-primary w-full">Sign in</button>
             </form>
           </div>
         </div>

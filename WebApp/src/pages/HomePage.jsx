@@ -1,124 +1,23 @@
-/**
- * HomePage Component
- *
- * Web Application Landing Page for the Common Foundation.
- * Displays project identity and non-functional placeholder cards
- * for future member feature assignments.
- *
- * Strict Compliance:
- * - No working feature buttons
- * - No forms
- * - No login
- * - No account CRUD
- * - No reservation CRUD
- * - No fake API data
- * - No role checks
- */
+import { Link } from 'react-router-dom';
+import { ROUTES } from '../constants/routes.js';
 
-import { PageHeader } from '../components/common/PageHeader.jsx';
-
-const FEATURE_MODULES = [
-  {
-    id: 'auth',
-    title: 'Login and role-based access',
-    assignedTo: 'Member 1',
-    description:
-      'Authentication and secure access control module for Backoffice users and Grid Operators.',
-  },
-  {
-    id: 'user-mgmt',
-    title: 'User Management',
-    assignedTo: 'Member 1',
-    description:
-      'Administration portal for managing system accounts, roles, and administrative access.',
-  },
-  {
-    id: 'prosumer-mgmt',
-    title: 'Prosumer Management',
-    assignedTo: 'Member 2',
-    description:
-      'Profile management, status activation, deactivation, and reactivation for Solar Prosumers.',
-  },
-  {
-    id: 'microgrid-nodes',
-    title: 'Microgrid Node Management',
-    assignedTo: 'Member 3',
-    description:
-      'Configuration, status oversight, operational scheduling, and maintenance of microgrid nodes.',
-  },
-  {
-    id: 'energy-slots',
-    title: 'Energy Slot Reservation Management',
-    assignedTo: 'Member 4',
-    description:
-      'Monitoring, allocation, and lifecycle management for prosumer energy trading reservations.',
-  },
-];
-
-export const HomePage = () => {
-  return (
-    <div className="home-page">
-      <PageHeader
-        title="Smart Solar Microgrid Trading System"
-        subtitle="Web Application"
-        badgeText="Foundation Ready"
-        badgeVariant="success"
-      />
-
-      <div className="alert alert-info border-info-subtle shadow-sm mb-4" role="status">
-        <div className="d-flex align-items-center">
-          <div>
-            <h2 className="h5 alert-heading mb-1 fw-bold">Common project foundation is ready</h2>
-            <p className="mb-0 small text-body-secondary">
-              The shared client infrastructure, routing layout, generic HTTP client, session
-              storage utilities, and feature boundaries have been established. Feature modules
-              below represent future work assignments and are currently inactive.
-            </p>
-          </div>
-        </div>
+export const HomePage = () => (
+  <div className="space-y-8">
+    <section className="overflow-hidden rounded-3xl bg-slate-950 px-6 py-10 text-white shadow-xl sm:px-10 sm:py-14">
+      <div className="max-w-3xl">
+        <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-300">Smart energy operations</p>
+        <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">Smart Solar Microgrid Trading System</h1>
+        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">A central web workspace for configuring microgrid nodes, their capacity, battery slots, and operating schedules through the authoritative C# API.</p>
+        <Link to={ROUTES.STATIONS} className="mt-8 inline-flex items-center rounded-lg bg-amber-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-300">Open node management <span className="ml-2">→</span></Link>
       </div>
+    </section>
 
-      <section aria-labelledby="assigned-features-heading">
-        <h2 id="assigned-features-heading" className="h4 text-dark mb-3 fw-semibold">
-          Assignment Feature Boundaries
-        </h2>
-        <div className="row g-4">
-          {FEATURE_MODULES.map((feature) => (
-            <div key={feature.id} className="col-12 col-md-6 col-lg-4">
-              <div className="card h-100 border-secondary-subtle shadow-sm opacity-75">
-                <div className="card-header bg-light d-flex justify-content-between align-items-center py-2">
-                  <span className="badge bg-secondary-subtle text-secondary border">
-                    {feature.assignedTo}
-                  </span>
-                  <span className="badge bg-light text-muted border">
-                    Pending Implementation
-                  </span>
-                </div>
-                <div className="card-body d-flex flex-column">
-                  <h3 className="h5 card-title text-secondary fw-bold mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="card-text text-muted small flex-grow-1">
-                    {feature.description}
-                  </p>
-                  <div className="mt-3 pt-2 border-top">
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-sm w-100 disabled"
-                      disabled
-                      aria-disabled="true"
-                    >
-                      Module Inactive (Shared Foundation Only)
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-};
+    <section className="grid gap-5 md:grid-cols-3" aria-label="System principles">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><p className="text-2xl">⌁</p><h2 className="mt-4 text-lg font-bold text-slate-950">API-led control</h2><p className="mt-2 text-sm leading-6 text-slate-600">Station data is loaded and changed through the ASP.NET Core API, keeping business rules on the server.</p></div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><p className="text-2xl">◷</p><h2 className="mt-4 text-lg font-bold text-slate-950">Operational clarity</h2><p className="mt-2 text-sm leading-6 text-slate-600">Schedules, location, capacity, storage slots, and lifecycle status are visible in one responsive view.</p></div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><p className="text-2xl">⌘</p><h2 className="mt-4 text-lg font-bold text-slate-950">Ready to connect</h2><p className="mt-2 text-sm leading-6 text-slate-600">Authentication is intentionally left for Member 1, with a single API client integration point prepared for the future token.</p></div>
+    </section>
+  </div>
+);
 
 export default HomePage;
