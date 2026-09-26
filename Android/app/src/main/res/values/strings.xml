@@ -80,4 +80,22 @@
     <string name="nearby_detail_schedule_label">Operating schedule</string>
     <string name="nearby_detail_schedule_empty">No schedule available.</string>
     <string name="nearby_cache_fallback_hint">Showing cached station data</string>
+
+    <!-- Member 2 Reservation & QR Module -->
+    <string name="module_status_ready_reservation">Tap to open Reservation &amp; QR Dispatch</string>
+    <string name="reservation_list_title">Reservation &amp; QR</string>
+    <string name="reservation_list_subtitle">Local cached bookings &amp; QR dispatch records</string>
+    <string name="reservation_list_empty">No reservations cached yet.</string>
+    <string name="reservation_prosumer_hint">Prosumer NIC</string>
+    <string name="action_refresh_cache">Refresh Cache</string>
+    <string name="status_pending_approval">Pending Approval</string>
+    <string name="status_approved">Approved</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_completed">Completed</string>
+    <string name="reservation_item_slot">Slot: %1$s</string>
+    <string name="reservation_item_station">Station: %1$s</string>
+    <string name="reservation_item_type">Type: %1$s</string>
+    <string name="reservation_item_id">Reservation: %1$s</string>
+    <string name="reservation_item_cancellation">Cancellation Reason: %1$s</string>
+    <string name="reservation_nic_required_prompt">Enter a Prosumer NIC to view cached reservations.</string>
 </resources>

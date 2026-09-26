@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.ui.DashboardActivity
 import com.example.smartsolarmicrogridtradingsystem.feature.operatormode.ui.OperatorLoginActivity
+import com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.ui.ReservationListActivity
 import com.example.smartsolarmicrogridtradingsystem.shared.component.BaseActivity
 import com.google.android.material.card.MaterialCardView
 
@@ -12,7 +13,7 @@ import com.google.android.material.card.MaterialCardView
  * Initial launcher screen for the Smart Solar Microgrid Trading System Android app.
  *
  * Displays confirmation that the common architectural foundation is ready,
- * along with entry to the Member 4 Dashboard & Maps feature.
+ * along with entry to Member features.
  */
 class MainActivity : BaseActivity() {
 
@@ -23,6 +24,11 @@ class MainActivity : BaseActivity() {
         val rootLayout: View? = findViewById(R.id.main)
         if (rootLayout != null) {
             setupSystemBarPadding(rootLayout)
+        }
+
+        val reservationCard = findViewById<MaterialCardView>(R.id.cardReservationQr)
+        reservationCard.setOnClickListener {
+            startActivity(Intent(this, ReservationListActivity::class.java))
         }
 
         val dashboardCard = findViewById<MaterialCardView>(R.id.cardDashboardMaps)
