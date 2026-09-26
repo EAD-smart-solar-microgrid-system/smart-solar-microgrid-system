@@ -248,17 +248,37 @@ The API connection configuration is managed in:
 ### Configuring the Development Server URL:
 ```kotlin
 object AppConfig {
-    const val BASE_URL: String = "http://YOUR_PC_LAN_IP:PORT/api/"
+    const val BASE_URL: String = "http://<HOST_LAN_IP>:5278/api/"
     // ...
 }
 ```
+
+### Physical Device and Emulator Development
+
+Physical device API URL:
+
+`http://<HOST_LAN_IP>:5278/api/`
+
+Emulator API URL:
+
+`http://10.0.2.2:5278/api/`
+
+LAN server command:
+
+`dotnet run --launch-profile lan-http`
+
+Phone connectivity test:
+
+`http://<HOST_LAN_IP>:5278/api/health`
+
+The emulator-only `10.0.2.2` address maps the Android Emulator to the host computer. A physical phone must use the host computer's LAN IP, and the phone and PC must be on the same reachable Wi-Fi network. The server binds to `http://0.0.0.0:5278`; this bind address must not be used as the Android client URL.
 
 ### Physical Phone Testing Instructions:
 1. **Never use `localhost` or `127.0.0.1`**: On Android devices, `localhost` points to the physical phone itself, not the development PC.
 2. **Connect to the same Wi-Fi / Local Network**: Ensure both your development computer and your Android smartphone are connected to the same local area network.
 3. **Find the Computer's LAN IP**:
    - On Windows: Open Command Prompt / PowerShell and execute `ipconfig`. Locate your active Wi-Fi or Ethernet adapter's **IPv4 Address** (e.g. `192.168.1.150`).
-4. **Update `AppConfig.kt`**: Replace `YOUR_PC_LAN_IP:PORT` with your LAN IP and port where IIS or Kestrel is serving the C# Web API (e.g., `http://192.168.1.150:5000/api/`).
+4. **Update `AppConfig.kt` for a physical device network**: Replace `<HOST_LAN_IP>:5278` with the development machine's current LAN IP and API port. The `10.0.2.2` value is for the Android emulator.
 5. **Cleartext HTTP Note**: Cleartext HTTP (`usesCleartextTraffic="true"`) is enabled in `AndroidManifest.xml` specifically to support local IP testing. Production deployments must switch `BASE_URL` to an HTTPS domain.
 
 ---
