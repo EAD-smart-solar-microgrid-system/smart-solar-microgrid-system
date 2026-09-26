@@ -138,24 +138,22 @@ export const updateProsumer = async (nic, data, options = {}) => {
  * Updates the lifecycle status of a prosumer (Pending, Active, Deactivated).
  *
  * @param {string} nic - National Identity Card
- * @param {string|object} statusOrData - New status string or object containing status and optional reason
+ * @param {string|object} status - Target lifecycle status
  * @param {object} [options={}] - Additional request options
  * @returns {Promise<object>} Normalized updated prosumer model
  */
-export const updateProsumerStatus = async (nic, statusOrData, options = {}) => {
+export const updateProsumerStatus = async (nic, status, options = {}) => {
   const normalizedNic = requireValidNic(nic);
-
-  const payload =
-    typeof statusOrData === 'string'
-      ? { status: statusOrData.trim() }
-      : {
-          status: (statusOrData?.status || '').trim(),
-          reason: statusOrData?.reason?.trim() || undefined,
-        };
+  const targetStatus =
+    typeof status === 'string'
+      ? status.trim()
+      : typeof status?.status === 'string'
+      ? status.status.trim()
+      : '';
 
   const response = await apiClient.patch(
     `${PROSUMERS_ROUTE}/${encodeURIComponent(normalizedNic)}/status`,
-    payload,
+    { status: targetStatus },
     getAuthOptions(options)
   );
 
