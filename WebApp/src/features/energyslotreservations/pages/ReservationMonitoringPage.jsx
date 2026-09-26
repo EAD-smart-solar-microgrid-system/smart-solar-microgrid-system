@@ -74,7 +74,7 @@ export const ReservationMonitoringPage = () => {
   }, [appliedFilters, page, pageSize]);
 
   useEffect(() => {
-    loadReservations();
+    Promise.resolve().then(loadReservations);
   }, [loadReservations]);
 
   const handleFilterChange = (name, value) => {
@@ -140,7 +140,7 @@ export const ReservationMonitoringPage = () => {
   const canGoNext = page < totalPages && !loading && totalCount > 0;
 
   return (
-    <div className="reservation-monitoring-page">
+    <div className="legacy-page reservation-monitoring-page space-y-4">
       <PageHeader
         title="Reservation Monitoring"
         subtitle="Read-only oversight of energy slot reservations across microgrid stations."

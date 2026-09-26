@@ -99,11 +99,11 @@ export const EnergySlotReservationsPage = () => {
   }, []);
 
   useEffect(() => {
-    loadStations();
+    Promise.resolve().then(loadStations);
   }, [loadStations]);
 
   useEffect(() => {
-    loadSlots(selectedStationId);
+    Promise.resolve().then(() => loadSlots(selectedStationId));
   }, [selectedStationId, loadSlots]);
 
   const handleStationChange = (stationId) => {
@@ -249,7 +249,7 @@ export const EnergySlotReservationsPage = () => {
   const slotsSectionReady = Boolean(selectedStationId) && !slotsLoading && !slotsError;
 
   return (
-    <div className="energy-slot-reservations-page">
+    <div className="legacy-page energy-slot-reservations-page space-y-4">
       <PageHeader
         title="Energy Slot Reservation Management"
         subtitle="Manage battery storage slot windows for microgrid stations"
