@@ -45,17 +45,13 @@ class AppDatabaseHelper private constructor(context: Context) : SQLiteOpenHelper
     override fun onCreate(db: SQLiteDatabase) {
         Log.d(TAG, "Creating database tables for version ${DatabaseContract.DATABASE_VERSION}")
         db.execSQL(DatabaseContract.SessionEntry.SQL_CREATE_TABLE)
+        db.execSQL(DatabaseContract.ProsumerProfileEntry.SQL_CREATE_TABLE)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         Log.d(TAG, "Upgrading database from version $oldVersion to $newVersion")
-        // Sequential migration structure:
-        // Example:
-        // if (oldVersion < 2) {
-        //     // Execute version 2 migrations (e.g. ALTER TABLE ...)
-        // }
-        // if (oldVersion < 3) {
-        //     // Execute version 3 migrations
-        // }
+        if (oldVersion < 2) {
+            db.execSQL(DatabaseContract.ProsumerProfileEntry.SQL_CREATE_TABLE)
+        }
     }
 }
