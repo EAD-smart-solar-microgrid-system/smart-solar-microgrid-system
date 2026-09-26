@@ -1,0 +1,56 @@
+import { ProsumerStatusBadge } from './ProsumerStatusBadge.jsx';
+
+/**
+ * ProsumerTable Component
+ *
+ * Renders a responsive, accessible table of registered solar prosumers.
+ * Follows the team's visual table conventions from StationList.
+ *
+ * @param {{ prosumers: Array<object> }} props
+ */
+export const ProsumerTable = ({ prosumers = [] }) => {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="min-w-full w-full text-left text-sm" aria-label="Solar Prosumers">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th scope="col" className="px-5 py-4 font-bold">NIC</th>
+              <th scope="col" className="px-5 py-4 font-bold">Full Name</th>
+              <th scope="col" className="px-5 py-4 font-bold">Email</th>
+              <th scope="col" className="px-5 py-4 font-bold">Phone</th>
+              <th scope="col" className="px-5 py-4 font-bold">Address</th>
+              <th scope="col" className="px-5 py-4 font-bold">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {prosumers.map((prosumer) => (
+              <tr key={prosumer.nic} className="transition hover:bg-slate-50/70">
+                <td className="px-5 py-4 font-mono font-medium text-slate-900">
+                  {prosumer.nic}
+                </td>
+                <td className="px-5 py-4 font-semibold text-slate-900">
+                  {prosumer.fullName || '—'}
+                </td>
+                <td className="px-5 py-4 text-slate-600">
+                  {prosumer.email || '—'}
+                </td>
+                <td className="px-5 py-4 text-slate-600">
+                  {prosumer.phone || '—'}
+                </td>
+                <td className="max-w-xs truncate px-5 py-4 text-slate-600" title={prosumer.address || ''}>
+                  {prosumer.address || '—'}
+                </td>
+                <td className="px-5 py-4">
+                  <ProsumerStatusBadge status={prosumer.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default ProsumerTable;
