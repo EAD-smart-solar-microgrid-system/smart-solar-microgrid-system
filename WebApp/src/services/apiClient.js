@@ -31,8 +31,9 @@ export const apiRequest = async (route, options = {}) => {
 
   if (body !== undefined) requestHeaders['Content-Type'] = 'application/json';
 
-  // Member 1 can provide a real access token here when authentication is integrated.
-  if (token) requestHeaders.Authorization = `Bearer ${token}`;
+  // Member 1: Attach provided access token or read from localStorage for authenticated requests.
+  const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+  if (activeToken) requestHeaders.Authorization = `Bearer ${activeToken}`;
 
   let response;
   try {

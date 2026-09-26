@@ -28,6 +28,7 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
+        // Authenticate credentials against active user database and generate signed JWT token
         var user = await _repo.GetByUsernameAsync(request.Username);
         if (user == null || user.Status != WebUserStatus.Active) return null;
         

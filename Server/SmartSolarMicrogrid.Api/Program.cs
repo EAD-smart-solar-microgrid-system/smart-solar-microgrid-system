@@ -9,6 +9,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Configuration;
@@ -113,7 +114,40 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Smart Solar Microgrid Trading System API",
+        Version = "v1",
+        Description = "Authoritative C# Web API for Backoffice, Grid Operators, and Prosumers."
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT Bearer token obtained from /api/auth/login"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddCors(options =>
 {
@@ -190,6 +224,49 @@ catch (Exception)
 {
     Console.Error.WriteLine(
         "MongoDB connection failed during startup verification.");
+}
+
+try
+{
+    using var seedScope = app.Services.CreateScope();
+    var userRepo = seedScope.ServiceProvider.GetRequiredService<IWebUserRepository>();
+    var existingUsers = await userRepo.GetAllAsync();
+
+    if (!existingUsers.Any(u => u.Role == SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.Backoffice))
+    {
+        var defaultAdmin = new SmartSolarMicrogrid.Api.Models.WebUser
+        {
+            Id = ObjectId.GenerateNewId().ToString(),
+            Username = "admin",
+            PasswordHash = "admin123",
+            Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.Backoffice,
+            Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await userRepo.CreateAsync(defaultAdmin);
+        Console.WriteLine("Default Backoffice user seeded: admin / admin123");
+    }
+
+    if (!existingUsers.Any(u => u.Role == SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.GridOperator))
+    {
+        var defaultOperator = new SmartSolarMicrogrid.Api.Models.WebUser
+        {
+            Id = ObjectId.GenerateNewId().ToString(),
+            Username = "operator",
+            PasswordHash = "operator123",
+            Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.GridOperator,
+            Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await userRepo.CreateAsync(defaultOperator);
+        Console.WriteLine("Default GridOperator user seeded: operator / operator123");
+    }
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"Initial web user seed check skipped: {ex.Message}");
 }
 
 app.Run();
