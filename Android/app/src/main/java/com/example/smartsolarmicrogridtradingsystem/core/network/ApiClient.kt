@@ -1,10 +1,12 @@
 package com.example.smartsolarmicrogridtradingsystem.core.network
 
 import android.util.Log
+import com.example.smartsolarmicrogridtradingsystem.BuildConfig
 import com.example.smartsolarmicrogridtradingsystem.core.config.AppConfig
 import com.example.smartsolarmicrogridtradingsystem.core.threading.AppExecutors
 import org.json.JSONObject
 import java.io.InputStream
+import java.io.IOException
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.ProtocolException
@@ -21,7 +23,7 @@ import java.nio.charset.StandardCharsets
  */
 object ApiClient {
 
-    private const val TAG = "ApiClient"
+    private const val TAG = "SmartSolarApi"
 
     /**
      * Executes an asynchronous HTTP network request.
@@ -45,6 +47,7 @@ object ApiClient {
             var connection: HttpURLConnection? = null
             try {
                 val fullUrl = resolveUrl(endpoint)
+                logDebug("Request ${method.name} $fullUrl")
                 val url = URL(fullUrl)
 
                 connection = (url.openConnection() as HttpURLConnection).apply {
@@ -77,28 +80,35 @@ object ApiClient {
                 }
 
                 val statusCode = connection.responseCode
-                Log.d(TAG, "Received HTTP status $statusCode for ${method.name} request")
 
                 if (statusCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
                     val errorBody = readStream(connection.errorStream)
+                    logResponse(method, fullUrl, statusCode, errorBody)
                     AppExecutors.executeOnMainThread {
                         callback.onError(NetworkResult.Unauthorized(statusCode, errorBody))
                     }
                 } else if (statusCode in 200..299) {
                     val responseBody = readStream(connection.inputStream) ?: ""
+                    logResponse(method, fullUrl, statusCode, responseBody)
                     AppExecutors.executeOnMainThread {
                         callback.onSuccess(NetworkResult.Success(statusCode, responseBody))
                     }
                 } else {
                     val errorBody = readStream(connection.errorStream)
+                    logResponse(method, fullUrl, statusCode, errorBody)
                     AppExecutors.executeOnMainThread {
                         callback.onError(NetworkResult.HttpError(statusCode, errorBody))
                     }
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Network request failure: ${e.javaClass.simpleName}")
+            } catch (e: IOException) {
+                logException("Transport failure for ${method.name} ${resolveUrl(endpoint)}", e)
                 AppExecutors.executeOnMainThread {
                     callback.onError(NetworkResult.NetworkError(e, e.localizedMessage ?: "Network connection error"))
+                }
+            } catch (e: Exception) {
+                logException("Unexpected client failure for ${method.name} ${resolveUrl(endpoint)}", e)
+                AppExecutors.executeOnMainThread {
+                    callback.onError(NetworkResult.UnexpectedError(e, e.localizedMessage ?: "Unexpected client error"))
                 }
             } finally {
                 connection?.disconnect()
@@ -141,5 +151,38 @@ object ApiClient {
     private fun readStream(stream: InputStream?): String? {
         if (stream == null) return null
         return stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+    }
+
+    private fun logDebug(message: String) {
+        if (BuildConfig.DEBUG) Log.d(TAG, message)
+    }
+
+    private fun logResponse(method: HttpMethod, url: String, statusCode: Int, body: String?) {
+        logDebug("Response ${method.name} $url status=$statusCode body=${safeBodyForLog(body)}")
+    }
+
+    private fun logException(message: String, exception: Exception) {
+        if (BuildConfig.DEBUG) {
+            Log.e(TAG, "$message exception=${exception.javaClass.name} message=${exception.message}", exception)
+        }
+    }
+
+    private fun safeBodyForLog(body: String?): String {
+        if (body.isNullOrBlank()) return "<empty>"
+
+        return try {
+            val json = JSONObject(body)
+            val sensitiveKeys = listOf(
+                "nic", "fullName", "email", "phoneNumber", "address",
+                "token", "accessToken", "refreshToken", "password", "secret",
+                "authorization"
+            )
+            sensitiveKeys.forEach { key ->
+                if (json.has(key)) json.put(key, "<redacted>")
+            }
+            json.toString()
+        } catch (_: Exception) {
+            "<non-JSON body omitted>"
+        }
     }
 }

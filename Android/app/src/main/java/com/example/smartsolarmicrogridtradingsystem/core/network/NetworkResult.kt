@@ -39,6 +39,12 @@ sealed class NetworkResult<out T> {
         val message: String? = null
     ) : NetworkResult<Nothing>()
 
+    /** Unexpected client-side failure that is not a transport failure or HTTP response. */
+    data class UnexpectedError(
+        val exception: Throwable? = null,
+        val message: String? = null
+    ) : NetworkResult<Nothing>()
+
     /**
      * Authentication / authorization failure (HTTP 401 Unauthorized).
      *
