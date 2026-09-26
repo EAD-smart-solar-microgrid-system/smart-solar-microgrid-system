@@ -122,4 +122,28 @@
     <string name="msg_no_slots_available">No available slots found for this station.</string>
     <string name="msg_no_stations_available">No active stations available.</string>
     <string name="error_reservation_cache_failed">Reservation was created on the server (ID: %1$s), but failed to save to local cache.</string>
+
+    <!-- Member 2 Detail, Edit, and Cancellation -->
+    <string name="detail_cancelled_at">Cancelled at: %1$s</string>
+    <string name="detail_cancellation_reason">Reason: %1$s</string>
+    <string name="detail_notice_expired">Modifications and cancellations require at least 12 hours advance notice before the scheduled slot time.</string>
+    <string name="detail_status_locked">This reservation is %1$s and can no longer be modified or cancelled.</string>
+    <string name="action_edit_reservation">Edit Reservation</string>
+    <string name="action_cancel_reservation">Cancel Reservation</string>
+    <string name="dialog_cancel_title">Cancel Reservation</string>
+    <string name="dialog_cancel_message">Are you sure you want to cancel this reservation? Cancellations require at least 12 hours advance notice and cannot be undone.</string>
+    <string name="dialog_cancel_reason_hint">Reason for cancellation (optional)</string>
+    <string name="action_confirm_cancel">Cancel Reservation</string>
+    <string name="action_keep_reservation">Keep Reservation</string>
+    <string name="msg_reservation_cancelled">Reservation cancelled successfully.</string>
+    <string name="edit_reservation_title">Edit Reservation</string>
+    <string name="edit_reservation_subtitle">Update your scheduled slot, time, or transfer type</string>
+    <string name="hint_station_readonly">Grid Station (Fixed)</string>
+    <string name="action_update_reservation">Save Changes</string>
+    <string name="msg_reservation_updated">Reservation updated successfully!</string>
+    <string name="error_reservation_update_cache_failed">Reservation was updated on the server, but local cache failed to save.</string>
+    <string name="error_reservation_cancel_cache_failed">Reservation was cancelled on the server, but local cache failed to update.</string>
+    <string name="error_reservation_not_found">Reservation could not be found.</string>
+    <string name="error_reservation_unauthorized">You do not have access to view this reservation.</string>
+    <string name="error_edit_twelve_hours">Modifications must be made at least 12 hours before the scheduled time.</string>
 </resources>

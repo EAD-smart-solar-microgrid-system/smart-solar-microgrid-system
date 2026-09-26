@@ -14,7 +14,9 @@ import com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.model.
 /**
  * RecyclerView adapter for presenting Member 2 local cached reservations.
  */
-class ReservationAdapter : RecyclerView.Adapter<ReservationAdapter.ReservationViewHolder>() {
+class ReservationAdapter(
+    private val onItemClick: ((ReservationDto) -> Unit)? = null
+) : RecyclerView.Adapter<ReservationAdapter.ReservationViewHolder>() {
 
     private val items = mutableListOf<ReservationDto>()
 
@@ -34,7 +36,11 @@ class ReservationAdapter : RecyclerView.Adapter<ReservationAdapter.ReservationVi
     }
 
     override fun onBindViewHolder(holder: ReservationViewHolder, position: Int) {
-        holder.bind(items[position])
+        val item = items[position]
+        holder.bind(item)
+        holder.itemView.setOnClickListener {
+            onItemClick?.invoke(item)
+        }
     }
 
     override fun getItemCount(): Int = items.size
