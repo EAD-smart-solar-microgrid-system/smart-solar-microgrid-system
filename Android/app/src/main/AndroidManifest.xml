@@ -31,6 +31,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".feature.prosumeraccount.ui.ProsumerRegistrationActivity" />
+        <activity android:name=".feature.prosumeraccount.ui.ProsumerProfileActivity" />
+        <activity android:name=".feature.prosumeraccount.ui.EditProsumerProfileActivity" />
     </application>
 
 </manifest>

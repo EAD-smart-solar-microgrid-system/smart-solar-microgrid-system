@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/editProfileRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Edit Prosumer Profile" android:textAppearance="?attr/textAppearanceHeadlineSmall" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="NIC and account status are controlled by the server and cannot be edited here." android:textColor="?android:attr/textColorSecondary" android:textSize="14sp" />
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:hint="NIC (read-only)">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etEditNic" android:layout_width="match_parent" android:layout_height="wrap_content" android:enabled="false" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:hint="Full name *">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etEditFullName" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textCapWords" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:hint="Email *">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etEditEmail" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textEmailAddress" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:hint="Phone number">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etEditPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="phone" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:hint="Address">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etEditAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="top" android:inputType="textCapSentences|textMultiLine" android:minLines="3" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView android:id="@+id/tvEditMessage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:textColor="?attr/colorError" android:textSize="14sp" android:visibility="gone" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnCancelEdit" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Cancel" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnSaveEdit" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:text="Save changes" />
+        </LinearLayout>
+        <ProgressBar android:id="@+id/progressEdit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:layout_marginTop="12dp" android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>
