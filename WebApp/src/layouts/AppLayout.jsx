@@ -23,6 +23,9 @@ export const AppLayout = () => {
             <NavLink end to={ROUTES.HOME} className={navLinkClass}>Overview</NavLink>
             <NavLink to={ROUTES.STATIONS} className={navLinkClass}>Stations</NavLink>
             {user?.role === 'Backoffice' && (
+              <NavLink to={ROUTES.PROSUMER_MANAGEMENT} className={navLinkClass}>Prosumers</NavLink>
+            )}
+            {user?.role === 'Backoffice' && (
               <NavLink to={ROUTES.USER_MANAGEMENT} className={navLinkClass}>Users</NavLink>
             )}
             {user ? (
