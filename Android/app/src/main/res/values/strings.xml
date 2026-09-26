@@ -9,4 +9,75 @@
     <string name="module_dashboard_maps">Dashboard &amp; Maps</string>
     <string name="module_operator_mode">Operator Mode</string>
     <string name="module_status_disabled">Pending individual feature development</string>
+    <string name="module_status_ready">Tap to open Member 4 dashboard</string>
+
+    <!-- Member 4 Dashboard & Booking Views -->
+    <string name="dashboard_title">Prosumer Dashboard</string>
+    <string name="dashboard_subtitle">View reservation counts and recent bookings</string>
+    <string name="dashboard_prosumer_hint">Prosumer NIC</string>
+    <string name="dashboard_pending_label">Pending</string>
+    <string name="dashboard_approved_future_label">Approved (future)</string>
+    <string name="dashboard_recent_header">Recent bookings</string>
+    <string name="dashboard_recent_empty">No recent bookings for this prosumer.</string>
+
+    <string name="booking_history_title">Booking History</string>
+    <string name="booking_history_subtitle">All monitored reservations for this prosumer</string>
+    <string name="pending_bookings_title">Pending Bookings</string>
+    <string name="pending_bookings_subtitle">Reservations awaiting approval</string>
+    <string name="booking_list_empty">No bookings match this view.</string>
+    <string name="search_title">Search &amp; Filter Bookings</string>
+
+    <string name="filter_prosumer_id">Prosumer ID (NIC)</string>
+    <string name="filter_station_id">Station ID</string>
+    <string name="filter_status">Status</string>
+    <string name="filter_search">Reservation ID, station ID, slot ID, or NIC</string>
+
+    <string name="action_load">Load dashboard</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_open_pending">Pending bookings</string>
+    <string name="action_open_history">Booking history</string>
+    <string name="action_open_search">Search / filter</string>
+    <string name="action_apply_filters">Apply filters</string>
+    <string name="action_reset">Reset</string>
+
+    <string name="booking_type_label">Type: %1$s</string>
+    <string name="booking_station_label">Station: %1$s</string>
+    <string name="booking_id_label">Reservation: %1$s</string>
+
+    <string name="detail_title">Reservation details</string>
+    <string name="detail_id">ID: %1$s</string>
+    <string name="detail_status">Status: %1$s</string>
+    <string name="detail_type">Type: %1$s</string>
+    <string name="detail_datetime">Date / time: %1$s</string>
+    <string name="detail_prosumer">Prosumer: %1$s</string>
+    <string name="detail_station">Station ID: %1$s</string>
+    <string name="detail_station_name">Station name: %1$s</string>
+    <string name="detail_station_name_unknown">Station name: not cached</string>
+    <string name="detail_slot">Slot ID: %1$s</string>
+    <string name="detail_created">Created: %1$s</string>
+    <string name="detail_updated">Updated: %1$s</string>
+
+    <string name="error_prosumer_required">Enter a prosumer NIC to load dashboard data.</string>
+    <string name="error_unauthorized">Authentication is required for this request.</string>
+    <string name="error_network">Network communication failed. Check connectivity and API URL.</string>
+    <string name="error_api_generic">API request failed (HTTP %1$d).</string>
+    <string name="error_unknown">An unexpected error occurred.</string>
+
+    <!-- Member 4 Nearby Stations Map -->
+    <string name="nearby_map_title">Nearby Grid Stations</string>
+    <string name="nearby_map_subtitle">Stations within your current location radius</string>
+    <string name="action_open_nearby_map">Nearby stations map</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="nearby_permission_denied">Location permission is required to show nearby stations. Enable it in app settings.</string>
+    <string name="nearby_location_unavailable">Unable to determine your current location. Try again outdoors or with GPS enabled.</string>
+    <string name="nearby_no_results">No grid stations found near your current location.</string>
+    <string name="nearby_network_error_cache_used">Network unavailable. Showing cached stations near you.</string>
+    <string name="nearby_marker_snippet">%1$s km · %2$s</string>
+    <string name="nearby_detail_distance">Distance: %1$s km</string>
+    <string name="nearby_detail_status">Status: %1$s</string>
+    <string name="nearby_detail_capacity">Capacity: %1$s kW/h</string>
+    <string name="nearby_detail_battery">Battery storage slots: %1$d</string>
+    <string name="nearby_detail_schedule_label">Operating schedule</string>
+    <string name="nearby_detail_schedule_empty">No schedule available.</string>
+    <string name="nearby_cache_fallback_hint">Showing cached station data</string>
 </resources>

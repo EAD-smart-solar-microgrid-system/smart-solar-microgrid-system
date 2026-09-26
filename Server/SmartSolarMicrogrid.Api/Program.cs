@@ -5,8 +5,10 @@
  * Purpose: Configure dependency injection and the ASP.NET Core request pipeline.
  */
 
-using System.Security.Authentication;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Configuration;
@@ -48,13 +50,7 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
         .GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
         .Value;
 
-    var mongoClientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
-    mongoClientSettings.SslSettings = new SslSettings
-    {
-        EnabledSslProtocols = SslProtocols.Tls12
-    };
-
-    return new MongoClient(mongoClientSettings);
+    return new MongoClient(settings.ConnectionString);
 });
 
 builder.Services.AddSingleton<IMongoDatabase>(serviceProvider =>
@@ -73,10 +69,37 @@ builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
 builder.Services.AddScoped<IProsumerService, ProsumerService>();
+builder.Services.AddScoped<IAdminProsumerRepository, AdminProsumerRepository>();
+builder.Services.AddScoped<IAdminProsumerService, AdminProsumerService>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
-builder.Services.AddScoped<ISlotAvailabilityChecker, UnavailableSlotAvailabilityChecker>();
+builder.Services.AddScoped<ISlotAvailabilityChecker, EnergyBookingSlotAvailabilityChecker>();
+builder.Services.AddScoped<IEnergyBookingSlotRepository, EnergyBookingSlotRepository>();
+builder.Services.AddScoped<IEnergyBookingSlotService, EnergyBookingSlotService>();
+builder.Services.AddScoped<IReservationMonitoringService, ReservationMonitoringService>();
+builder.Services.AddScoped<IMember4DashboardService, Member4DashboardService>();
+builder.Services.AddScoped<INearbyStationsService, NearbyStationsService>();
 builder.Services.AddScoped<IActiveReservationChecker, ActiveReservationChecker>();
+builder.Services.AddSingleton<ICurrentProsumerAccessor, UnavailableCurrentProsumerAccessor>();
+
+builder.Services.AddScoped<IWebUserRepository, WebUserRepository>();
+builder.Services.AddScoped<IWebUserService, WebUserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var key = builder.Configuration["Jwt:Key"] ?? "super_secret_key_for_smart_solar_microgrid_12345";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true
+        };
+    });
 
 builder.Services.AddControllers();
 
@@ -132,6 +155,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("DevelopmentCorsPolicy");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -2,7 +2,7 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: IProsumerRepository.cs
- * Purpose: Define persistence contracts for solar prosumer accounts in MongoDB.
+ * Purpose: Define MongoDB operations required by Prosumer account services.
  */
 
 using SmartSolarMicrogrid.Api.Common.Enums;
@@ -12,29 +12,21 @@ namespace SmartSolarMicrogrid.Api.Repositories;
 
 public interface IProsumerRepository
 {
-    Task<IReadOnlyList<Prosumer>> GetAllAsync(
-        ProsumerStatus? status = null,
-        CancellationToken cancellationToken = default);
-
     Task<Prosumer?> GetByNicAsync(
-        string normalizedNic,
-        CancellationToken cancellationToken = default);
-
-    Task<bool> ExistsByNicAsync(
-        string normalizedNic,
+        string nic,
         CancellationToken cancellationToken = default);
 
     Task<Prosumer> CreateAsync(
         Prosumer prosumer,
         CancellationToken cancellationToken = default);
 
-    Task<Prosumer?> UpdateDetailsAsync(
+    Task<Prosumer?> UpdateProfileAsync(
         Prosumer prosumer,
         CancellationToken cancellationToken = default);
 
     Task<Prosumer?> UpdateStatusAsync(
-        string normalizedNic,
-        ProsumerStatus status,
+        string nic,
+        ProsumerAccountStatus status,
         DateTime updatedAt,
         CancellationToken cancellationToken = default);
 }

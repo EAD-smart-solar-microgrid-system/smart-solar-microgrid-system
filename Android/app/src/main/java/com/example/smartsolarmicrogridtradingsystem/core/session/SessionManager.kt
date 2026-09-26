@@ -1,79 +1,44 @@
 package com.example.smartsolarmicrogridtradingsystem.core.session
-
+import android.content.ContentValues
 import android.content.Context
-import android.content.SharedPreferences
+import com.example.smartsolarmicrogridtradingsystem.data.local.sqlite.AppDatabaseHelper
+import com.example.smartsolarmicrogridtradingsystem.data.local.sqlite.DatabaseContract.SessionEntry
 
-/**
- * Manages lightweight authentication session persistence using private SharedPreferences.
- *
- * Security rules:
- * - Passwords are NEVER stored here or anywhere on the client.
- * - Stores only authentication token, user identifier (NIC), role, and login state flag.
- * - Login and registration network workflows are decoupled and must be implemented in their respective modules.
- */
-class SessionManager(context: Context) {
-
-    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences(
-        PREFS_NAME,
-        Context.MODE_PRIVATE
-    )
-
-    companion object {
-        private const val PREFS_NAME = "smart_solar_session_prefs"
-        private const val KEY_AUTH_TOKEN = "key_auth_token"
-        private const val KEY_USER_IDENTIFIER = "key_user_identifier"
-        private const val KEY_ROLE = "key_role"
-        private const val KEY_IS_LOGGED_IN = "key_is_logged_in"
-    }
-
-    /**
-     * Saves user session data upon successful server authentication.
-     *
-     * @param token Authentication Bearer token provided by the C# Web API.
-     * @param userIdentifier Unique user identifier or NIC.
-     * @param role User role (e.g. "Solar Prosumer", "Grid Operator", "Backoffice").
-     */
+class SessionManager(private val context: Context) {
     fun saveSession(token: String, userIdentifier: String, role: String) {
-        prefs.edit()
-            .putString(KEY_AUTH_TOKEN, token)
-            .putString(KEY_USER_IDENTIFIER, userIdentifier)
-            .putString(KEY_ROLE, role)
-            .putBoolean(KEY_IS_LOGGED_IN, true)
-            .apply()
+        val db = AppDatabaseHelper.getInstance(context).writableDatabase
+        db.execSQL("DELETE FROM ${SessionEntry.TABLE_NAME}")
+        val values = ContentValues().apply {
+            put(SessionEntry.COLUMN_USER_IDENTIFIER, userIdentifier)
+            put(SessionEntry.COLUMN_ROLE, role)
+            put(SessionEntry.COLUMN_TOKEN, token)
+            put(SessionEntry.COLUMN_LAST_UPDATED, System.currentTimeMillis())
+        }
+        db.insert(SessionEntry.TABLE_NAME, null, values)
     }
 
-    /**
-     * Retrieves the stored authentication token.
-     */
-    fun getToken(): String? {
-        return prefs.getString(KEY_AUTH_TOKEN, null)
+    private fun getSessionData(): Triple<String, String, String>? {
+        val db = AppDatabaseHelper.getInstance(context).readableDatabase
+        val cursor = db.query(SessionEntry.TABLE_NAME, null, null, null, null, null, null)
+        return if (cursor.moveToFirst()) {
+            val role = cursor.getString(cursor.getColumnIndexOrThrow(SessionEntry.COLUMN_ROLE))
+            val token = cursor.getString(cursor.getColumnIndexOrThrow(SessionEntry.COLUMN_TOKEN))
+            val user = cursor.getString(cursor.getColumnIndexOrThrow(SessionEntry.COLUMN_USER_IDENTIFIER))
+            cursor.close()
+            Triple(token, user, role)
+        } else {
+            cursor.close()
+            null
+        }
     }
 
-    /**
-     * Retrieves the stored user identifier (NIC).
-     */
-    fun getUserIdentifier(): String? {
-        return prefs.getString(KEY_USER_IDENTIFIER, null)
-    }
+    fun getToken(): String? = getSessionData()?.first
+    fun getUserIdentifier(): String? = getSessionData()?.second
+    fun getRole(): String? = getSessionData()?.third
+    fun isLoggedIn(): Boolean = getSessionData() != null
 
-    /**
-     * Retrieves the stored user role.
-     */
-    fun getRole(): String? {
-        return prefs.getString(KEY_ROLE, null)
-    }
-
-    /**
-     * Returns whether an active user session exists.
-     */
-    fun isLoggedIn(): Boolean {
-        return prefs.getBoolean(KEY_IS_LOGGED_IN, false)
-    }
-
-    /**
-     * Clears all session data from private storage upon sign-out.
-     */
     fun clearSession() {
-        prefs.edit().clear().apply()
+        val db = AppDatabaseHelper.getInstance(context).writableDatabase
+        db.execSQL("DELETE FROM ${SessionEntry.TABLE_NAME}")
     }
 }

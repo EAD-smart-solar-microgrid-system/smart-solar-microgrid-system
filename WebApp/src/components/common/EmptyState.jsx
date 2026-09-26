@@ -1,26 +1,7 @@
-/**
- * EmptyState Component
- *
- * Presentation-only component representing empty or pending states.
- * Uses semantic HTML and Bootstrap 5 utilities.
- */
-
-export const EmptyState = ({
-  title = 'No Data Available',
-  message = 'There are no items to display at this time.',
-  children,
-}) => {
-  return (
-    <div className="card border-0 bg-light text-center py-5 px-3 my-3">
-      <div className="card-body">
-        <h2 className="h4 text-secondary mb-2">{title}</h2>
-        <p className="text-muted mb-3 mx-auto" style={{ maxWidth: '480px' }}>
-          {message}
-        </p>
-        {children && <div className="mt-2">{children}</div>}
-      </div>
-    </div>
-  );
-};
+export const EmptyState = ({ title = 'No data available', message = 'There are no items to display.', children }) => (
+  <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+    <h2 className="text-xl font-bold text-slate-950">{title}</h2><p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{message}</p>{children && <div className="mt-4">{children}</div>}
+  </div>
+);
 
 export default EmptyState;
