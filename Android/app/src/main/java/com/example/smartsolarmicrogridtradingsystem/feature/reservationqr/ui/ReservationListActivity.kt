@@ -60,7 +60,15 @@ class ReservationListActivity : BaseActivity() {
         tvEmpty = findViewById(R.id.tvReservationListEmpty)
         recyclerView = findViewById(R.id.rvReservationList)
 
-        adapter = ReservationAdapter()
+        adapter = ReservationAdapter { reservation ->
+            val intent = Intent(this, ReservationDetailActivity::class.java).apply {
+                putExtra(ReservationDetailActivity.EXTRA_RESERVATION_ID, reservation.id)
+                resolveProsumerNic()?.let { nic ->
+                    putExtra(ReservationDetailActivity.EXTRA_PROSUMER_NIC, nic)
+                }
+            }
+            startActivity(intent)
+        }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
