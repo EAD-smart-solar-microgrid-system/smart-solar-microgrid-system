@@ -50,7 +50,7 @@ public sealed class ReservationService : IReservationService
                 validationError);
         }
 
-        var normalizedNic = ProsumerService.NormalizeNic(request.ProsumerNic);
+        var normalizedNic = ProsumerService.NormalizeNic(request.ProsumerNic)!;
         var prosumer = await _prosumerRepository.GetByNicAsync(normalizedNic, cancellationToken);
         if (prosumer is null)
         {
@@ -59,7 +59,7 @@ public sealed class ReservationService : IReservationService
                 "The referenced solar prosumer profile was not found.");
         }
 
-        if (prosumer.Status == ProsumerStatus.Deactivated)
+        if (prosumer.AccountStatus == ProsumerAccountStatus.Deactivated)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Validation,
