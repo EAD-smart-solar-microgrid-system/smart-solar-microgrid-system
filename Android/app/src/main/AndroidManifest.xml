@@ -66,6 +66,9 @@
             android:name=".feature.reservationqr.ui.EditReservationActivity"
             android:exported="false" />
         <activity
+            android:name=".feature.reservationqr.ui.QrDispatchActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

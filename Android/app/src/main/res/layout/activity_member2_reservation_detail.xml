@@ -154,11 +154,28 @@
                 android:layout_marginTop="12dp"
                 android:visibility="gone" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewQrDispatch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/action_view_qr_dispatch"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvDetailQrNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/layoutDetailActions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
