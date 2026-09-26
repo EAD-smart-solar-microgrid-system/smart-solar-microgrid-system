@@ -1,37 +1,9 @@
-/**
- * PageHeader Component
- *
- * Reusable presentation-only page header.
- * Uses semantic HTML (<header>, <h1>) and Bootstrap 5 utilities.
- */
-
-export const PageHeader = ({
-  title,
-  subtitle,
-  badgeText,
-  badgeVariant = 'secondary',
-  children,
-}) => {
+export const PageHeader = ({ title, subtitle, badgeText, children }) => {
   if (!title) return null;
-
   return (
-    <header className="page-header pb-3 mb-4 border-bottom">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-        <div>
-          <div className="d-flex align-items-center gap-2">
-            <h1 className="h2 mb-0 text-dark fw-bold">{title}</h1>
-            {badgeText && (
-              <span className={`badge bg-${badgeVariant} text-uppercase`}>
-                {badgeText}
-              </span>
-            )}
-          </div>
-          {subtitle && (
-            <p className="text-muted mt-1 mb-0 fs-6">{subtitle}</p>
-          )}
-        </div>
-        {children && <div className="page-header-actions">{children}</div>}
-      </div>
+    <header className="flex flex-col justify-between gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
+      <div><div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-bold text-slate-950">{title}</h1>{badgeText && <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">{badgeText}</span>}</div>{subtitle && <p className="mt-1 text-slate-600">{subtitle}</p>}</div>
+      {children && <div>{children}</div>}
     </header>
   );
 };

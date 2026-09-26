@@ -17,6 +17,7 @@ export const AppLayout = () => {
             </Link>
             <ul className="navbar-nav ms-auto flex-row flex-wrap gap-3 align-items-center">
               <li className="nav-item"><Link className="nav-link py-1" to={ROUTES.HOME}>Home</Link></li>
+              <li className="nav-item"><Link className="nav-link py-1" to={ROUTES.STATIONS}>Stations</Link></li>
               {user?.role === 'Backoffice' && (
                 <li className="nav-item"><Link className="nav-link py-1" to={ROUTES.USER_MANAGEMENT}>Users</Link></li>
               )}
