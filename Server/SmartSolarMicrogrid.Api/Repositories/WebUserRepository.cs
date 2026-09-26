@@ -2,8 +2,9 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: WebUserRepository.cs
- * Purpose: Implementation for WebUser repository operations using MongoDB.
+ * Purpose: Implementation for WebUser repository operations using MongoDB against UsersDetail collection.
  */
+using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Data;
 using SmartSolarMicrogrid.Api.Models;
@@ -14,23 +15,68 @@ public class WebUserRepository : IWebUserRepository
 {
     private readonly IMongoCollection<WebUser> _collection;
 
+    // Filter to isolate WebUser documents from Prosumer records sharing the UsersDetail collection
+    private static FilterDefinition<WebUser> WebUserFilter =>
+        Builders<WebUser>.Filter.Exists("PasswordHash", true);
+
     public WebUserRepository(MongoDbContext dbContext)
     {
+        // Obtain the shared UsersDetail collection for web user accounts
         _collection = dbContext.Database.GetCollection<WebUser>("UsersDetail");
     }
 
-    public async Task<List<WebUser>> GetAllAsync() =>
-        await _collection.Find(_ => true).ToListAsync();
+    public async Task<List<WebUser>> GetAllAsync()
+    {
+        // Retrieve all web users while excluding non-web user (prosumer) documents
+        return await _collection.Find(WebUserFilter).ToListAsync();
+    }
 
-    public async Task<WebUser?> GetByIdAsync(string id) =>
-        await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+    public async Task<WebUser?> GetByIdAsync(string id)
+    {
+        // Validate ObjectId format to avoid format exceptions when querying
+        if (!ObjectId.TryParse(id, out _))
+        {
+            return null;
+        }
 
-    public async Task<WebUser?> GetByUsernameAsync(string username) =>
-        await _collection.Find(x => x.Username == username).FirstOrDefaultAsync();
+        // Fetch a web user matching the given identifier
+        var filter = Builders<WebUser>.Filter.And(
+            Builders<WebUser>.Filter.Eq(x => x.Id, id),
+            WebUserFilter
+        );
+        return await _collection.Find(filter).FirstOrDefaultAsync();
+    }
 
-    public async Task CreateAsync(WebUser user) =>
+    public async Task<WebUser?> GetByUsernameAsync(string username)
+    {
+        // Fetch a web user matching the given username
+        var filter = Builders<WebUser>.Filter.And(
+            Builders<WebUser>.Filter.Eq(x => x.Username, username),
+            WebUserFilter
+        );
+        return await _collection.Find(filter).FirstOrDefaultAsync();
+    }
+
+    public async Task CreateAsync(WebUser user)
+    {
+        // Ensure new web user has a valid unique ObjectId identifier
+        if (string.IsNullOrWhiteSpace(user.Id))
+        {
+            user.Id = ObjectId.GenerateNewId().ToString();
+        }
+
+        // Insert new web user document into the collection
         await _collection.InsertOneAsync(user);
+    }
 
-    public async Task UpdateAsync(string id, WebUser user) =>
-        await _collection.ReplaceOneAsync(x => x.Id == id, user);
+    public async Task UpdateAsync(string id, WebUser user)
+    {
+        // Update existing web user document by identifier
+        user.Id = id;
+        var filter = Builders<WebUser>.Filter.And(
+            Builders<WebUser>.Filter.Eq(x => x.Id, id),
+            WebUserFilter
+        );
+        await _collection.ReplaceOneAsync(filter, user);
+    }
 }
