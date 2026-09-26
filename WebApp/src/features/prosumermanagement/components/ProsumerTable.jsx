@@ -4,15 +4,61 @@ import { ProsumerStatusBadge } from './ProsumerStatusBadge.jsx';
  * ProsumerTable Component
  *
  * Renders a responsive, accessible table of registered solar prosumers.
- * Supports row-level View and Edit actions.
+ * Supports row-level View, Edit, and contextual lifecycle actions (Activate, Deactivate, Reactivate).
  *
  * @param {{
  *   prosumers: Array<object>,
  *   onView?: (prosumer: object) => void,
- *   onEdit?: (prosumer: object) => void
+ *   onEdit?: (prosumer: object) => void,
+ *   onStatusAction?: (prosumer: object, targetStatus: string) => void
  * }} props
  */
-export const ProsumerTable = ({ prosumers = [], onView, onEdit }) => {
+export const ProsumerTable = ({
+  prosumers = [],
+  onView,
+  onEdit,
+  onStatusAction,
+}) => {
+  const renderStatusAction = (prosumer) => {
+    if (prosumer.status === 'Pending') {
+      return (
+        <button
+          type="button"
+          onClick={() => onStatusAction && onStatusAction(prosumer, 'Active')}
+          className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+        >
+          Activate
+        </button>
+      );
+    }
+
+    if (prosumer.status === 'Active') {
+      return (
+        <button
+          type="button"
+          onClick={() => onStatusAction && onStatusAction(prosumer, 'Deactivated')}
+          className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
+        >
+          Deactivate
+        </button>
+      );
+    }
+
+    if (prosumer.status === 'Deactivated') {
+      return (
+        <button
+          type="button"
+          onClick={() => onStatusAction && onStatusAction(prosumer, 'Active')}
+          className="rounded-lg border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+        >
+          Reactivate
+        </button>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -65,6 +111,7 @@ export const ProsumerTable = ({ prosumers = [], onView, onEdit }) => {
                     >
                       Edit
                     </button>
+                    {renderStatusAction(prosumer)}
                   </div>
                 </td>
               </tr>

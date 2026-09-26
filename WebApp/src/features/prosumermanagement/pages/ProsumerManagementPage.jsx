@@ -16,6 +16,7 @@ import { ProsumerTable } from '../components/ProsumerTable.jsx';
 import { CreateProsumerModal } from '../components/CreateProsumerModal.jsx';
 import { ProsumerDetailsModal } from '../components/ProsumerDetailsModal.jsx';
 import { EditProsumerModal } from '../components/EditProsumerModal.jsx';
+import { ProsumerStatusModal } from '../components/ProsumerStatusModal.jsx';
 import { getProsumers } from '../services/prosumerService.js';
 import { ApiError } from '../../../services/apiClient.js';
 
@@ -51,6 +52,7 @@ export const ProsumerManagementPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewingProsumer, setViewingProsumer] = useState(null);
   const [editingProsumer, setEditingProsumer] = useState(null);
+  const [statusActionTarget, setStatusActionTarget] = useState(null);
 
   /**
    * Fetches prosumer profiles from the backend service.
@@ -119,6 +121,17 @@ export const ProsumerManagementPage = () => {
 
   const handleEditSuccess = (updated) => {
     setFeedback(`Prosumer ${updated.fullName || updated.nic} updated successfully.`);
+    loadProsumers(statusFilter);
+  };
+
+  const handleStatusAction = (prosumer, targetStatus) => {
+    setFeedback('');
+    setStatusActionTarget({ prosumer, targetStatus });
+  };
+
+  const handleStatusSuccess = (updated, actionName) => {
+    setFeedback(`Prosumer ${updated.fullName || updated.nic} ${actionName.toLowerCase()}d successfully.`);
+    setStatusActionTarget(null);
     loadProsumers(statusFilter);
   };
 
@@ -320,6 +333,7 @@ export const ProsumerManagementPage = () => {
           prosumers={filteredProsumers}
           onView={handleViewProsumer}
           onEdit={handleEditProsumer}
+          onStatusAction={handleStatusAction}
         />
       )}
 
@@ -345,6 +359,18 @@ export const ProsumerManagementPage = () => {
           prosumer={editingProsumer}
           onClose={() => setEditingProsumer(null)}
           onSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Status Action Confirmation Modal */}
+      {statusActionTarget && (
+        <ProsumerStatusModal
+          key={`${statusActionTarget.prosumer.nic}-${statusActionTarget.targetStatus}`}
+          isOpen={Boolean(statusActionTarget)}
+          prosumer={statusActionTarget.prosumer}
+          targetStatus={statusActionTarget.targetStatus}
+          onClose={() => setStatusActionTarget(null)}
+          onSuccess={handleStatusSuccess}
         />
       )}
     </div>
