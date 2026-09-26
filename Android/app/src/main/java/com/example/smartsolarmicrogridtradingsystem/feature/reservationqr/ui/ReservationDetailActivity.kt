@@ -61,6 +61,8 @@ class ReservationDetailActivity : BaseActivity() {
     private lateinit var layoutActions: LinearLayout
     private lateinit var btnEdit: MaterialButton
     private lateinit var btnCancel: MaterialButton
+    private lateinit var btnViewQr: MaterialButton
+    private lateinit var tvQrNotice: TextView
 
     private var reservationId: String = ""
     private var currentReservation: ReservationDto? = null
@@ -126,6 +128,8 @@ class ReservationDetailActivity : BaseActivity() {
         layoutActions = findViewById(R.id.layoutDetailActions)
         btnEdit = findViewById(R.id.btnEditReservation)
         btnCancel = findViewById(R.id.btnCancelReservation)
+        btnViewQr = findViewById(R.id.btnViewQrDispatch)
+        tvQrNotice = findViewById(R.id.tvDetailQrNotice)
     }
 
     private fun setupListeners() {
@@ -140,6 +144,21 @@ class ReservationDetailActivity : BaseActivity() {
 
         btnCancel.setOnClickListener {
             showCancelConfirmationDialog()
+        }
+
+        btnViewQr.setOnClickListener {
+            val record = currentReservation ?: return@setOnClickListener
+            if (record.parsedStatus == ReservationStatus.APPROVED) {
+                val intent = Intent(this, QrDispatchActivity::class.java).apply {
+                    putExtra(QrDispatchActivity.EXTRA_RESERVATION_ID, record.id)
+                    val expectedNic = intent.getStringExtra(EXTRA_PROSUMER_NIC)?.trim()
+                        ?: sessionManager.getUserIdentifier()?.trim()
+                    if (!expectedNic.isNullOrBlank()) {
+                        putExtra(QrDispatchActivity.EXTRA_PROSUMER_NIC, expectedNic)
+                    }
+                }
+                startActivity(intent)
+            }
         }
     }
 
@@ -229,20 +248,47 @@ class ReservationDetailActivity : BaseActivity() {
     private fun configureStatusActions(record: ReservationDto) {
         when (record.parsedStatus) {
             ReservationStatus.CANCELLED -> {
+                btnViewQr.visibility = View.GONE
+                tvQrNotice.visibility = View.GONE
                 btnEdit.visibility = View.GONE
                 btnCancel.visibility = View.GONE
                 tvNoticeExplanation.text = getString(R.string.detail_status_locked, "Cancelled")
                 tvNoticeExplanation.visibility = View.VISIBLE
             }
             ReservationStatus.COMPLETED -> {
+                btnViewQr.visibility = View.GONE
+                tvQrNotice.visibility = View.GONE
                 btnEdit.visibility = View.GONE
                 btnCancel.visibility = View.GONE
                 tvNoticeExplanation.text = getString(R.string.detail_status_locked, "Completed")
                 tvNoticeExplanation.visibility = View.VISIBLE
             }
-            ReservationStatus.PENDING, ReservationStatus.APPROVED -> {
-                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
+            ReservationStatus.PENDING -> {
+                btnViewQr.visibility = View.GONE
+                tvQrNotice.text = getString(R.string.msg_qr_pending_notice)
+                tvQrNotice.visibility = View.VISIBLE
 
+                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
+                btnEdit.visibility = View.VISIBLE
+                btnCancel.visibility = View.VISIBLE
+
+                if (has12Hours) {
+                    btnEdit.isEnabled = true
+                    btnCancel.isEnabled = true
+                    tvNoticeExplanation.visibility = View.GONE
+                } else {
+                    btnEdit.isEnabled = false
+                    btnCancel.isEnabled = false
+                    tvNoticeExplanation.text = getString(R.string.detail_notice_expired)
+                    tvNoticeExplanation.visibility = View.VISIBLE
+                }
+            }
+            ReservationStatus.APPROVED -> {
+                btnViewQr.visibility = View.VISIBLE
+                btnViewQr.isEnabled = true
+                tvQrNotice.visibility = View.GONE
+
+                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
                 btnEdit.visibility = View.VISIBLE
                 btnCancel.visibility = View.VISIBLE
 

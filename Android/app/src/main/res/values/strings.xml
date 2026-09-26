@@ -146,4 +146,20 @@
     <string name="error_reservation_not_found">Reservation could not be found.</string>
     <string name="error_reservation_unauthorized">You do not have access to view this reservation.</string>
     <string name="error_edit_twelve_hours">Modifications must be made at least 12 hours before the scheduled time.</string>
+
+    <!-- Member 2 QR Dispatch -->
+    <string name="title_qr_dispatch">QR Dispatch Credential</string>
+    <string name="action_view_qr_dispatch">View QR Dispatch</string>
+    <string name="msg_qr_pending_notice">QR becomes available after reservation approval.</string>
+    <string name="msg_qr_not_approved">QR tokens can only be generated for Approved reservations. Current status: %1$s.</string>
+    <string name="qr_instructions">Present this QR code to the microgrid station operator for check-in and energy dispatch. Generating a new QR code will supersede and invalidate any prior code.</string>
+    <string name="qr_status_active">Active QR Credential</string>
+    <string name="qr_status_expired">Expired QR Credential</string>
+    <string name="qr_issued_at">Issued: %1$s</string>
+    <string name="qr_expires_at">Expires: %1$s</string>
+    <string name="msg_qr_token_expired">The dispatch window for this reservation has ended (4 hours post-slot). This QR credential has expired and can no longer be used.</string>
+    <string name="action_refresh_qr">Generate New QR</string>
+    <string name="error_qr_generate_failed">Failed to generate QR credential.</string>
+    <string name="error_qr_render_failed">Failed to render QR barcode.</string>
+    <string name="action_qr_done">Done</string>
 </resources>
