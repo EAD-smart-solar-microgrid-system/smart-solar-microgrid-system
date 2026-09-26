@@ -98,4 +98,28 @@
     <string name="reservation_item_id">Reservation: %1$s</string>
     <string name="reservation_item_cancellation">Cancellation Reason: %1$s</string>
     <string name="reservation_nic_required_prompt">Enter a Prosumer NIC to view cached reservations.</string>
+
+    <!-- Member 2 Create Reservation -->
+    <string name="create_reservation_title">New Reservation</string>
+    <string name="create_reservation_subtitle">Book a microgrid charging or drop-off slot</string>
+    <string name="action_new_reservation">New Reservation</string>
+    <string name="hint_station">Select Grid Station</string>
+    <string name="hint_slot">Select Booking Slot</string>
+    <string name="hint_reservation_date">Reservation Date</string>
+    <string name="hint_reservation_time">Reservation Time</string>
+    <string name="label_reservation_type">Reservation Type</string>
+    <string name="type_drop_off">Drop Off</string>
+    <string name="type_charging">Charging</string>
+    <string name="action_submit_reservation">Confirm &amp; Book Reservation</string>
+    <string name="msg_reservation_created">Reservation booked successfully!</string>
+    <string name="error_station_required">Please select a grid station.</string>
+    <string name="error_slot_required">Please select an available booking slot.</string>
+    <string name="error_date_time_required">Please select both reservation date and time.</string>
+    <string name="error_date_time_future">Reservation date and time must be in the future.</string>
+    <string name="error_date_time_7_days">Reservations must be scheduled within a rolling 7-day forward window.</string>
+    <string name="msg_loading_stations">Loading stations…</string>
+    <string name="msg_loading_slots">Loading available slots…</string>
+    <string name="msg_no_slots_available">No available slots found for this station.</string>
+    <string name="msg_no_stations_available">No active stations available.</string>
+    <string name="error_reservation_cache_failed">Reservation was created on the server (ID: %1$s), but failed to save to local cache.</string>
 </resources>

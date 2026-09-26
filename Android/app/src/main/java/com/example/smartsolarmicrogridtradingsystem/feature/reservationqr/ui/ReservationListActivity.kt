@@ -14,6 +14,10 @@ import com.example.smartsolarmicrogridtradingsystem.shared.component.BaseActivit
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+
 /**
  * Member 2 reservation list activity for displaying offline cached reservations.
  * Loads bookings from [ReservationLocalRepository] and allows filtering by prosumer NIC.
@@ -26,9 +30,16 @@ class ReservationListActivity : BaseActivity() {
 
     private lateinit var etProsumerNic: TextInputEditText
     private lateinit var btnRefreshCache: MaterialButton
+    private lateinit var fabNewReservation: ExtendedFloatingActionButton
     private lateinit var progress: ProgressBar
     private lateinit var tvEmpty: TextView
     private lateinit var recyclerView: RecyclerView
+
+    private val createReservationLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        // Cache refresh is automatically handled in onResume() when returning to this screen
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +55,7 @@ class ReservationListActivity : BaseActivity() {
 
         etProsumerNic = findViewById(R.id.etProsumerNic)
         btnRefreshCache = findViewById(R.id.btnRefreshCache)
+        fabNewReservation = findViewById(R.id.fabNewReservation)
         progress = findViewById(R.id.progressReservationList)
         tvEmpty = findViewById(R.id.tvReservationListEmpty)
         recyclerView = findViewById(R.id.rvReservationList)
@@ -61,6 +73,18 @@ class ReservationListActivity : BaseActivity() {
             loadReservationsFromCache()
         }
 
+        fabNewReservation.setOnClickListener {
+            val intent = Intent(this, CreateReservationActivity::class.java).apply {
+                resolveProsumerNic()?.let { nic ->
+                    putExtra(CreateReservationActivity.EXTRA_PROSUMER_NIC, nic)
+                }
+            }
+            createReservationLauncher.launch(intent)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
         loadReservationsFromCache()
     }
 
