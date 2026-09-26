@@ -4,11 +4,15 @@ import { ProsumerStatusBadge } from './ProsumerStatusBadge.jsx';
  * ProsumerTable Component
  *
  * Renders a responsive, accessible table of registered solar prosumers.
- * Follows the team's visual table conventions from StationList.
+ * Supports row-level View and Edit actions.
  *
- * @param {{ prosumers: Array<object> }} props
+ * @param {{
+ *   prosumers: Array<object>,
+ *   onView?: (prosumer: object) => void,
+ *   onEdit?: (prosumer: object) => void
+ * }} props
  */
-export const ProsumerTable = ({ prosumers = [] }) => {
+export const ProsumerTable = ({ prosumers = [], onView, onEdit }) => {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -21,6 +25,7 @@ export const ProsumerTable = ({ prosumers = [] }) => {
               <th scope="col" className="px-5 py-4 font-bold">Phone</th>
               <th scope="col" className="px-5 py-4 font-bold">Address</th>
               <th scope="col" className="px-5 py-4 font-bold">Status</th>
+              <th scope="col" className="px-5 py-4 font-bold text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -43,6 +48,24 @@ export const ProsumerTable = ({ prosumers = [] }) => {
                 </td>
                 <td className="px-5 py-4">
                   <ProsumerStatusBadge status={prosumer.status} />
+                </td>
+                <td className="px-5 py-4 text-right">
+                  <div className="inline-flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onView && onView(prosumer)}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onEdit && onEdit(prosumer)}
+                      className="rounded-lg border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -4,6 +4,7 @@
  * Member 2 Backoffice Solar Prosumer administration view.
  * Supports status filtering (All, Pending, Active, Deactivated),
  * client-side multi-field searching, and clean state handling.
+ * Integrates create, details, and edit modal workflows.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -12,6 +13,9 @@ import { LoadingIndicator } from '../../../components/common/LoadingIndicator.js
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 import { EmptyState } from '../../../components/common/EmptyState.jsx';
 import { ProsumerTable } from '../components/ProsumerTable.jsx';
+import { CreateProsumerModal } from '../components/CreateProsumerModal.jsx';
+import { ProsumerDetailsModal } from '../components/ProsumerDetailsModal.jsx';
+import { EditProsumerModal } from '../components/EditProsumerModal.jsx';
 import { getProsumers } from '../services/prosumerService.js';
 import { ApiError } from '../../../services/apiClient.js';
 
@@ -39,8 +43,14 @@ export const ProsumerManagementPage = () => {
   const [prosumers, setProsumers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [feedback, setFeedback] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Modal states
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [viewingProsumer, setViewingProsumer] = useState(null);
+  const [editingProsumer, setEditingProsumer] = useState(null);
 
   /**
    * Fetches prosumer profiles from the backend service.
@@ -88,6 +98,30 @@ export const ProsumerManagementPage = () => {
     loadProsumers(statusFilter);
   };
 
+  const handleOpenCreate = () => {
+    setFeedback('');
+    setIsCreateOpen(true);
+  };
+
+  const handleCreateSuccess = (created) => {
+    setFeedback(`Prosumer ${created.fullName || created.nic} registered successfully.`);
+    loadProsumers(statusFilter);
+  };
+
+  const handleViewProsumer = (prosumer) => {
+    setViewingProsumer(prosumer);
+  };
+
+  const handleEditProsumer = (prosumer) => {
+    setFeedback('');
+    setEditingProsumer(prosumer);
+  };
+
+  const handleEditSuccess = (updated) => {
+    setFeedback(`Prosumer ${updated.fullName || updated.nic} updated successfully.`);
+    loadProsumers(statusFilter);
+  };
+
   /**
    * Client-side search across currently loaded prosumers.
    * Matches case-insensitively against NIC, Full Name, Email, and Phone.
@@ -131,7 +165,33 @@ export const ProsumerManagementPage = () => {
       <PageHeader
         title="Prosumer Management"
         subtitle="Manage registered solar prosumers, monitor their account status, and oversee microgrid participation."
-      />
+      >
+        <button
+          type="button"
+          onClick={handleOpenCreate}
+          className="inline-flex shrink-0 items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+        >
+          + Register Prosumer
+        </button>
+      </PageHeader>
+
+      {/* Success / Feedback Alert */}
+      {feedback && (
+        <div
+          className="flex items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"
+          role="status"
+        >
+          <span>{feedback}</span>
+          <button
+            type="button"
+            onClick={() => setFeedback('')}
+            className="text-xl leading-none text-emerald-700 hover:text-emerald-950"
+            aria-label="Dismiss success message"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -256,7 +316,36 @@ export const ProsumerManagementPage = () => {
 
       {/* Populated Table */}
       {!loading && !error && filteredProsumers.length > 0 && (
-        <ProsumerTable prosumers={filteredProsumers} />
+        <ProsumerTable
+          prosumers={filteredProsumers}
+          onView={handleViewProsumer}
+          onEdit={handleEditProsumer}
+        />
+      )}
+
+      {/* Create Prosumer Modal */}
+      <CreateProsumerModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={handleCreateSuccess}
+      />
+
+      {/* Prosumer Details Modal */}
+      <ProsumerDetailsModal
+        isOpen={Boolean(viewingProsumer)}
+        prosumer={viewingProsumer}
+        onClose={() => setViewingProsumer(null)}
+      />
+
+      {/* Edit Prosumer Modal */}
+      {editingProsumer && (
+        <EditProsumerModal
+          key={editingProsumer.nic}
+          isOpen={Boolean(editingProsumer)}
+          prosumer={editingProsumer}
+          onClose={() => setEditingProsumer(null)}
+          onSuccess={handleEditSuccess}
+        />
       )}
     </div>
   );
