@@ -6,6 +6,7 @@
  */
 
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Common.Enums;
 using SmartSolarMicrogrid.Api.DTOs.Prosumers;
@@ -218,12 +219,19 @@ public sealed class ProsumerService : IProsumerService
             .GetCurrentProsumerNicAsync(cancellationToken));
     }
 
-    private static string? NormalizeNic(string? nic)
+    internal static string? NormalizeNic(string? nic)
     {
         // Normalize the primary business identifier consistently before repository calls.
         return string.IsNullOrWhiteSpace(nic)
             ? null
             : nic.Trim().ToUpperInvariant();
+    }
+
+    internal static bool IsValidNic(string? nic)
+    {
+        var normalizedNic = NormalizeNic(nic);
+        return normalizedNic is not null
+            && Regex.IsMatch(normalizedNic, @"^(\d{9}[VX]|\d{12})$", RegexOptions.CultureInvariant);
     }
 
     private static string? NormalizeOptionalText(string? value)
