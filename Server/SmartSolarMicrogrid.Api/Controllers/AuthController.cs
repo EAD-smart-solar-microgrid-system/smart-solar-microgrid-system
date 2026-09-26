@@ -26,6 +26,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        // Authenticate web user credentials and issue signed JWT bearer token
         var response = await _authService.LoginAsync(request);
         if (response == null) return Unauthorized(new { message = "Invalid credentials or deactivated account." });
         return Ok(response);
@@ -35,6 +36,7 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public IActionResult GetMe()
     {
+        // Extract authenticated user identity claims from current context
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
