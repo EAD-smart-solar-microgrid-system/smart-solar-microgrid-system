@@ -22,6 +22,8 @@ export const AppLayout = () => {
           <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
             <NavLink end to={ROUTES.HOME} className={navLinkClass}>Overview</NavLink>
             <NavLink to={ROUTES.STATIONS} className={navLinkClass}>Stations</NavLink>
+            <NavLink to={ROUTES.ENERGY_SLOT_RESERVATIONS} className={navLinkClass}>Energy Slots</NavLink>
+            <NavLink to={ROUTES.RESERVATION_MONITORING} className={navLinkClass}>Monitoring</NavLink>
             {user?.role === 'Backoffice' && (
               <NavLink to={ROUTES.PROSUMER_MANAGEMENT} className={navLinkClass}>Prosumers</NavLink>
             )}
