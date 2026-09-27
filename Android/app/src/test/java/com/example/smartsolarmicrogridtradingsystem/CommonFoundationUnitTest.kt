@@ -16,7 +16,7 @@ class CommonFoundationUnitTest {
 
     @Test
     fun testAppConfigConstants() {
-        assertEquals("http://YOUR_PC_LAN_IP:PORT/api/", AppConfig.BASE_URL)
+        assertEquals("http://10.0.2.2:5278/api/", AppConfig.BASE_URL)
         assertEquals(15000, AppConfig.CONNECT_TIMEOUT_MS)
         assertEquals(15000, AppConfig.READ_TIMEOUT_MS)
     }
@@ -78,10 +78,10 @@ class CommonFoundationUnitTest {
     @Test
     fun testApiClientResolveUrl() {
         val resolvedWithSlash = ApiClient.resolveUrl("/energy/slots")
-        assertEquals("http://YOUR_PC_LAN_IP:PORT/api/energy/slots", resolvedWithSlash)
+        assertEquals("http://10.0.2.2:5278/api/energy/slots", resolvedWithSlash)
 
         val resolvedWithoutSlash = ApiClient.resolveUrl("energy/slots")
-        assertEquals("http://YOUR_PC_LAN_IP:PORT/api/energy/slots", resolvedWithoutSlash)
+        assertEquals("http://10.0.2.2:5278/api/energy/slots", resolvedWithoutSlash)
 
         val absoluteUrl = ApiClient.resolveUrl("http://example.com/api/test")
         assertEquals("http://example.com/api/test", absoluteUrl)
