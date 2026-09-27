@@ -4,7 +4,22 @@
  * Displays energy booking slots for the selected station.
  */
 
-import { formatSlotDateTime } from '../utils/slotMapper.js';
+import { formatSlotDateTimeParts } from '../utils/slotMapper.js';
+
+const SlotDateTimeCell = ({ iso }) => {
+  const parts = formatSlotDateTimeParts(iso);
+
+  if (!parts) {
+    return <span className="text-muted">—</span>;
+  }
+
+  return (
+    <div className="slot-datetime">
+      <div>{parts.date}</div>
+      <div className="slot-time">{parts.time}</div>
+    </div>
+  );
+};
 
 export const SlotList = ({
   slots,
@@ -38,8 +53,12 @@ export const SlotList = ({
             const rowBusy = isToggling || isDeleting;
             return (
               <tr key={slot.id}>
-                <td>{formatSlotDateTime(slot.slotStartUtc)}</td>
-                <td>{formatSlotDateTime(slot.slotEndUtc)}</td>
+                <td>
+                  <SlotDateTimeCell iso={slot.slotStartUtc} />
+                </td>
+                <td>
+                  <SlotDateTimeCell iso={slot.slotEndUtc} />
+                </td>
                 <td className="text-end">{slot.capacityKw}</td>
                 <td>
                   <span
@@ -49,7 +68,7 @@ export const SlotList = ({
                   </span>
                 </td>
                 <td className="text-end">
-                  <div className="d-flex flex-wrap justify-content-end gap-2">
+                  <div className="slot-actions">
                     <button
                       type="button"
                       className="btn btn-outline-primary btn-sm"
@@ -68,8 +87,8 @@ export const SlotList = ({
                       {isToggling
                         ? 'Updating…'
                         : slot.isAvailable
-                          ? 'Mark unavailable'
-                          : 'Mark available'}
+                          ? 'Unavailable'
+                          : 'Available'}
                     </button>
                     <button
                       type="button"

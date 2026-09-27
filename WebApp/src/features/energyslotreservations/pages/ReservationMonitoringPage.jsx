@@ -16,6 +16,7 @@ import {
   getReservationMonitoringById,
   getReservationMonitoringList,
 } from '../services/reservationMonitoringService.js';
+import { getStations, getSlotsByStationId } from '../services/energySlotService.js';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -34,6 +35,10 @@ export const ReservationMonitoringPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(DEFAULT_PAGE_SIZE);
 
+  const [stations, setStations] = useState([]);
+  const [stationsLoading, setStationsLoading] = useState(true);
+  const [slotById, setSlotById] = useState({});
+
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -49,6 +54,27 @@ export const ReservationMonitoringPage = () => {
     () => Math.max(1, Math.ceil(totalCount / pageSize) || 1),
     [totalCount, pageSize]
   );
+
+  const stationNameById = useMemo(() => {
+    const map = {};
+    stations.forEach((station) => {
+      if (station?.id) {
+        map[station.id] = station.stationName || 'Unnamed station';
+      }
+    });
+    return map;
+  }, [stations]);
+
+  const loadStations = useCallback(async () => {
+    setStationsLoading(true);
+    const response = await getStations();
+    if (response.success) {
+      setStations(response.data ?? []);
+    } else {
+      setStations([]);
+    }
+    setStationsLoading(false);
+  }, []);
 
   const loadReservations = useCallback(async () => {
     setLoading(true);
@@ -74,8 +100,55 @@ export const ReservationMonitoringPage = () => {
   }, [appliedFilters, page, pageSize]);
 
   useEffect(() => {
+    loadStations();
+  }, [loadStations]);
+
+  useEffect(() => {
     Promise.resolve().then(loadReservations);
   }, [loadReservations]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSlotsForVisibleReservations = async () => {
+      const stationIds = [
+        ...new Set(items.map((item) => item.stationId).filter(Boolean)),
+      ];
+
+      if (stationIds.length === 0) {
+        return;
+      }
+
+      const responses = await Promise.all(
+        stationIds.map((stationId) => getSlotsByStationId(stationId))
+      );
+
+      if (cancelled) {
+        return;
+      }
+
+      setSlotById((current) => {
+        const next = { ...current };
+        responses.forEach((response) => {
+          if (!response.success || !Array.isArray(response.data)) {
+            return;
+          }
+          response.data.forEach((slot) => {
+            if (slot?.id) {
+              next[slot.id] = slot;
+            }
+          });
+        });
+        return next;
+      });
+    };
+
+    loadSlotsForVisibleReservations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
   const handleFilterChange = (name, value) => {
     setDraftFilters((current) => ({
@@ -154,6 +227,8 @@ export const ReservationMonitoringPage = () => {
         onApply={handleApplyFilters}
         onReset={handleResetFilters}
         disabled={loading}
+        stations={stations}
+        stationsLoading={stationsLoading}
       />
 
       {error && (
@@ -192,6 +267,8 @@ export const ReservationMonitoringPage = () => {
               reservations={items}
               onViewDetails={handleViewDetails}
               detailsLoadingId={detailsLoadingId}
+              stationNameById={stationNameById}
+              slotById={slotById}
             />
           </div>
           <div className="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -227,6 +304,8 @@ export const ReservationMonitoringPage = () => {
         error={detailsError}
         onClose={handleCloseDetails}
         onRetry={handleRetryDetails}
+        stationNameById={stationNameById}
+        slotById={slotById}
       />
     </div>
   );
