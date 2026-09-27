@@ -68,6 +68,85 @@ export const mapReservationMonitoringList = (response) => {
 export const formatReservationDateTime = (iso) => formatSlotDateTime(iso);
 
 /**
+ * Builds a friendly booking label (no raw ObjectIds).
+ *
+ * @param {object} reservation - Normalized reservation
+ * @returns {string}
+ */
+export const formatReservationLabel = (reservation) => {
+  if (!reservation) {
+    return '—';
+  }
+
+  const bookingId = formatBookingId(reservation.id);
+  const type = reservation.reservationType || 'Booking';
+  const when = formatReservationDateTime(reservation.reservationDateTime);
+
+  if (when === '—') {
+    return `${bookingId} · ${type}`;
+  }
+
+  return `${bookingId} · ${type} · ${when}`;
+};
+
+/**
+ * Builds a short booking reference from a MongoDB id (not the full ObjectId).
+ * Example: "6ab4bc60d234426b650c8fba" → "BK-C8FBA"
+ *
+ * @param {string} id - Reservation id
+ * @returns {string}
+ */
+export const formatBookingId = (id) => {
+  const raw = String(id || '').trim();
+  if (!raw) {
+    return 'BK-UNKNOWN';
+  }
+
+  const suffix = raw.slice(-6).toUpperCase();
+  return `BK-${suffix}`;
+};
+
+/**
+ * Formats a slot window for display.
+ *
+ * @param {object|null} slot - Normalized slot
+ * @returns {string}
+ */
+export const formatSlotLabel = (slot) => {
+  const parts = getSlotWindowParts(slot);
+  if (!parts) {
+    return 'Unknown slot';
+  }
+
+  return `${parts.start} → ${parts.end}${parts.capacity ? ` · ${parts.capacity}` : ''}`;
+};
+
+/**
+ * Returns slot window parts for line-by-line UI rendering.
+ *
+ * @param {object|null} slot - Normalized slot
+ * @returns {{ start: string, end: string, capacity: string }|null}
+ */
+export const getSlotWindowParts = (slot) => {
+  if (!slot) {
+    return null;
+  }
+
+  const start = formatSlotDateTime(slot.slotStartUtc);
+  const end = formatSlotDateTime(slot.slotEndUtc);
+  const capacity =
+    Number.isFinite(slot.capacityKw) && slot.capacityKw > 0
+      ? `${slot.capacityKw} kW`
+      : '';
+
+  return {
+    start: start === '—' ? 'Unknown start' : start,
+    end: end === '—' ? 'Unknown end' : end,
+    capacity,
+  };
+};
+
+/**
  * Builds Bootstrap badge classes for a reservation status.
  *
  * @param {string} status - Reservation status string
@@ -94,5 +173,9 @@ export default {
   mapReservationMonitoringItem,
   mapReservationMonitoringList,
   formatReservationDateTime,
+  formatReservationLabel,
+  formatBookingId,
+  formatSlotLabel,
+  getSlotWindowParts,
   getReservationStatusBadgeClass,
 };

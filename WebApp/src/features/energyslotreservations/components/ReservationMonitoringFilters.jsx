@@ -18,6 +18,8 @@ export const ReservationMonitoringFilters = ({
   onApply,
   onReset,
   disabled,
+  stations = [],
+  stationsLoading = false,
 }) => {
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -32,8 +34,8 @@ export const ReservationMonitoringFilters = ({
   return (
     <form className="card border-0 shadow-sm mb-4" onSubmit={handleSubmit}>
       <div className="card-body">
-        <div className="row g-3 align-items-end">
-          <div className="col-12 col-md-6 col-lg-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 items-end">
+          <div>
             <label htmlFor="monitoring-status" className="form-label">
               Status
             </label>
@@ -53,39 +55,48 @@ export const ReservationMonitoringFilters = ({
             </select>
           </div>
 
-          <div className="col-12 col-md-6 col-lg-3">
+          <div>
             <label htmlFor="monitoring-station-id" className="form-label">
-              Station ID
+              Station
             </label>
-            <input
+            <select
               id="monitoring-station-id"
               name="stationId"
-              type="text"
-              className="form-control"
-              placeholder="MongoDB ObjectId"
+              className="form-select"
               value={filters.stationId}
               onChange={handleChange}
-              disabled={disabled}
-            />
+              disabled={disabled || stationsLoading}
+              aria-busy={stationsLoading}
+            >
+              <option value="">
+                {stationsLoading ? 'Loading stations…' : 'All stations'}
+              </option>
+              {stations.map((station) => (
+                <option key={station.id} value={station.id}>
+                  {station.stationName}
+                  {station.status ? ` (${station.status})` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="col-12 col-md-6 col-lg-3">
+          <div>
             <label htmlFor="monitoring-prosumer-id" className="form-label">
-              Prosumer ID (NIC)
+              Prosumer NIC
             </label>
             <input
               id="monitoring-prosumer-id"
               name="prosumerId"
               type="text"
               className="form-control"
-              placeholder="NIC"
+              placeholder="e.g. 991234567V"
               value={filters.prosumerId}
               onChange={handleChange}
               disabled={disabled}
             />
           </div>
 
-          <div className="col-12 col-md-6 col-lg-3">
+          <div>
             <label htmlFor="monitoring-search" className="form-label">
               Search
             </label>
@@ -94,14 +105,14 @@ export const ReservationMonitoringFilters = ({
               name="search"
               type="search"
               className="form-control"
-              placeholder="Reservation ID, station ID, slot ID, or NIC"
+              placeholder="Reservation ID, slot ID, or NIC"
               value={filters.search}
               onChange={handleChange}
               disabled={disabled}
             />
           </div>
 
-          <div className="col-12 col-md-6 col-lg-3">
+          <div>
             <label htmlFor="monitoring-start-date" className="form-label">
               Start date
             </label>
@@ -116,7 +127,7 @@ export const ReservationMonitoringFilters = ({
             />
           </div>
 
-          <div className="col-12 col-md-6 col-lg-3">
+          <div>
             <label htmlFor="monitoring-end-date" className="form-label">
               End date
             </label>
@@ -131,7 +142,7 @@ export const ReservationMonitoringFilters = ({
             />
           </div>
 
-          <div className="col-12 col-lg-6 d-flex flex-wrap gap-2 justify-content-lg-end">
+          <div className="col-span-full flex flex-wrap gap-2 justify-end">
             <button type="submit" className="btn btn-primary" disabled={disabled}>
               Apply filters
             </button>

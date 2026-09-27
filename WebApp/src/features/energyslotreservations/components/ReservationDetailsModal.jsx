@@ -1,11 +1,13 @@
 /**
  * ReservationDetailsModal Component
  *
- * Bootstrap modal showing one reservation monitoring record (read-only).
+ * Modal showing one reservation monitoring record (read-only).
  */
 
 import {
+  formatBookingId,
   formatReservationDateTime,
+  getSlotWindowParts,
   getReservationStatusBadgeClass,
 } from '../utils/reservationMonitoringMapper.js';
 import { LoadingIndicator } from '../../../components/common/LoadingIndicator.jsx';
@@ -18,10 +20,17 @@ export const ReservationDetailsModal = ({
   error,
   onClose,
   onRetry,
+  stationNameById = {},
+  slotById = {},
 }) => {
   if (!show) {
     return null;
   }
+
+  const stationName = reservation
+    ? stationNameById[reservation.stationId] || 'Unknown station'
+    : '—';
+  const slotParts = reservation ? getSlotWindowParts(slotById[reservation.slotId]) : null;
 
   return (
     <>
@@ -52,43 +61,55 @@ export const ReservationDetailsModal = ({
 
               {!loading && !error && reservation && (
                 <dl className="row mb-0">
-                  <dt className="col-sm-4">Reservation ID</dt>
+                  <dt className="col-sm-4 fw-bold font-semibold">Booking ID</dt>
+                  <dd className="col-sm-8">{formatBookingId(reservation.id)}</dd>
+
+                  <dt className="col-sm-4 fw-bold font-semibold">Station</dt>
+                  <dd className="col-sm-8">{stationName}</dd>
+
+                  <dt className="col-sm-4 fw-bold font-semibold">Slot window</dt>
                   <dd className="col-sm-8">
-                    <code>{reservation.id}</code>
+                    {slotParts ? (
+                      <div className="leading-relaxed">
+                        <div>
+                          <span className="text-muted">Start:</span> {slotParts.start}
+                        </div>
+                        <div>
+                          <span className="text-muted">End:</span> {slotParts.end}
+                        </div>
+                        {slotParts.capacity ? (
+                          <div>
+                            <span className="text-muted">Capacity:</span> {slotParts.capacity}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      'Unknown slot'
+                    )}
                   </dd>
 
-                  <dt className="col-sm-4">Station ID</dt>
-                  <dd className="col-sm-8">
-                    <code>{reservation.stationId}</code>
-                  </dd>
-
-                  <dt className="col-sm-4">Slot ID</dt>
-                  <dd className="col-sm-8">
-                    <code>{reservation.slotId}</code>
-                  </dd>
-
-                  <dt className="col-sm-4">Prosumer ID</dt>
+                  <dt className="col-sm-4 fw-bold font-semibold">Prosumer NIC</dt>
                   <dd className="col-sm-8">{reservation.prosumerId || '—'}</dd>
 
-                  <dt className="col-sm-4">Reservation date / time</dt>
+                  <dt className="col-sm-4 fw-bold font-semibold">Reservation date / time</dt>
                   <dd className="col-sm-8">
                     {formatReservationDateTime(reservation.reservationDateTime)}
                   </dd>
 
-                  <dt className="col-sm-4">Type</dt>
+                  <dt className="col-sm-4 fw-bold font-semibold">Type</dt>
                   <dd className="col-sm-8">{reservation.reservationType || '—'}</dd>
 
-                  <dt className="col-sm-4">Status</dt>
+                  <dt className="col-sm-4 fw-bold font-semibold">Status</dt>
                   <dd className="col-sm-8">
                     <span className={`badge ${getReservationStatusBadgeClass(reservation.status)}`}>
                       {reservation.status || 'Unknown'}
                     </span>
                   </dd>
 
-                  <dt className="col-sm-4">Created</dt>
+                  <dt className="col-sm-4 fw-bold font-semibold">Created</dt>
                   <dd className="col-sm-8">{formatReservationDateTime(reservation.createdAt)}</dd>
 
-                  <dt className="col-sm-4">Updated</dt>
+                  <dt className="col-sm-4 fw-bold font-semibold">Updated</dt>
                   <dd className="col-sm-8">{formatReservationDateTime(reservation.updatedAt)}</dd>
                 </dl>
               )}
