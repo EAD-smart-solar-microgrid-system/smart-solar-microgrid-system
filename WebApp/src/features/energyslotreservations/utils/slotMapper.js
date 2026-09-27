@@ -167,17 +167,39 @@ export const localDateTimeInputToUtcIso = (localValue) => {
  * @returns {string} Human-readable date/time
  */
 export const formatSlotDateTime = (iso) => {
-  if (!iso) {
+  const parts = formatSlotDateTimeParts(iso);
+  if (!parts) {
     return '—';
+  }
+
+  return `${parts.date}, ${parts.time}`;
+};
+
+/**
+ * Splits a UTC timestamp into date and time parts for line-by-line UI.
+ *
+ * @param {string|null} iso - UTC timestamp
+ * @returns {{ date: string, time: string }|null}
+ */
+export const formatSlotDateTimeParts = (iso) => {
+  if (!iso) {
+    return null;
   }
 
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
-    return '—';
+    return null;
   }
 
-  return date.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  return {
+    date: date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+    time: date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    }),
+  };
 };
