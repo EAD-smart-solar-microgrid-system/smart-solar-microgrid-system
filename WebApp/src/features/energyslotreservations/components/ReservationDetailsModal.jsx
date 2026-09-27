@@ -13,6 +13,13 @@ import {
 import { LoadingIndicator } from '../../../components/common/LoadingIndicator.jsx';
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 
+const DetailRow = ({ label, children }) => (
+  <div className="grid grid-cols-[minmax(9.5rem,11.5rem)_minmax(0,1fr)] gap-x-4 gap-y-1 items-start">
+    <dt className="fw-bold font-semibold text-slate-800">{label}</dt>
+    <dd className="mb-0 min-w-0 text-slate-700">{children}</dd>
+  </div>
+);
+
 export const ReservationDetailsModal = ({
   show,
   reservation,
@@ -60,15 +67,10 @@ export const ReservationDetailsModal = ({
               )}
 
               {!loading && !error && reservation && (
-                <dl className="row mb-0">
-                  <dt className="col-sm-4 fw-bold font-semibold">Booking ID</dt>
-                  <dd className="col-sm-8">{formatBookingId(reservation.id)}</dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Station</dt>
-                  <dd className="col-sm-8">{stationName}</dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Slot window</dt>
-                  <dd className="col-sm-8">
+                <dl className="mb-0 flex flex-col gap-3">
+                  <DetailRow label="Booking ID">{formatBookingId(reservation.id)}</DetailRow>
+                  <DetailRow label="Station">{stationName}</DetailRow>
+                  <DetailRow label="Slot window">
                     {slotParts ? (
                       <div className="leading-relaxed">
                         <div>
@@ -86,31 +88,23 @@ export const ReservationDetailsModal = ({
                     ) : (
                       'Unknown slot'
                     )}
-                  </dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Prosumer NIC</dt>
-                  <dd className="col-sm-8">{reservation.prosumerId || '—'}</dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Reservation date / time</dt>
-                  <dd className="col-sm-8">
+                  </DetailRow>
+                  <DetailRow label="Prosumer NIC">{reservation.prosumerId || '—'}</DetailRow>
+                  <DetailRow label="Reservation date / time">
                     {formatReservationDateTime(reservation.reservationDateTime)}
-                  </dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Type</dt>
-                  <dd className="col-sm-8">{reservation.reservationType || '—'}</dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Status</dt>
-                  <dd className="col-sm-8">
+                  </DetailRow>
+                  <DetailRow label="Type">{reservation.reservationType || '—'}</DetailRow>
+                  <DetailRow label="Status">
                     <span className={`badge ${getReservationStatusBadgeClass(reservation.status)}`}>
                       {reservation.status || 'Unknown'}
                     </span>
-                  </dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Created</dt>
-                  <dd className="col-sm-8">{formatReservationDateTime(reservation.createdAt)}</dd>
-
-                  <dt className="col-sm-4 fw-bold font-semibold">Updated</dt>
-                  <dd className="col-sm-8">{formatReservationDateTime(reservation.updatedAt)}</dd>
+                  </DetailRow>
+                  <DetailRow label="Created">
+                    {formatReservationDateTime(reservation.createdAt)}
+                  </DetailRow>
+                  <DetailRow label="Updated">
+                    {formatReservationDateTime(reservation.updatedAt)}
+                  </DetailRow>
                 </dl>
               )}
             </div>
