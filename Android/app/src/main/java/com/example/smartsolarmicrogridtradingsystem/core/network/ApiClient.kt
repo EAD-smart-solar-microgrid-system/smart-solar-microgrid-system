@@ -115,7 +115,11 @@ object ApiClient {
         } else {
             val base = AppConfig.BASE_URL.trimEnd('/')
             val relative = endpoint.trimStart('/')
-            "$base/$relative"
+            if (base.endsWith("/api", ignoreCase = true) && relative.startsWith("api/", ignoreCase = true)) {
+                "$base/${relative.substring(4)}"
+            } else {
+                "$base/$relative"
+            }
         }
     }
 
