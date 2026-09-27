@@ -10,6 +10,7 @@
     <string name="module_operator_mode">Operator Mode</string>
     <string name="module_status_disabled">Pending individual feature development</string>
     <string name="module_status_ready">Tap to open Member 4 dashboard</string>
+    <string name="module_status_ready_operator">Tap to open Operator Mode</string>
 
     <!-- Member 4 Dashboard & Booking Views -->
     <string name="dashboard_title">Prosumer Dashboard</string>
