@@ -19,3 +19,15 @@ public record LoginResponse(
     string Username,
     WebUserRole Role
 );
+
+public record ProsumerLoginRequest(
+    [Required] string Nic
+);
+
+public record ProsumerLoginResponse(
+    string Token,
+    string Nic,
+    string FullName,
+    string Email,
+    string AccountStatus
+);

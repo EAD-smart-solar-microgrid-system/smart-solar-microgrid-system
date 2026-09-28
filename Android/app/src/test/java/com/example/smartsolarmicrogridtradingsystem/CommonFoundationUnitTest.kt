@@ -67,11 +67,12 @@ class CommonFoundationUnitTest {
     @Test
     fun testDatabaseContract() {
         assertEquals("smart_solar_microgrid.db", DatabaseContract.DATABASE_NAME)
-        assertEquals(1, DatabaseContract.DATABASE_VERSION)
+        assertEquals(2, DatabaseContract.DATABASE_VERSION)
         assertEquals("local_session", DatabaseContract.SessionEntry.TABLE_NAME)
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("CREATE TABLE local_session"))
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("user_identifier TEXT NOT NULL"))
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("role TEXT NOT NULL"))
+        assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("token TEXT NOT NULL"))
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("last_updated INTEGER NOT NULL"))
     }
 

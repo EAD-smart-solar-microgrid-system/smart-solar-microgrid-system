@@ -14,9 +14,7 @@ val mapsApiKey: String = secretsProperties.getProperty("MAPS_API_KEY", "")
 
 android {
     namespace = "com.example.smartsolarmicrogridtradingsystem"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.smartsolarmicrogridtradingsystem"

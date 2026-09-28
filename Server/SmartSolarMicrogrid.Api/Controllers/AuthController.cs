@@ -32,6 +32,26 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("prosumer-login")]
+    public async Task<IActionResult> ProsumerLogin(
+        [FromBody] ProsumerLoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Authenticate solar prosumer by NIC and return JWT token
+        if (request == null || string.IsNullOrWhiteSpace(request.Nic))
+        {
+            return BadRequest(new { message = "NIC is required." });
+        }
+
+        var (succeeded, response, errorMessage) = await _authService.ProsumerLoginAsync(request.Nic, cancellationToken);
+        if (!succeeded)
+        {
+            return BadRequest(new { message = errorMessage });
+        }
+
+        return Ok(response);
+    }
+
     [Authorize]
     [HttpGet("me")]
     public IActionResult GetMe()
