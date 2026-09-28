@@ -69,6 +69,15 @@
             android:name=".feature.reservationqr.ui.QrDispatchActivity"
             android:exported="false" />
         <activity
+            android:name=".feature.prosumeraccount.ui.AppLoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.prosumeraccount.ui.ProsumerRegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.prosumeraccount.ui.ProsumerProfileActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

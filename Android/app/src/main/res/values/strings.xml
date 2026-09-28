@@ -180,4 +180,32 @@
     <string name="operator_clear_action">Clear / Next Scan</string>
     <string name="operator_status_completed">Transfer Completed</string>
     <string name="operator_logout_action">Sign Out</string>
+
+    <string name="app_login_title">Smart Solar Microgrid</string>
+    <string name="app_login_subtitle">Sign in to manage solar power trading</string>
+
+    <!-- Member 1 Prosumer Account & Unified Auth -->
+    <string name="prosumer_register_title">Register Prosumer</string>
+    <string name="prosumer_register_subtitle">Create a new solar prosumer trading profile</string>
+    <string name="prosumer_nic_hint">National Identity Card (NIC)</string>
+    <string name="prosumer_name_hint">Full Name</string>
+    <string name="prosumer_email_hint">Email Address</string>
+    <string name="prosumer_phone_hint">Phone Number (Optional)</string>
+    <string name="prosumer_address_hint">Residential Address (Optional)</string>
+    <string name="prosumer_register_action">Create Account</string>
+    <string name="prosumer_login_title">Prosumer Sign In</string>
+    <string name="prosumer_login_subtitle">Enter your registered NIC to access your account</string>
+    <string name="prosumer_login_action">Sign In</string>
+    <string name="prosumer_profile_title">My Profile</string>
+    <string name="prosumer_profile_subtitle">Manage your personal prosumer details</string>
+    <string name="prosumer_status_label">Account Status: %1$s</string>
+    <string name="prosumer_save_action">Update Profile</string>
+    <string name="prosumer_deactivate_action">Request Account Deactivation</string>
+    <string name="prosumer_deactivate_confirm_title">Request Deactivation?</string>
+    <string name="prosumer_deactivate_confirm_msg">Are you sure you want to request deactivation for your prosumer account? This action cannot be reversed without Backoffice approval.</string>
+    <string name="auth_tab_prosumer">Solar Prosumer</string>
+    <string name="auth_tab_operator">Grid Operator</string>
+    <string name="auth_register_link">New Prosumer? Create an Account</string>
+    <string name="auth_login_link">Already have an account? Sign In</string>
+    <string name="msg_registration_pending">Registration successful! Your account is currently Pending Activation. A Backoffice administrator will review and activate your account before you can log in.</string>
 </resources>

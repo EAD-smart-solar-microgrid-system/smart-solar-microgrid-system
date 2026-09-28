@@ -11,4 +11,8 @@ namespace SmartSolarMicrogrid.Api.Services;
 public interface IAuthService
 {
     Task<LoginResponse?> LoginAsync(LoginRequest request);
+
+    Task<(bool Succeeded, ProsumerLoginResponse? Response, string? ErrorMessage)> ProsumerLoginAsync(
+        string nic,
+        CancellationToken cancellationToken = default);
 }

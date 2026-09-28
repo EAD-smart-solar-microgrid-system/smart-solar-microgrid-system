@@ -23,7 +23,26 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <!-- App Title -->
+            <!-- App Emblem & Title -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#334155"
+                app:cardBackgroundColor="#0F172A">
+
+                <ImageView
+                    android:id="@+id/ivMainEmblem"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/brand_emblem"
+                    android:contentDescription="@string/app_name" />
+            </com.google.android.material.card.MaterialCardView>
+
             <TextView
                 android:id="@+id/tvAppTitle"
                 android:layout_width="match_parent"
@@ -90,9 +109,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:alpha="0.6"
-                android:clickable="false"
-                android:enabled="false"
+                android:clickable="true"
+                android:enabled="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="1dp">
 
@@ -115,7 +135,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="@string/module_status_disabled"
+                        android:text="View and edit profile, request deactivation"
                         android:textColor="?android:attr/textColorSecondary"
                         android:textSize="13sp" />
                 </LinearLayout>
@@ -202,9 +222,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:alpha="0.6"
-                android:clickable="false"
-                android:enabled="false"
+                android:clickable="true"
+                android:enabled="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="1dp">
 

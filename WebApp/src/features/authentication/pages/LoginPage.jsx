@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContextValue.js';
 import { ROUTES } from '../../../constants/routes';
+import { Logo } from '../../../components/common/Logo.jsx';
 
 export const LoginPage = () => {
   const { login } = useContext(AuthContext);
@@ -18,7 +19,7 @@ export const LoginPage = () => {
       if (userData?.role === 'Backoffice') {
         navigate(ROUTES.USER_MANAGEMENT);
       } else {
-        navigate(ROUTES.HOME);
+        navigate(ROUTES.STATIONS);
       }
     } catch {
       setError("Invalid username or password");
@@ -28,9 +29,12 @@ export const LoginPage = () => {
   return (
     <div className="legacy-page flex justify-center py-6 sm:py-10">
       <div className="col-md-4">
-        <div className="card w-full max-w-md">
+        <div className="card w-full max-w-md shadow-md border border-slate-200/80">
           <div className="card-body">
-            <h1 className="mb-4 text-center text-xl font-bold text-slate-950">Sign in</h1>
+            <div className="mb-4 flex flex-col items-center justify-center text-center">
+              <Logo size="lg" showText={false} />
+              <h1 className="mt-3 text-xl font-bold text-slate-900">Sign in to Smart Solar Microgrid</h1>
+            </div>
             {error && <div className="alert alert-danger">{error}</div>}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

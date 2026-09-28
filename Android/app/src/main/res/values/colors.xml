@@ -6,4 +6,9 @@
     <color name="status_approved">#2EA043</color>
     <color name="status_cancelled">#F85149</color>
     <color name="status_completed">#388E3C</color>
+    <color name="color_error">#BA1A1A</color>
+    <color name="solar_orange">#D97706</color>
+    <color name="solar_orange_light">#FFFBEB</color>
+    <color name="color_primary">#D97706</color>
+    <color name="color_primary_container">#FEF3C7</color>
 </resources>
