@@ -1,10 +1,13 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import appConfig from '../../../config/appConfig';
+import { ROUTES } from '../../../constants/routes.js';
 import { AuthContext } from '../../authentication/context/AuthContextValue.js';
 
 export const UserManagementPage = () => {
   const { token } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
+  const [pendingProsumerCount, setPendingProsumerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ username: '', password: '', role: 'GridOperator' });
   const [editingId, setEditingId] = useState(null);
@@ -30,7 +33,21 @@ export const UserManagementPage = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+
+    if (token) {
+      fetch(`${appConfig.apiBaseUrl}/admin/prosumers`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          const pending = Array.isArray(data)
+            ? data.filter((p) => p.status === 'Pending' || p.status === 'PendingActivation').length
+            : 0;
+          setPendingProsumerCount(pending);
+        })
+        .catch(() => {});
+    }
+  }, [fetchUsers, token]);
 
   const cancelEdit = () => {
     setEditingId(null);
@@ -159,6 +176,64 @@ export const UserManagementPage = () => {
             <span className="block text-xl font-black text-slate-700">{operatorCount}</span>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Operators</span>
           </div>
+        </div>
+      </div>
+
+      {/* DIRECTORY SWITCHER TABS & PROSUMER ALERT */}
+      <div className="space-y-3">
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
+          >
+            <span>Staff &amp; Operator Accounts</span>
+            <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{totalCount}</span>
+          </button>
+          <Link
+            to={ROUTES.PROSUMER_MANAGEMENT}
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            <span>Solar Prosumers</span>
+            {pendingProsumerCount > 0 ? (
+              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs text-slate-950 font-black animate-pulse">
+                {pendingProsumerCount} Pending
+              </span>
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">Directory</span>
+            )}
+          </Link>
+        </div>
+
+        {/* Informative Prosumer Activation Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white p-4 sm:p-5 shadow-xs">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold shadow-xs text-xl">
+              ☀️
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900">Mobile Solar Prosumer Registrations</h4>
+                {pendingProsumerCount > 0 && (
+                  <span className="rounded-md bg-amber-200 px-2 py-0.5 text-[11px] font-black text-amber-900">
+                    {pendingProsumerCount} Awaiting Activation
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Prosumers registered via the mobile application are listed in the <strong>Prosumers Directory</strong> for Backoffice review and access activation.
+              </p>
+            </div>
+          </div>
+          <Link
+            to={ROUTES.PROSUMER_MANAGEMENT}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-xs transition hover:bg-amber-400 hover:shadow-sm"
+          >
+            <span>Review &amp; Activate Prosumers</span>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Link>
         </div>
       </div>
 
