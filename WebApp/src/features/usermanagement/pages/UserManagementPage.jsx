@@ -158,13 +158,13 @@ export const UserManagementPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-amber-600">
-            Administration &amp; Governance
+            Admin Settings &amp; Governance
           </span>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            User &amp; Administrator Management
+            Admin Settings — User &amp; Privilege Management
           </h1>
           <p className="mt-1.5 text-sm text-slate-500">
-            Create and govern administrative accounts with full privileges or station grid operator credentials.
+            Create an administrator with full platform control or a station grid operator, and govern system-wide credentials.
           </p>
         </div>
 
@@ -193,7 +193,7 @@ export const UserManagementPage = () => {
             type="button"
             className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
           >
-            <span>Staff &amp; Administrator Accounts</span>
+            <span>Admin Settings &amp; Accounts</span>
             <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{totalCount}</span>
           </button>
           <Link
@@ -267,23 +267,18 @@ export const UserManagementPage = () => {
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 border border-amber-200/70 text-amber-600">
-              {form.role === 'Backoffice' ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-              )}
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
-                {editingId
-                  ? `Edit Account Credentials`
-                  : form.role === 'Backoffice'
-                  ? 'Create New Administrator Account'
-                  : 'Create New Grid Operator Account'}
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800">
+                  Admin Setting
+                </span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                {editingId ? `Edit Account Credentials` : 'Create New Administrator Account'}
               </h2>
               <p className="text-xs text-slate-500">
                 {editingId
@@ -489,10 +484,10 @@ export const UserManagementPage = () => {
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
-              Staff &amp; Administrator Directory
+              Staff &amp; Administrator Directory (Admin Settings)
             </h3>
             <p className="text-xs text-slate-500">
-              All registered administrators and grid operators with platform access.
+              All registered administrators and grid operators configured in system settings.
             </p>
           </div>
           <button

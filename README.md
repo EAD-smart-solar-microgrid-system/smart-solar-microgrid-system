@@ -78,11 +78,11 @@ cd Android
 
 | Role | Username / Identifier | Password | Access Level & Privileges |
 | :--- | :--- | :--- | :--- |
-| **System Administrator** | `admin` | `admin123` | Web Portal (`/login`) — Full Governance, Prosumer Activation, Station Config, and **New Admin/Operator Creation** (`/user-management`) |
+| **System Administrator** | `admin` | `admin123` | Web Portal (`/login`) — Full Governance, Prosumer Activation, Station Config, and **New Admin/Operator Creation** via **Admin Settings** (`/admin-settings` or `/user-management`) |
 | **Grid Operator** | `operator` (or `operator1`) | `operator123` | Web Portal & Mobile Operator Mode — Station Operations, Slot Management & QR Token Verification |
 | **Solar Prosumer** | Registered NIC (e.g., `200012345678`) | N/A (NIC-based auth) | Mobile Prosumer Account (requires Admin activation via `/prosumer-management`) |
 
-> **Note:** Any logged-in Administrator can create additional Administrator accounts with full privileges via the Web Portal under **Users** (`/user-management`).
+> **Note:** Any logged-in Administrator can create additional Administrator accounts with full privileges via the Web Portal under **Admin Settings** (`/admin-settings` or `/user-management`).
 
 ---
 

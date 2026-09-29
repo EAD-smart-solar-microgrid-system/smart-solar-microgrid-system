@@ -8,6 +8,7 @@ export const ROUTES = Object.freeze({
   HOME: '/',
   LOGIN: '/login',
   USER_MANAGEMENT: '/user-management',
+  ADMIN_SETTINGS: '/admin-settings',
   PROSUMER_MANAGEMENT: '/prosumer-management',
   MICROGRID_NODES: '/microgrid-nodes',
   STATIONS: '/stations',

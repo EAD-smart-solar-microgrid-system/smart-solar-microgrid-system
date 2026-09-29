@@ -1,11 +1,14 @@
 import React, { useContext } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants/routes.js';
 import { AuthContext } from '../features/authentication/context/AuthContextValue.js';
 import { Logo } from '../components/common/Logo.jsx';
 
 export const AppLayout = () => {
   const { user, logout } = useContext(AuthContext);
+  const location = useLocation();
+  const isAdminSettingsActive =
+    location.pathname === ROUTES.ADMIN_SETTINGS || location.pathname === ROUTES.USER_MANAGEMENT;
 
   const navLinkClass = ({ isActive }) =>
     `rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
@@ -54,8 +57,15 @@ export const AppLayout = () => {
                   </NavLink>
                 )}
                 {user?.role === 'Backoffice' && (
-                  <NavLink to={ROUTES.USER_MANAGEMENT} className={navLinkClass}>
-                    Users
+                  <NavLink
+                    to={ROUTES.ADMIN_SETTINGS}
+                    className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                      isAdminSettingsActive
+                        ? 'bg-amber-50 text-amber-900 font-bold border border-amber-300'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    Admin Settings
                   </NavLink>
                 )}
                 <div className="ml-2 flex items-center gap-2 border-l border-slate-200 pl-3">

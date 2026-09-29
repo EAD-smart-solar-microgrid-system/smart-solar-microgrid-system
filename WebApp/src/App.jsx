@@ -30,6 +30,7 @@ export function App() {
             <Route index element={<HomePage />} />
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.USER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><UserManagementPage /></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_SETTINGS} element={<ProtectedRoute roleRequired="Backoffice"><UserManagementPage /></ProtectedRoute>} />
             <Route path={ROUTES.PROSUMER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><ProsumerManagementPage /></ProtectedRoute>} />
             <Route path={ROUTES.ENERGY_SLOT_RESERVATIONS} element={<EnergySlotReservationsPage />} />
             <Route path={ROUTES.RESERVATION_MONITORING} element={<ReservationMonitoringPage />} />
