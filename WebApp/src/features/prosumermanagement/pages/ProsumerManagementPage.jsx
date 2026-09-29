@@ -191,12 +191,12 @@ export const ProsumerManagementPage = () => {
       </PageHeader>
 
       {/* DIRECTORY SWITCHER TABS */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         <Link
-          to={ROUTES.USER_MANAGEMENT}
+          to={ROUTES.ADMIN_SETTINGS}
           className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
         >
-          <span>Staff &amp; Operator Accounts</span>
+          <span>Admin Settings &amp; Accounts</span>
         </Link>
         <button
           type="button"
@@ -205,6 +205,15 @@ export const ProsumerManagementPage = () => {
           <span>Solar Prosumers</span>
           <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{prosumers.length}</span>
         </button>
+        <Link
+          to={`${ROUTES.ADMIN_SETTINGS}?action=create`}
+          className="flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50/70 px-4 py-2 text-sm font-bold text-amber-900 transition hover:bg-amber-100"
+        >
+          <svg className="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Create New Administrator Account</span>
+        </Link>
       </div>
 
       {/* Success / Feedback Alert */}

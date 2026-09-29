@@ -13,6 +13,12 @@ export const UserManagementPage = () => {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined' && (window.location.search.includes('action=create') || window.location.hash === '#create')) {
+      return 'create';
+    }
+    return 'all';
+  });
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -188,14 +194,24 @@ export const UserManagementPage = () => {
       {/* DIRECTORY SWITCHER TABS & PROSUMER ALERT */}
       <div className="space-y-3">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
           <button
             type="button"
-            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
+            onClick={() => setActiveTab('directory')}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition shadow-xs ${
+              activeTab === 'directory' || activeTab === 'all'
+                ? 'bg-slate-900 text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
           >
             <span>Admin Settings &amp; Accounts</span>
-            <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{totalCount}</span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+              activeTab === 'directory' || activeTab === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {totalCount}
+            </span>
           </button>
+
           <Link
             to={ROUTES.PROSUMER_MANAGEMENT}
             className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
@@ -209,6 +225,25 @@ export const UserManagementPage = () => {
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">Directory</span>
             )}
           </Link>
+
+          {/* ADDED: Create New Administrator Account section button next to Solar Prosumers */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('create');
+              document.getElementById('create-admin-form-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition shadow-xs ${
+              activeTab === 'create'
+                ? 'bg-amber-500 text-slate-950 font-black ring-2 ring-amber-500/30'
+                : 'border border-amber-300/80 bg-amber-50/70 text-amber-900 hover:bg-amber-100'
+            }`}
+          >
+            <svg className="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Create New Administrator Account</span>
+          </button>
         </div>
 
         {/* Informative Prosumer Activation Banner */}
@@ -263,7 +298,12 @@ export const UserManagementPage = () => {
       )}
 
       {/* CREATE / EDIT USER CARD */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div
+        id="create-admin-form-section"
+        className={`rounded-2xl border bg-white p-6 shadow-sm transition-all duration-300 ${
+          activeTab === 'create' ? 'border-amber-400 ring-4 ring-amber-400/20 shadow-md' : 'border-slate-200'
+        }`}
+      >
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 border border-amber-200/70 text-amber-600">
