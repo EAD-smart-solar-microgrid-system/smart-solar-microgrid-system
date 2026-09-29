@@ -132,6 +132,24 @@ The current implementation resolves the authenticated Prosumer NIC through `Http
 
 Profile updates can change only full name, email, phone number, and address. NIC, account status, and timestamps remain server-controlled. A deactivation request changes `Active` to `DeactivationRequested`; it does not delete the document or immediately set `Deactivated`. Pending activation and already deactivated accounts cannot request deactivation. Future activation approval and reactivation are Backoffice responsibilities and are not implemented here.
 
+## Member 3 - Prosumer Account Control
+
+Prosumer profiles are stored in the `UsersDetail` MongoDB collection. NIC is normalized by trimming whitespace and converting to uppercase, then stored as the MongoDB `_id`. This makes NIC the primary business identifier and gives the database uniqueness enforcement without a separate index.
+
+The Prosumer model contains `Nic`, `FullName`, `Email`, optional `PhoneNumber`, optional `Address`, `AccountStatus`, `CreatedAt`, and `UpdatedAt`. It does not store passwords, JWTs, or session tokens.
+
+The public registration endpoint is `POST /api/prosumers/register`. New profiles receive the server-controlled `PendingActivation` status and UTC timestamps. Duplicate NIC values return `409 Conflict`; the client cannot choose account status or timestamps.
+
+Authenticated self-service routes are:
+
+- `GET /api/prosumers/me`
+- `PUT /api/prosumers/me`
+- `POST /api/prosumers/me/deactivation-request`
+
+The current implementation deliberately returns `401 Unauthorized` for these routes until Member 1 supplies the authenticated Prosumer NIC through `ICurrentProsumerAccessor`. It never trusts a NIC from a query string or request body.
+
+Profile updates can change only full name, email, phone number, and address. NIC, account status, and timestamps remain server-controlled. A deactivation request changes `Active` to `DeactivationRequested`; it does not delete the document or immediately set `Deactivated`. Pending activation and already deactivated accounts cannot request deactivation. Future activation approval and reactivation are Backoffice responsibilities and are not implemented here.
+
 ## Initial API infrastructure
 
 - `GET /api/health` returns HTTP 200 with the API status.

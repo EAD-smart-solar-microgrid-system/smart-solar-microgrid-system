@@ -63,6 +63,7 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
     };
 
     return new MongoClient(mongoClientSettings);
+    return new MongoClient(settings.ConnectionString);
 });
 
 builder.Services.AddSingleton<IMongoDatabase>(serviceProvider =>
@@ -94,6 +95,8 @@ builder.Services.AddScoped<INearbyStationsService, NearbyStationsService>();
 builder.Services.AddScoped<IActiveReservationChecker, ActiveReservationChecker>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentProsumerAccessor, HttpCurrentProsumerAccessor>();
+builder.Services.AddSingleton<IActiveReservationChecker, UnavailableActiveReservationChecker>();
+builder.Services.AddSingleton<ICurrentProsumerAccessor, UnavailableCurrentProsumerAccessor>();
 
 builder.Services.AddScoped<IWebUserRepository, WebUserRepository>();
 builder.Services.AddScoped<IWebUserService, WebUserService>();

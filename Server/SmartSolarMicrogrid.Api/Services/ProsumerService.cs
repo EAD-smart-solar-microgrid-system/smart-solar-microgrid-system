@@ -220,7 +220,7 @@ public sealed class ProsumerService : IProsumerService
         return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 
-    public static string NormalizeNic(string? nic)
+    private async Task<string?> GetCurrentNicAsync(CancellationToken cancellationToken)
     {
         // Normalize the primary business identifier consistently before repository calls.
         return string.IsNullOrWhiteSpace(nic)
@@ -258,6 +258,32 @@ public sealed class ProsumerService : IProsumerService
     {
         // Apply registration validation without inventing a strict national NIC format.
         if (string.IsNullOrWhiteSpace(nic))
+        // Normalize the identity supplied by the future authentication integration.
+        return NormalizeNic(await _currentProsumerAccessor
+            .GetCurrentProsumerNicAsync(cancellationToken));
+    }
+
+    private static string? NormalizeNic(string? nic)
+    {
+        // Normalize the primary business identifier consistently before repository calls.
+        return string.IsNullOrWhiteSpace(nic)
+            ? null
+            : nic.Trim().ToUpperInvariant();
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        // Trim optional profile text and represent whitespace-only input as absent.
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string? ValidateRegistration(
+        string? nic,
+        string? fullName,
+        string? email)
+    {
+        // Apply registration validation without inventing a strict national NIC format.
+        if (nic is null)
         {
             return "Nic is required.";
         }
