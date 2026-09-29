@@ -18,10 +18,16 @@ class AppDatabaseHelper private constructor(context: Context) : SQLiteOpenHelper
     }
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(DatabaseContract.SessionEntry.SQL_CREATE_TABLE)
+        db.execSQL(DatabaseContract.ProsumerProfileEntry.SQL_CREATE_TABLE)
     }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             db.execSQL("ALTER TABLE ${DatabaseContract.SessionEntry.TABLE_NAME} ADD COLUMN ${DatabaseContract.SessionEntry.COLUMN_TOKEN} TEXT NOT NULL DEFAULT ''")
         }
+        db.execSQL(DatabaseContract.ProsumerProfileEntry.SQL_CREATE_TABLE)
+    }
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        db.execSQL(DatabaseContract.ProsumerProfileEntry.SQL_CREATE_TABLE)
     }
 }

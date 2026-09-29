@@ -47,7 +47,7 @@ class ReservationListActivity : BaseActivity() {
 
         val root = findViewById<View>(R.id.reservationListRoot)
         if (root != null) {
-            setupSystemBarPadding(root)
+            setupSystemBarPadding(root, applyBottomPadding = false)
         }
 
         sessionManager = SessionManager(this)
@@ -89,6 +89,9 @@ class ReservationListActivity : BaseActivity() {
             }
             createReservationLauncher.launch(intent)
         }
+
+        // Setup production bottom navigation shell
+        BottomNavHelper.setup(this, BottomNavHelper.NavTab.RESERVATIONS)
     }
 
     override fun onResume() {

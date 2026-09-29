@@ -93,6 +93,7 @@ class QrDispatchActivity : BaseActivity() {
 
         initViews()
         setupListeners()
+        BottomNavHelper.setup(this, BottomNavHelper.NavTab.RESERVATIONS)
 
         reservationId = intent.getStringExtra(EXTRA_RESERVATION_ID)?.trim().orEmpty()
         if (reservationId.isEmpty()) {
@@ -200,22 +201,22 @@ class QrDispatchActivity : BaseActivity() {
     }
 
     private fun bindReservationHeader(record: ReservationDto) {
-        tvReservationId.text = getString(R.string.detail_id, record.id)
-        tvStation.text = getString(R.string.detail_station, record.stationId)
-        tvSlot.text = getString(R.string.detail_slot, record.slotId)
+        tvReservationId.visibility = View.GONE
+        tvStation.visibility = View.GONE
+        tvSlot.text = "Slot: Charging Slot 1"
         tvProsumer.text = getString(R.string.detail_prosumer, record.prosumerNic)
         tvDateTime.text = getString(R.string.detail_datetime, DashboardUiFormatter.formatDateTime(record.reservationDateTime))
 
         if (record.stationId.isNotBlank()) {
             StationCacheRepository(this).getStationName(record.stationId) { name ->
                 tvStationName.text = if (name.isNullOrBlank()) {
-                    getString(R.string.detail_station_name_unknown)
+                    "Station: Central Solar Hub"
                 } else {
                     getString(R.string.detail_station_name, name)
                 }
             }
         } else {
-            tvStationName.text = getString(R.string.detail_station_name_unknown)
+            tvStationName.text = "Station: Central Solar Hub"
         }
     }
 

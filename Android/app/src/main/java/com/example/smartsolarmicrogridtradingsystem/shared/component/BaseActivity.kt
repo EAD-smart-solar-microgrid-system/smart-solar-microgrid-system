@@ -18,6 +18,9 @@ import androidx.core.view.WindowInsetsCompat
 abstract class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+        )
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
     }
@@ -26,11 +29,17 @@ abstract class BaseActivity : AppCompatActivity() {
      * Convenience method to configure standard window insets on a designated root view.
      *
      * @param rootView The root layout view that should receive system bar padding.
+     * @param applyBottomPadding Whether to apply bottom system bar padding. Defaults to true.
      */
-    protected fun setupSystemBarPadding(rootView: View) {
+    protected fun setupSystemBarPadding(rootView: View, applyBottomPadding: Boolean = true) {
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            view.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                if (applyBottomPadding) systemBars.bottom else 0
+            )
             insets
         }
     }
