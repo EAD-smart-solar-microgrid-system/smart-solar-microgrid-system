@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:background="@color/home_bg"
     tools:context=".feature.prosumeraccount.ui.AppLoginActivity">
 
     <LinearLayout
@@ -26,10 +27,10 @@
                 android:layout_width="104dp"
                 android:layout_height="104dp"
                 app:cardCornerRadius="24dp"
-                app:cardElevation="4dp"
-                app:strokeWidth="1.5dp"
-                app:strokeColor="#334155"
-                app:cardBackgroundColor="#0F172A">
+                app:cardElevation="2dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/home_card_stroke"
+                app:cardBackgroundColor="@color/home_card_bg">
 
                 <ImageView
                     android:id="@+id/ivBrandLogo"

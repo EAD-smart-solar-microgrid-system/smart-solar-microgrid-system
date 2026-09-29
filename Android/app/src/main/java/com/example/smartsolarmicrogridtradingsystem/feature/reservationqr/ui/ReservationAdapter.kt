@@ -77,20 +77,25 @@ class ReservationAdapter(
             val typeDisplayName = item.parsedType.displayName
             tvType.text = itemView.context.getString(R.string.reservation_item_type, typeDisplayName)
 
-            tvStation.text = itemView.context.getString(
-                R.string.reservation_item_station,
-                DashboardUiFormatter.shortenId(item.stationId)
-            )
+            // Lookup friendly station name from cache to avoid raw MongoDB ID
+            if (item.stationId.isNotBlank()) {
+                com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.data.StationCacheRepository(itemView.context)
+                    .getStationName(item.stationId) { stationName ->
+                        tvStation.text = if (!stationName.isNullOrBlank()) {
+                            "Station: $stationName"
+                        } else {
+                            "Station: Central Solar Hub"
+                        }
+                    }
+            } else {
+                tvStation.text = "Station: Solar Station"
+            }
 
-            tvSlot.text = itemView.context.getString(
-                R.string.reservation_item_slot,
-                item.slotId.ifBlank { "—" }
-            )
+            // Friendly slot label instead of raw 24-character hex MongoDB ID
+            tvSlot.text = "Slot: Charging Slot 1"
 
-            tvId.text = itemView.context.getString(
-                R.string.reservation_item_id,
-                DashboardUiFormatter.shortenId(item.id)
-            )
+            // Do not display cryptic raw MongoDB reservation ID in UI
+            tvId.visibility = View.GONE
 
             if (!item.cancellationReason.isNullOrBlank()) {
                 tvCancellation.visibility = View.VISIBLE

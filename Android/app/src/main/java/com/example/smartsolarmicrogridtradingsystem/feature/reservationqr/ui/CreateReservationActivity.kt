@@ -101,6 +101,9 @@ class CreateReservationActivity : BaseActivity() {
         setupListeners()
         populateInitialNic()
         loadStations()
+
+        // Setup production bottom navigation shell
+        BottomNavHelper.setup(this, BottomNavHelper.NavTab.RESERVATIONS)
     }
 
     private fun initViews() {
@@ -179,8 +182,7 @@ class CreateReservationActivity : BaseActivity() {
                     tilStation.isEnabled = true
 
                     val stationLabels: List<String> = activeStations.map { station: StationReferenceDto ->
-                        val name = station.name.ifBlank { "Station " + DashboardUiFormatter.shortenId(station.id) }
-                        "$name (${DashboardUiFormatter.shortenId(station.id)})"
+                        station.name.ifBlank { "Solar Station" }
                     }
 
                     val adapter = ArrayAdapter(
@@ -237,9 +239,9 @@ class CreateReservationActivity : BaseActivity() {
                     tilSlot.hint = getString(R.string.hint_slot)
                     tilSlot.isEnabled = true
 
-                    val slotLabels: List<String> = selectableSlots.map { slot: StationSlotDto ->
+                    val slotLabels: List<String> = selectableSlots.mapIndexed { idx, slot: StationSlotDto ->
                         val startFormatted = DashboardUiFormatter.formatDateTime(slot.slotStartUtc)
-                        "Slot ${DashboardUiFormatter.shortenId(slot.id)} · $startFormatted (${slot.capacityKw} kW)"
+                        "Slot ${idx + 1} · $startFormatted (${slot.capacityKw} kW)"
                     }
 
                     val adapter = ArrayAdapter(

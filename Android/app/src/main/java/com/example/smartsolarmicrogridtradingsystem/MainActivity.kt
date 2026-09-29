@@ -45,33 +45,60 @@ class MainActivity : BaseActivity() {
 
         val rootLayout: View? = findViewById(R.id.main)
         if (rootLayout != null) {
-            setupSystemBarPadding(rootLayout)
+            setupSystemBarPadding(rootLayout, applyBottomPadding = false)
         }
 
-        val tvAppSubtitle = findViewById<TextView>(R.id.tvAppSubtitle)
+        val tvAppSubtitle = findViewById<TextView?>(R.id.tvAppSubtitle)
         val userNic = sessionManager.getUserIdentifier()
-        if (!userNic.isNullOrBlank()) {
-            tvAppSubtitle.text = "Logged in as Prosumer: $userNic"
+        if (!userNic.isNullOrBlank() && tvAppSubtitle != null) {
+            tvAppSubtitle.text = "Logged in: $userNic"
         }
 
-        val prosumerCard = findViewById<MaterialCardView>(R.id.cardProsumerAccount)
-        prosumerCard.setOnClickListener {
-            startActivity(Intent(this, ProsumerProfileActivity::class.java))
-        }
-
+        // Module 1: Reservation & QR Dispatch (Member 2)
         val reservationCard = findViewById<MaterialCardView>(R.id.cardReservationQr)
-        reservationCard.setOnClickListener {
+        val btnLaunchReservation = findViewById<View?>(R.id.btnLaunchReservation)
+        val openReservation = {
             startActivity(Intent(this, ReservationListActivity::class.java))
         }
+        reservationCard.setOnClickListener { openReservation() }
+        btnLaunchReservation?.setOnClickListener { openReservation() }
 
+        // Module 2: Dashboard & Maps (Member 4)
         val dashboardCard = findViewById<MaterialCardView>(R.id.cardDashboardMaps)
-        dashboardCard.setOnClickListener {
+        val btnLaunchDashboard = findViewById<View?>(R.id.btnLaunchDashboard)
+        val openDashboard = {
             startActivity(Intent(this, DashboardActivity::class.java))
         }
+        dashboardCard.setOnClickListener { openDashboard() }
+        btnLaunchDashboard?.setOnClickListener { openDashboard() }
 
+        // Module 3: Operator Mode (Member 1)
         val operatorCard = findViewById<MaterialCardView>(R.id.cardOperatorMode)
-        operatorCard.setOnClickListener {
+        val btnLaunchOperator = findViewById<View?>(R.id.btnLaunchOperator)
+        val openOperator = {
             startActivity(Intent(this, OperatorLoginActivity::class.java))
         }
+        operatorCard.setOnClickListener { openOperator() }
+        btnLaunchOperator?.setOnClickListener { openOperator() }
+
+        // Module 4: Prosumer Account Control (Member 3)
+        val prosumerCard = findViewById<MaterialCardView>(R.id.cardProsumerAccount)
+        val btnLaunchProsumer = findViewById<View?>(R.id.btnLaunchProsumer)
+        val openProsumer = {
+            startActivity(
+                Intent(
+                    this,
+                    com.example.smartsolarmicrogridtradingsystem.feature.prosumeraccount.ui.ProsumerProfileActivity::class.java
+                )
+            )
+        }
+        prosumerCard.setOnClickListener { openProsumer() }
+        btnLaunchProsumer?.setOnClickListener { openProsumer() }
+
+        // Setup production bottom navigation shell
+        com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.ui.BottomNavHelper.setup(
+            this,
+            com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.ui.BottomNavHelper.NavTab.HOME
+        )
     }
 }

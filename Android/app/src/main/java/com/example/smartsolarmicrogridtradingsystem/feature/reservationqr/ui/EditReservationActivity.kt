@@ -98,6 +98,7 @@ class EditReservationActivity : BaseActivity() {
 
         initViews()
         setupListeners()
+        BottomNavHelper.setup(this, BottomNavHelper.NavTab.RESERVATIONS)
 
         reservationId = intent.getStringExtra(EXTRA_RESERVATION_ID)?.trim().orEmpty()
         if (reservationId.isEmpty()) {
@@ -178,7 +179,15 @@ class EditReservationActivity : BaseActivity() {
 
     private fun bindExistingRecord(record: ReservationDto) {
         etProsumerNic.setText(record.prosumerNic)
-        etStation.setText(DashboardUiFormatter.shortenId(record.stationId))
+        // Lookup friendly station name
+        if (record.stationId.isNotBlank()) {
+            com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.data.StationCacheRepository(this)
+                .getStationName(record.stationId) { name ->
+                    etStation.setText(name ?: "Central Solar Hub")
+                }
+        } else {
+            etStation.setText("Central Solar Hub")
+        }
         selectedSlotId = record.slotId
 
         // Check if modification is permitted under the 12-hour rule
@@ -215,7 +224,7 @@ class EditReservationActivity : BaseActivity() {
         }
 
         // Set initial slot display
-        actvSlot.setText("Slot ${DashboardUiFormatter.shortenId(record.slotId)} (Current)", false)
+        actvSlot.setText("Slot 1 (Current)", false)
 
         loadAvailableSlots(record.stationId, record.slotId)
     }
@@ -238,13 +247,13 @@ class EditReservationActivity : BaseActivity() {
                     val slotIdList = mutableListOf<String>()
 
                     // Always keep existing slot as an option
-                    slotLabels.add("Slot ${DashboardUiFormatter.shortenId(currentSlotId)} (Current)")
+                    slotLabels.add("Slot 1 (Current)")
                     slotIdList.add(currentSlotId)
 
-                    for (slot in selectableSlots) {
+                    for ((idx, slot) in selectableSlots.withIndex()) {
                         if (slot.id != currentSlotId) {
                             val startFormatted = DashboardUiFormatter.formatDateTime(slot.slotStartUtc)
-                            slotLabels.add("Slot ${DashboardUiFormatter.shortenId(slot.id)} · $startFormatted (${slot.capacityKw} kW)")
+                            slotLabels.add("Slot ${idx + 2} · $startFormatted (${slot.capacityKw} kW)")
                             slotIdList.add(slot.id)
                         }
                     }

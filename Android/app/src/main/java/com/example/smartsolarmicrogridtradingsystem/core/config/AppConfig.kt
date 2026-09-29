@@ -16,7 +16,7 @@ object AppConfig {
      * Base URL for the central C# Web API endpoints.
      * Default targets the Android emulator talking to a local Kestrel API on port 5278.
      */
-    const val BASE_URL: String = "http://10.0.2.2:5278/api/"
+    const val BASE_URL: String = "http://127.0.0.1:5278/api/"
 
     /**
      * Connection timeout in milliseconds for HTTP connections.
