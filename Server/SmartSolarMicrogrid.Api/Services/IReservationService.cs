@@ -25,6 +25,10 @@ public interface IReservationService
         CancelReservationRequest? request,
         CancellationToken cancellationToken = default);
 
+    Task<ReservationServiceResult<ReservationResponse>> ApproveAsync(
+        string id,
+        CancellationToken cancellationToken = default);
+
     Task<ReservationServiceResult<QrTokenResponse>> GenerateQrTokenAsync(
         string id,
         CancellationToken cancellationToken = default);

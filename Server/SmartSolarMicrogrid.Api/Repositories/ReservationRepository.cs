@@ -91,6 +91,30 @@ public sealed class ReservationRepository : IReservationRepository
             cancellationToken);
     }
 
+    public async Task<EnergyReservation?> ApproveIfPendingAsync(
+        string id,
+        DateTime updatedAt,
+        CancellationToken cancellationToken = default)
+    {
+        // Approve only when the document is still Pending so concurrent requests cannot both succeed.
+        var filter = Builders<EnergyReservation>.Filter.And(
+            Builders<EnergyReservation>.Filter.Eq(reservation => reservation.Id, id),
+            Builders<EnergyReservation>.Filter.Eq(reservation => reservation.Status, ReservationStatus.Pending));
+
+        var update = Builders<EnergyReservation>.Update
+            .Set(reservation => reservation.Status, ReservationStatus.Approved)
+            .Set(reservation => reservation.UpdatedAt, updatedAt);
+
+        return await _reservations.FindOneAndUpdateAsync(
+            filter,
+            update,
+            new FindOneAndUpdateOptions<EnergyReservation>
+            {
+                ReturnDocument = ReturnDocument.After
+            },
+            cancellationToken);
+    }
+
     public async Task<EnergyReservation?> SaveQrTokenAsync(
         string id,
         string qrToken,

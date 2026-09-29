@@ -36,6 +36,11 @@ public interface IReservationRepository
         DateTime updatedAt,
         CancellationToken cancellationToken = default);
 
+    Task<EnergyReservation?> ApproveIfPendingAsync(
+        string id,
+        DateTime updatedAt,
+        CancellationToken cancellationToken = default);
+
     Task<EnergyReservation?> SaveQrTokenAsync(
         string id,
         string qrToken,
