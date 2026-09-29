@@ -9,7 +9,7 @@ export const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
   const [pendingProsumerCount, setPendingProsumerCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ username: '', password: '', role: 'GridOperator' });
+  const [form, setForm] = useState({ username: '', password: '', role: 'Backoffice' });
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -51,7 +51,7 @@ export const UserManagementPage = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setForm({ username: '', password: '', role: 'GridOperator' });
+    setForm({ username: '', password: '', role: 'Backoffice' });
     setError('');
   };
 
@@ -68,7 +68,8 @@ export const UserManagementPage = () => {
           body: JSON.stringify({ username: form.username, role: form.role }),
         });
         if (response.ok) {
-          setSuccessMsg(`User '${form.username}' updated successfully!`);
+          const roleTitle = form.role === 'Backoffice' ? 'Administrator' : 'Grid Operator';
+          setSuccessMsg(`User '${form.username}' updated successfully as ${roleTitle}!`);
           cancelEdit();
           fetchUsers();
         } else {
@@ -85,8 +86,9 @@ export const UserManagementPage = () => {
           body: JSON.stringify(form),
         });
         if (response.ok) {
-          setSuccessMsg(`User '${form.username}' created successfully!`);
-          setForm({ username: '', password: '', role: 'GridOperator' });
+          const roleTitle = form.role === 'Backoffice' ? 'Administrator (Full Admin Privileges)' : 'Grid Operator';
+          setSuccessMsg(`New ${roleTitle} account '${form.username}' created successfully!`);
+          setForm({ username: '', password: '', role: 'Backoffice' });
           fetchUsers();
         } else {
           const errData = await response.json().catch(() => null);
@@ -102,8 +104,12 @@ export const UserManagementPage = () => {
     return status === 0 || status === '0' || status === 'Active';
   };
 
+  const isBackofficeRole = (role) => {
+    return role === 0 || role === '0' || role === 'Backoffice';
+  };
+
   const getRoleLabel = (role) => {
-    if (role === 0 || role === '0' || role === 'Backoffice') return 'Backoffice Admin';
+    if (isBackofficeRole(role)) return 'Administrator';
     if (role === 1 || role === '1' || role === 'GridOperator') return 'Grid Operator';
     return String(role);
   };
@@ -134,7 +140,7 @@ export const UserManagementPage = () => {
     setForm({
       username: user.username,
       password: '',
-      role: user.role === 0 || user.role === '0' || user.role === 'Backoffice' ? 'Backoffice' : 'GridOperator',
+      role: isBackofficeRole(user.role) ? 'Backoffice' : 'GridOperator',
     });
     setError('');
     setSuccessMsg('');
@@ -143,7 +149,7 @@ export const UserManagementPage = () => {
 
   // Quick stats
   const totalCount = users.length;
-  const backofficeCount = users.filter((u) => u.role === 0 || u.role === '0' || u.role === 'Backoffice').length;
+  const adminCount = users.filter((u) => isBackofficeRole(u.role)).length;
   const operatorCount = users.filter((u) => u.role === 1 || u.role === '1' || u.role === 'GridOperator').length;
 
   return (
@@ -152,13 +158,13 @@ export const UserManagementPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-amber-600">
-            Administration & Governance
+            Administration &amp; Governance
           </span>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            User Management
+            User &amp; Administrator Management
           </h1>
           <p className="mt-1.5 text-sm text-slate-500">
-            Manage administrative backoffice staff and station grid operator access credentials.
+            Create and govern administrative accounts with full privileges or station grid operator credentials.
           </p>
         </div>
 
@@ -168,9 +174,9 @@ export const UserManagementPage = () => {
             <span className="block text-xl font-black text-slate-900">{totalCount}</span>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Users</span>
           </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3.5 py-2 text-center shadow-xs">
-            <span className="block text-xl font-black text-amber-700">{backofficeCount}</span>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">Backoffice</span>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2 text-center shadow-xs">
+            <span className="block text-xl font-black text-amber-700">{adminCount}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">Administrators</span>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-center shadow-xs">
             <span className="block text-xl font-black text-slate-700">{operatorCount}</span>
@@ -187,7 +193,7 @@ export const UserManagementPage = () => {
             type="button"
             className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
           >
-            <span>Staff &amp; Operator Accounts</span>
+            <span>Staff &amp; Administrator Accounts</span>
             <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{totalCount}</span>
           </button>
           <Link
@@ -221,7 +227,7 @@ export const UserManagementPage = () => {
                 )}
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
-                Prosumers registered via the mobile application are listed in the <strong>Prosumers Directory</strong> for Backoffice review and access activation.
+                Prosumers registered via the mobile application appear in the <strong>Prosumers Directory</strong> for Administrator review and account activation.
               </p>
             </div>
           </div>
@@ -261,18 +267,28 @@ export const UserManagementPage = () => {
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 border border-amber-200/70 text-amber-600">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
+              {form.role === 'Backoffice' ? (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              )}
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                {editingId ? `Edit User Credentials` : 'Create New System User'}
+                {editingId
+                  ? `Edit Account Credentials`
+                  : form.role === 'Backoffice'
+                  ? 'Create New Administrator Account'
+                  : 'Create New Grid Operator Account'}
               </h2>
               <p className="text-xs text-slate-500">
                 {editingId
-                  ? `Updating profile and role for '${form.username}'`
-                  : 'Add a new backoffice administrator or station grid operator.'}
+                  ? `Updating profile and role permissions for '${form.username}'`
+                  : 'Create an administrator with full platform control or a station grid operator.'}
               </p>
             </div>
           </div>
@@ -287,17 +303,110 @@ export const UserManagementPage = () => {
           )}
         </div>
 
-        <form onSubmit={handleCreateOrUpdate} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <form onSubmit={handleCreateOrUpdate} className="space-y-6">
+          {/* STEP 1: SELECT PRIVILEGE & ROLE */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2.5">
+              Account Privilege Level &amp; Role <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {/* Card 1: Administrator (Full Admin Privileges / Backoffice) */}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, role: 'Backoffice' })}
+                className={`relative flex flex-col items-start rounded-2xl border p-4 text-left transition ${
+                  form.role === 'Backoffice'
+                    ? 'border-amber-500 bg-gradient-to-br from-amber-50/70 via-orange-50/30 to-white ring-2 ring-amber-500/20 shadow-xs'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                }`}
+              >
+                <div className="flex w-full items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-800">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </span>
+                    <span className="text-sm font-extrabold text-slate-900">Administrator</span>
+                  </div>
+                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-black text-amber-800">
+                    Full Admin Privileges
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mb-2.5">
+                  Complete governance level. Admins can create additional admins, manage operators, activate prosumers, and configure stations.
+                </p>
+                <div className="space-y-1 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-amber-600 font-bold">✓</span>
+                    <span>Create &amp; manage other Admin accounts</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-amber-600 font-bold">✓</span>
+                    <span>Review &amp; activate mobile Solar Prosumers</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-amber-600 font-bold">✓</span>
+                    <span>Full access to stations, slots &amp; audit trails</span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Card 2: Grid Operator */}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, role: 'GridOperator' })}
+                className={`relative flex flex-col items-start rounded-2xl border p-4 text-left transition ${
+                  form.role === 'GridOperator'
+                    ? 'border-slate-800 bg-gradient-to-br from-slate-50 via-slate-100/50 to-white ring-2 ring-slate-800/10 shadow-xs'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                }`}
+              >
+                <div className="flex w-full items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-800">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </span>
+                    <span className="text-sm font-extrabold text-slate-900">Grid Operator</span>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-700">
+                    Station Operations
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mb-2.5">
+                  Operational level. Operators manage physical battery swapping stations, monitor charging slots, and verify prosumer QR tokens.
+                </p>
+                <div className="space-y-1 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-700 font-bold">✓</span>
+                    <span>Scan &amp; verify Prosumer QR dispatch tokens</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-700 font-bold">✓</span>
+                    <span>Manage physical station battery charging slots</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-700 font-bold">✓</span>
+                    <span>Monitor live energy dispatch &amp; reservations</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* STEP 2: CREDENTIALS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Username */}
             <div>
               <label htmlFor="user-username" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Username
+                Username <span className="text-rose-500">*</span>
               </label>
               <input
                 id="user-username"
                 type="text"
-                placeholder="e.g. john_operator"
+                placeholder={form.role === 'Backoffice' ? 'e.g. admin_lead, sarah_gov' : 'e.g. operator_colombo, john_ops'}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
@@ -308,12 +417,12 @@ export const UserManagementPage = () => {
             {/* Password */}
             <div>
               <label htmlFor="user-password" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                {editingId ? 'Password (Leave blank to keep)' : 'Password'}
+                {editingId ? 'Password (Leave blank to keep unchanged)' : 'Initial Password'} <span className="text-rose-500">*</span>
               </label>
               <input
                 id="user-password"
                 type="password"
-                placeholder={editingId ? '••••••••' : 'Enter password'}
+                placeholder={editingId ? '••••••••' : 'Enter secure password'}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -321,25 +430,25 @@ export const UserManagementPage = () => {
                 disabled={Boolean(editingId)}
               />
             </div>
+          </div>
 
-            {/* Role */}
+          {/* ROLE CONFIRMATION HINT */}
+          <div className={`flex items-start gap-2.5 rounded-xl p-3 text-xs ${
+            form.role === 'Backoffice'
+              ? 'border border-amber-200 bg-amber-50/60 text-amber-900'
+              : 'border border-slate-200 bg-slate-50 text-slate-700'
+          }`}>
+            <span className="text-base shrink-0">{form.role === 'Backoffice' ? '🛡️' : '⚡'}</span>
             <div>
-              <label htmlFor="user-role" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Assigned Role
-              </label>
-              <select
-                id="user-role"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-900 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition"
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="GridOperator">Grid Operator (Station & Slots)</option>
-                <option value="Backoffice">Backoffice (Full Governance)</option>
-              </select>
+              <strong>{form.role === 'Backoffice' ? 'Creating Administrator Account:' : 'Creating Grid Operator Account:'}</strong>{' '}
+              {form.role === 'Backoffice'
+                ? 'This user will be assigned the Backoffice role with full admin privileges, including the authority to create and manage other admin accounts and activate prosumers.'
+                : 'This user will be assigned the GridOperator role with operational permissions to manage battery charging stations and verify tokens.'}
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          {/* ACTION BUTTONS */}
+          <div className="flex items-center justify-end gap-3 pt-1">
             {editingId && (
               <button
                 type="button"
@@ -351,9 +460,25 @@ export const UserManagementPage = () => {
             )}
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-slate-950 shadow-xs transition hover:bg-amber-400 hover:shadow-sm"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-slate-950 shadow-xs transition hover:bg-amber-400 hover:shadow-sm"
             >
-              {editingId ? 'Save Changes' : 'Create User Account'}
+              {editingId ? (
+                <span>Save Account Changes</span>
+              ) : form.role === 'Backoffice' ? (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span>Create Administrator Account</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span>Create Grid Operator Account</span>
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -364,10 +489,10 @@ export const UserManagementPage = () => {
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
-              User Directory
+              Staff &amp; Administrator Directory
             </h3>
             <p className="text-xs text-slate-500">
-              All registered administrative and operator accounts in MongoDB.
+              All registered administrators and grid operators with platform access.
             </p>
           </div>
           <button
@@ -378,7 +503,7 @@ export const UserManagementPage = () => {
             <svg className="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Refresh
+            Refresh Directory
           </button>
         </div>
 
@@ -387,7 +512,7 @@ export const UserManagementPage = () => {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th scope="col" className="py-3.5 pl-6 pr-4">User</th>
-                <th scope="col" className="py-3.5 px-4">Role</th>
+                <th scope="col" className="py-3.5 px-4">Role &amp; Privilege Level</th>
                 <th scope="col" className="py-3.5 px-4">Status</th>
                 <th scope="col" className="py-3.5 pr-6 pl-4 text-right">Actions</th>
               </tr>
@@ -395,8 +520,8 @@ export const UserManagementPage = () => {
             <tbody className="divide-y divide-slate-100 text-sm">
               {users.map((user) => {
                 const active = isUserActive(user.status);
+                const isAdmin = isBackofficeRole(user.role);
                 const roleLabel = getRoleLabel(user.role);
-                const isBackoffice = roleLabel.includes('Backoffice');
                 const initials = user.username ? user.username.slice(0, 2).toUpperCase() : 'US';
 
                 return (
@@ -404,11 +529,22 @@ export const UserManagementPage = () => {
                     {/* User */}
                     <td className="py-4 pl-6 pr-4">
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${isBackoffice ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
+                          isAdmin
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300 ring-2 ring-amber-400/20'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
                           {initials}
                         </div>
                         <div>
-                          <span className="font-bold text-slate-900 block">{user.username}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900">{user.username}</span>
+                            {isAdmin && (
+                              <span className="text-[10px] rounded bg-amber-100 text-amber-800 font-extrabold px-1.5 py-0.2">
+                                ADMIN
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[11px] text-slate-400 font-mono">
                             ID: {user.id ? String(user.id).slice(-6) : '—'}
                           </span>
@@ -416,20 +552,33 @@ export const UserManagementPage = () => {
                       </div>
                     </td>
 
-                    {/* Role */}
+                    {/* Role & Privilege Level */}
                     <td className="py-4 px-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${isBackoffice ? 'bg-amber-50 text-amber-900 border border-amber-200/80' : 'bg-slate-100 text-slate-800 border border-slate-200'}`}>
-                        {isBackoffice ? (
-                          <svg className="h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
-                        ) : (
-                          <svg className="h-3.5 w-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        )}
-                        {roleLabel}
-                      </span>
+                      {isAdmin ? (
+                        <div className="inline-flex flex-col">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200/90 px-2.5 py-1 text-xs font-bold">
+                            <svg className="h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            Administrator (Full Access)
+                          </span>
+                          <span className="text-[10px] text-slate-400 mt-0.5 pl-1">
+                            Governance &amp; Account Creation
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex flex-col">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 px-2.5 py-1 text-xs font-medium">
+                            <svg className="h-3.5 w-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            {roleLabel}
+                          </span>
+                          <span className="text-[10px] text-slate-400 mt-0.5 pl-1">
+                            Station Ops &amp; QR Verification
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Status */}

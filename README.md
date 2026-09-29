@@ -76,11 +76,13 @@ cd Android
 
 ## 🔐 Sample Credentials (Local Dev)
 
-| Role | Username / Identifier | Password | Access Level |
+| Role | Username / Identifier | Password | Access Level & Privileges |
 | :--- | :--- | :--- | :--- |
-| **Backoffice Admin** | `admin` | `Admin@123` | Web Portal (`/login`) |
-| **Grid Operator** | `operator1` | `Operator@123` | Web Portal & Mobile Operator Mode |
-| **Prosumer** | Registered NIC (e.g., `200012345678`) | N/A (NIC-based auth) | Mobile Prosumer Account |
+| **System Administrator** | `admin` | `admin123` | Web Portal (`/login`) — Full Governance, Prosumer Activation, Station Config, and **New Admin/Operator Creation** (`/user-management`) |
+| **Grid Operator** | `operator` (or `operator1`) | `operator123` | Web Portal & Mobile Operator Mode — Station Operations, Slot Management & QR Token Verification |
+| **Solar Prosumer** | Registered NIC (e.g., `200012345678`) | N/A (NIC-based auth) | Mobile Prosumer Account (requires Admin activation via `/prosumer-management`) |
+
+> **Note:** Any logged-in Administrator can create additional Administrator accounts with full privileges via the Web Portal under **Users** (`/user-management`).
 
 ---
 
