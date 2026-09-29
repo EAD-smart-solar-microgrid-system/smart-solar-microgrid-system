@@ -5,6 +5,7 @@
  * Purpose: Expose Prosumer registration and authenticated self-service routes.
  */
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.DTOs.Prosumers;
@@ -49,6 +50,7 @@ public sealed class ProsumersController : ControllerBase
     }
 
     [HttpGet("me")]
+    [Authorize(Roles = "Prosumer")]
     [ProducesResponseType(typeof(ProsumerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -67,6 +69,7 @@ public sealed class ProsumersController : ControllerBase
     }
 
     [HttpPut("me")]
+    [Authorize(Roles = "Prosumer")]
     [ProducesResponseType(typeof(ProsumerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -92,6 +95,7 @@ public sealed class ProsumersController : ControllerBase
     }
 
     [HttpPost("me/deactivation-request")]
+    [Authorize(Roles = "Prosumer")]
     [ProducesResponseType(typeof(ProsumerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]

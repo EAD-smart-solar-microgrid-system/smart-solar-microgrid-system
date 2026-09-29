@@ -34,3 +34,6 @@ dist-ssr/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+.idea
+

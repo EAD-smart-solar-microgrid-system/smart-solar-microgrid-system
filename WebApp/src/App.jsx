@@ -33,7 +33,7 @@ export function App() {
             <Route path={ROUTES.PROSUMER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><ProsumerManagementPage /></ProtectedRoute>} />
             <Route path={ROUTES.ENERGY_SLOT_RESERVATIONS} element={<EnergySlotReservationsPage />} />
             <Route path={ROUTES.RESERVATION_MONITORING} element={<ReservationMonitoringPage />} />
-            <Route path={ROUTES.STATIONS.slice(1)} element={<StationsPage />} />
+            <Route path={ROUTES.STATIONS.slice(1)} element={<ProtectedRoute roleRequired="Backoffice"><StationsPage /></ProtectedRoute>} />
             <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
           </Route>
         </Routes>

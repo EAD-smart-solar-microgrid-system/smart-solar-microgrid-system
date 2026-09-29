@@ -5,6 +5,7 @@
  * Purpose: Expose the public REST endpoints for microgrid node management.
  */
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.DTOs.Stations;
@@ -25,6 +26,7 @@ public sealed class StationsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<IReadOnlyList<StationResponse>>> GetAll(
         CancellationToken cancellationToken)
     {
@@ -40,6 +42,7 @@ public sealed class StationsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Backoffice")]
     public async Task<ActionResult<StationResponse>> Create(
         [FromBody] CreateStationRequest? request,
         CancellationToken cancellationToken)
@@ -61,6 +64,7 @@ public sealed class StationsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Backoffice")]
     public async Task<ActionResult<StationResponse>> UpdateDetails(
         string id,
         [FromBody] UpdateStationRequest? request,
@@ -83,6 +87,7 @@ public sealed class StationsController : ControllerBase
     }
 
     [HttpPatch("{id}/status")]
+    [Authorize(Roles = "Backoffice")]
     public async Task<ActionResult<StationResponse>> UpdateStatus(
         string id,
         [FromBody] UpdateStationStatusRequest? request,
