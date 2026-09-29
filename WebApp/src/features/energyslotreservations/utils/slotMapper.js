@@ -4,6 +4,16 @@
  * Normalizes C# Web API DTOs into predictable camelCase UI models.
  */
 
+const normalizeBoolean = (value, fallback = false) => {
+  if (value === true || value === 'true') {
+    return true;
+  }
+  if (value === false || value === 'false') {
+    return false;
+  }
+  return value == null ? fallback : Boolean(value);
+};
+
 /**
  * Maps a single energy booking slot DTO from the server.
  *
@@ -21,7 +31,7 @@ export const mapEnergySlot = (dto) => {
     slotStartUtc: dto.slotStartUtc ?? dto.SlotStartUtc ?? null,
     slotEndUtc: dto.slotEndUtc ?? dto.SlotEndUtc ?? null,
     capacityKw: Number(dto.capacityKw ?? dto.CapacityKw ?? 0),
-    isAvailable: Boolean(dto.isAvailable ?? dto.IsAvailable ?? false),
+    isAvailable: normalizeBoolean(dto.isAvailable ?? dto.IsAvailable, false),
     createdAt: dto.createdAt ?? dto.CreatedAt ?? null,
     updatedAt: dto.updatedAt ?? dto.UpdatedAt ?? null,
   };
@@ -197,9 +207,11 @@ export const formatSlotDateTimeParts = (iso) => {
       day: 'numeric',
       year: 'numeric',
     }),
-    time: date.toLocaleTimeString(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-    }),
+    time: date
+      .toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+      .replace(/ (AM|PM)$/i, '\u00A0$1'),
   };
 };

@@ -80,10 +80,10 @@ export const ReservationDetailsModal = ({
                   <DetailRow label="Slot window">
                     {slotParts ? (
                       <div className="leading-relaxed">
-                        <div>
+                        <div className="text-nowrap">
                           <span className="text-muted">Start:</span> {slotParts.start}
                         </div>
-                        <div>
+                        <div className="text-nowrap">
                           <span className="text-muted">End:</span> {slotParts.end}
                         </div>
                         {slotParts.capacity ? (

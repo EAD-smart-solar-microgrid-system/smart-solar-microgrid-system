@@ -254,7 +254,6 @@ export const ReservationMonitoringPage = () => {
       <PageHeader
         title="Reservation Monitoring"
         subtitle="Monitor energy slot reservations and approve pending bookings for QR dispatch."
-        badgeText="Member 4"
         badgeVariant="info"
       />
 
