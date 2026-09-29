@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../services/apiClient.js';
 import { createStation, getStations, updateStation, updateStationStatus } from '../services/stationService.js';
 import { StationList } from '../components/stations/StationList.jsx';
 import { StationModal } from '../components/stations/StationModal.jsx';
 import { ROUTES } from '../constants/routes.js';
+import { AuthContext } from '../features/authentication/context/AuthContextValue.js';
 
 const errorMessage = (error) => {
   if (error instanceof ApiError && error.status) return `API error (${error.status}): ${error.message}`;
@@ -12,6 +13,8 @@ const errorMessage = (error) => {
 };
 
 export const StationsPage = () => {
+  const { user } = useContext(AuthContext);
+  const isBackoffice = user?.role === 'Backoffice';
   const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState('');
@@ -128,7 +131,9 @@ export const StationsPage = () => {
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Microgrid node management</h1>
           <p className="mt-2 max-w-2xl text-slate-600">Register stations, maintain their operating schedules, and control availability for the trading system.</p>
         </div>
-        <button type="button" onClick={openCreate} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-sky-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700">+ Add station</button>
+        {isBackoffice && (
+          <button type="button" onClick={openCreate} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-sky-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700">+ Add station</button>
+        )}
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -143,9 +148,9 @@ export const StationsPage = () => {
       {loading ? (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm" role="status"><div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" /><p className="mt-4 text-sm text-slate-500">Loading microgrid nodes…</p></div>
       ) : stations.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-2xl text-sky-700">⌁</div><h2 className="mt-4 text-xl font-bold text-slate-950">No microgrid nodes have been registered yet.</h2><p className="mx-auto mt-2 max-w-md text-sm text-slate-500">Add the first station to make its capacity and operating schedule available to the system.</p><button type="button" onClick={openCreate} className="mt-5 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700">Add first station</button></div>
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-2xl text-sky-700">⌁</div><h2 className="mt-4 text-xl font-bold text-slate-950">No microgrid nodes have been registered yet.</h2><p className="mx-auto mt-2 max-w-md text-sm text-slate-500">Add the first station to make its capacity and operating schedule available to the system.</p>{isBackoffice && <button type="button" onClick={openCreate} className="mt-5 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700">Add first station</button>}</div>
       ) : (
-        <StationList stations={stations} onEdit={openEdit} onStatusChange={handleStatusChange} statusChangingId={statusChangingId} />
+        <StationList stations={stations} onEdit={openEdit} onStatusChange={handleStatusChange} statusChangingId={statusChangingId} isBackoffice={isBackoffice} />
       )}
 
       {editingStation !== undefined && <StationModal station={editingStation} onSubmit={handleSave} onCancel={closeModal} submitting={submitting} serverError={formError} />}

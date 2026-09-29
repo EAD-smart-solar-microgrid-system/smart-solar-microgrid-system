@@ -215,7 +215,7 @@ app.MapControllers();
 try
 {
     var database = app.Services.GetRequiredService<IMongoDatabase>();
-    using var connectionCheckTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+    using var connectionCheckTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
     await database.RunCommandAsync<BsonDocument>(
         new BsonDocument("ping", 1),

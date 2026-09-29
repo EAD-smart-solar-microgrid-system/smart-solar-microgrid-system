@@ -13,11 +13,12 @@ import { ProsumerManagementPage } from './features/prosumermanagement/pages/Pros
 import { StationsPage } from './pages/StationsPage.jsx';
 import { useContext } from 'react';
 
-const ProtectedRoute = ({ children, roleRequired }) => {
+const ProtectedRoute = ({ children, roleRequired, allowedRoles }) => {
   const { user, isLoading } = useContext(AuthContext);
   if (isLoading) return <div>Loading...</div>;
   if (!user) return <Navigate to={ROUTES.LOGIN} />;
   if (roleRequired && user.role !== roleRequired) return <Navigate to={ROUTES.HOME} />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to={ROUTES.HOME} />;
   return children;
 };
 
@@ -33,7 +34,7 @@ export function App() {
             <Route path={ROUTES.PROSUMER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><ProsumerManagementPage /></ProtectedRoute>} />
             <Route path={ROUTES.ENERGY_SLOT_RESERVATIONS} element={<EnergySlotReservationsPage />} />
             <Route path={ROUTES.RESERVATION_MONITORING} element={<ReservationMonitoringPage />} />
-            <Route path={ROUTES.STATIONS.slice(1)} element={<ProtectedRoute roleRequired="Backoffice"><StationsPage /></ProtectedRoute>} />
+            <Route path={ROUTES.STATIONS.slice(1)} element={<ProtectedRoute allowedRoles={['Backoffice', 'GridOperator']}><StationsPage /></ProtectedRoute>} />
             <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
           </Route>
         </Routes>

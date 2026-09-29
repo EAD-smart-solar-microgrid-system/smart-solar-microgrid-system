@@ -220,14 +220,6 @@ public sealed class ProsumerService : IProsumerService
         return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 
-    private async Task<string?> GetCurrentNicAsync(CancellationToken cancellationToken)
-    {
-        // Normalize the primary business identifier consistently before repository calls.
-        return string.IsNullOrWhiteSpace(nic)
-            ? string.Empty
-            : nic.Trim().ToUpperInvariant();
-    }
-
     public static bool IsValidNic(string? nic)
     {
         // Accept the common Sri Lankan NIC formats used by reservation validation.
@@ -245,25 +237,7 @@ public sealed class ProsumerService : IProsumerService
                    @"^\d{12}$");
     }
 
-    private static string? NormalizeOptionalText(string? value)
-    {
-        // Trim optional profile text and represent whitespace-only input as absent.
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    }
-
-    private static string? ValidateRegistration(
-        string? nic,
-        string? fullName,
-        string? email)
-    {
-        // Apply registration validation without inventing a strict national NIC format.
-        if (string.IsNullOrWhiteSpace(nic))
-        // Normalize the identity supplied by the future authentication integration.
-        return NormalizeNic(await _currentProsumerAccessor
-            .GetCurrentProsumerNicAsync(cancellationToken));
-    }
-
-    private static string? NormalizeNic(string? nic)
+    public static string? NormalizeNic(string? nic)
     {
         // Normalize the primary business identifier consistently before repository calls.
         return string.IsNullOrWhiteSpace(nic)

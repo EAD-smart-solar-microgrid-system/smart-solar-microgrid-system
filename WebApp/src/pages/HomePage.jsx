@@ -48,6 +48,12 @@ export const HomePage = () => {
     let isMounted = true;
 
     const fetchLiveNetworkStats = async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) {
+        if (isMounted) setStatsError(true);
+        return;
+      }
+
       try {
         // Fetch authoritative live station and reservation data from C# Web API
         const [stationsData, monitoringData] = await Promise.all([
