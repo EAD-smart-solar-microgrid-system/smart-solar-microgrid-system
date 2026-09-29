@@ -93,7 +93,7 @@ Station fields are:
 - `CreatedAt`
 - `UpdatedAt`
 
-The public endpoints are:
+The station endpoints are:
 
 - `GET /api/stations`
 - `POST /api/stations`
@@ -110,9 +110,9 @@ Operating schedules use a simple list of same-day entries containing `DayOfWeek`
 
 Station validation is performed in `StationService`: station name, latitude, longitude, capacity, battery capacity, schedule days, schedule times, and status values are checked before repository calls. Station names are trimmed as required; invalid values are rejected rather than silently corrected.
 
-Deactivation is also a service-layer rule. Before changing `Active` to `Inactive`, `StationService` asks the narrow `IActiveReservationChecker` dependency whether active reservations exist. If the checker reports active reservations, the API returns `409 Conflict` and does not update MongoDB. The current Member 2 reservation implementation is not connected, so the temporary `UnavailableActiveReservationChecker` returns an unavailable signal and the API fails closed with `503 Service Unavailable`; it never pretends that there are zero reservations. Member 2 can later replace this registration with the real checker.
+Deactivation is also a service-layer rule. Before changing `Active` to `Inactive`, `StationService` asks the narrow `IActiveReservationChecker` dependency whether active reservations exist. If the checker reports active reservations, the API returns `409 Conflict` and does not update MongoDB. The registered `ActiveReservationChecker` checks `Pending` and `Approved` reservations and fails closed when the reservation store is unavailable.
 
-Member 1's future authentication and role-based authorization must protect these management endpoints after that work is merged. JWT, login, users, and hard-coded temporary roles are intentionally not implemented here.
+Station reads require authentication. Station mutations require the `Backoffice` role. JWT authorization is also enforced on admin prosumer operations and prosumer self-service operations; registration remains public.
 
 ## Member 3 - Prosumer Account Control
 
@@ -128,7 +128,7 @@ Authenticated self-service routes are:
 - `PUT /api/prosumers/me`
 - `POST /api/prosumers/me/deactivation-request`
 
-The current implementation deliberately returns `401 Unauthorized` for these routes until Member 1 supplies the authenticated Prosumer NIC through `ICurrentProsumerAccessor`. It never trusts a NIC from a query string or request body.
+The current implementation resolves the authenticated Prosumer NIC through `HttpCurrentProsumerAccessor`. It never trusts a NIC from a query string or request body.
 
 Profile updates can change only full name, email, phone number, and address. NIC, account status, and timestamps remain server-controlled. A deactivation request changes `Active` to `DeactivationRequested`; it does not delete the document or immediately set `Deactivated`. Pending activation and already deactivated accounts cannot request deactivation. Future activation approval and reactivation are Backoffice responsibilities and are not implemented here.
 
