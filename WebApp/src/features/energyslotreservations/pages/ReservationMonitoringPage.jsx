@@ -4,7 +4,8 @@
  * Member 4 read-only reservation monitoring UI.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { AuthContext } from '../../authentication/context/AuthContextValue.js';
 import { PageHeader } from '../../../components/common/PageHeader.jsx';
 import { LoadingIndicator } from '../../../components/common/LoadingIndicator.jsx';
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
@@ -17,6 +18,7 @@ import {
   getReservationMonitoringList,
 } from '../services/reservationMonitoringService.js';
 import { getStations, getSlotsByStationId } from '../services/energySlotService.js';
+import { approveReservation } from '../services/reservationCommandService.js';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -30,6 +32,9 @@ const EMPTY_FILTERS = {
 };
 
 export const ReservationMonitoringPage = () => {
+  const { user } = useContext(AuthContext);
+  const canApprove = user?.role === 'GridOperator';
+
   const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
@@ -49,6 +54,9 @@ export const ReservationMonitoringPage = () => {
   const [detailsLoadingId, setDetailsLoadingId] = useState(null);
   const [detailsError, setDetailsError] = useState(null);
   const [selectedReservationId, setSelectedReservationId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [actionError, setActionError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalCount / pageSize) || 1),
@@ -201,12 +209,41 @@ export const ReservationMonitoringPage = () => {
     setDetailsError(null);
     setDetailsLoadingId(null);
     setSelectedReservationId(null);
+    setActionError(null);
+    setActionLoading(false);
   };
 
   const handleRetryDetails = () => {
     if (selectedReservationId) {
       loadReservationDetails(selectedReservationId);
     }
+  };
+
+  const handleApprove = async () => {
+    if (!detailsReservation?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Approve reservation ${detailsReservation.id}? The prosumer can then request a QR token for this booking.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setActionLoading(true);
+    setActionError(null);
+    const response = await approveReservation(detailsReservation.id);
+    setActionLoading(false);
+
+    if (!response.success) {
+      setActionError(response.error || 'The reservation could not be approved.');
+      return;
+    }
+
+    setSuccessMessage('Reservation approved.');
+    await loadReservations();
+    await loadReservationDetails(detailsReservation.id);
   };
 
   const canGoPrevious = page > 1 && !loading;
@@ -216,10 +253,22 @@ export const ReservationMonitoringPage = () => {
     <div className="legacy-page reservation-monitoring-page space-y-4">
       <PageHeader
         title="Reservation Monitoring"
-        subtitle="Read-only oversight of energy slot reservations across microgrid stations."
+        subtitle="Monitor energy slot reservations and approve pending bookings for QR dispatch."
         badgeText="Member 4"
         badgeVariant="info"
       />
+
+      {successMessage && (
+        <div className="alert alert-success alert-dismissible fade show" role="status">
+          {successMessage}
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Dismiss"
+            onClick={() => setSuccessMessage('')}
+          />
+        </div>
+      )}
 
       <ReservationMonitoringFilters
         filters={draftFilters}
@@ -304,6 +353,10 @@ export const ReservationMonitoringPage = () => {
         error={detailsError}
         onClose={handleCloseDetails}
         onRetry={handleRetryDetails}
+        onApprove={handleApprove}
+        canApprove={canApprove}
+        actionError={actionError}
+        actionLoading={actionLoading}
         stationNameById={stationNameById}
         slotById={slotById}
       />

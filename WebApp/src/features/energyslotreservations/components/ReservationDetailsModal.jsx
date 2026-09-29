@@ -27,12 +27,19 @@ export const ReservationDetailsModal = ({
   error,
   onClose,
   onRetry,
+  onApprove,
+  canApprove = false,
+  actionError,
+  actionLoading = false,
   stationNameById = {},
   slotById = {},
 }) => {
   if (!show) {
     return null;
   }
+
+  const isPending =
+    reservation && String(reservation.status || '').toLowerCase() === 'pending';
 
   const stationName = reservation
     ? stationNameById[reservation.stationId] || 'Unknown station'
@@ -107,9 +114,30 @@ export const ReservationDetailsModal = ({
                   </DetailRow>
                 </dl>
               )}
+
+              {!loading && !error && actionError && (
+                <div className="alert alert-danger mt-3 mb-0 py-2" role="alert">
+                  {actionError}
+                </div>
+              )}
             </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
+            <div className="modal-footer flex-wrap gap-2">
+              {canApprove && isPending && !loading && !error && (
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={onApprove}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? 'Approving…' : 'Approve'}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+                disabled={loading || actionLoading}
+              >
                 Close
               </button>
             </div>

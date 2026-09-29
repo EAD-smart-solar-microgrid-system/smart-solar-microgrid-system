@@ -331,6 +331,106 @@ public sealed class ReservationService : IReservationService
         return ReservationServiceResult<ReservationResponse>.Success(MapToResponse(updated));
     }
 
+    public async Task<ReservationServiceResult<ReservationResponse>> ApproveAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        // Move a pending reservation to Approved without issuing a QR token or completing the transfer.
+        if (!ObjectId.TryParse(id, out _))
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Validation,
+                "The reservation id must be a valid MongoDB ObjectId.");
+        }
+
+        var existing = await _reservationRepository.GetByIdAsync(id, cancellationToken);
+        if (existing is null)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.NotFound,
+                "The requested reservation was not found.");
+        }
+
+        if (existing.Status != ReservationStatus.Pending)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Conflict,
+                "The reservation is no longer pending and cannot be approved.");
+        }
+
+        var now = DateTime.UtcNow;
+        if (NormalizeToUtc(existing.ReservationDateTime) <= now)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Conflict,
+                "Only a future reservation can be approved.");
+        }
+
+        var prosumer = await _prosumerRepository.GetByNicAsync(existing.ProsumerNic, cancellationToken);
+        if (prosumer is null)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.NotFound,
+                "The referenced solar prosumer profile was not found.");
+        }
+
+        if (prosumer.AccountStatus == ProsumerAccountStatus.Deactivated)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Validation,
+                "A reservation for a deactivated solar prosumer profile cannot be approved.");
+        }
+
+        var station = await _stationRepository.GetByIdAsync(existing.StationId, cancellationToken);
+        if (station is null)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.NotFound,
+                "The referenced microgrid node was not found.");
+        }
+
+        if (station.Status != StationStatus.Active)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Conflict,
+                "Reservations cannot be approved for an inactive microgrid node.");
+        }
+
+        var slotAvailability = await _slotAvailabilityChecker.CheckSlotAvailabilityAsync(
+            existing.StationId,
+            existing.SlotId,
+            existing.ReservationDateTime,
+            cancellationToken);
+
+        var slotAvailabilityError = MapSlotAvailabilityFailure(slotAvailability);
+        if (slotAvailabilityError is not null)
+        {
+            return slotAvailabilityError;
+        }
+
+        var approved = await _reservationRepository.ApproveIfPendingAsync(
+            existing.Id,
+            now,
+            cancellationToken);
+
+        if (approved is not null)
+        {
+            return ReservationServiceResult<ReservationResponse>.Success(MapToResponse(approved));
+        }
+
+        var current = await _reservationRepository.GetByIdAsync(existing.Id, cancellationToken);
+        if (current is null)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.NotFound,
+                "The requested reservation was not found.");
+        }
+
+        return ReservationServiceResult<ReservationResponse>.Failure(
+            ReservationServiceErrorType.Conflict,
+            "The reservation status changed before approval could be completed.");
+    }
+
     public async Task<ReservationServiceResult<QrTokenResponse>> GenerateQrTokenAsync(
         string id,
         CancellationToken cancellationToken = default)
@@ -462,6 +562,17 @@ public sealed class ReservationService : IReservationService
             _ => ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Conflict,
                 "The requested battery storage slot is currently occupied or unavailable.")
+        };
+    }
+
+    private static DateTime NormalizeToUtc(DateTime value)
+    {
+        // Normalize unspecified timestamps as UTC before comparing reservation eligibility.
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+            _ => value.ToUniversalTime()
         };
     }
 

@@ -5,6 +5,7 @@
  * Purpose: Expose public command endpoints for energy slot booking, modification, cancellation, and QR token generation.
  */
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.DTOs.Reservations;
@@ -58,6 +59,23 @@ public sealed class ReservationsController : ControllerBase
         }
 
         var result = await _reservationService.UpdateAsync(id, request, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return CreateErrorResult(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("{id}/approve")]
+    [Authorize(Roles = "GridOperator")]
+    public async Task<ActionResult<ReservationResponse>> Approve(
+        string id,
+        CancellationToken cancellationToken)
+    {
+        // Approve a pending reservation so the existing QR-token workflow can proceed.
+        var result = await _reservationService.ApproveAsync(id, cancellationToken);
 
         if (!result.Succeeded)
         {
