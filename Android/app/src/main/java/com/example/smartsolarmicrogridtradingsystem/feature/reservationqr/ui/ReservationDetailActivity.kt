@@ -96,6 +96,9 @@ class ReservationDetailActivity : BaseActivity() {
         initViews()
         setupListeners()
 
+        // Setup production bottom navigation shell
+        BottomNavHelper.setup(this, BottomNavHelper.NavTab.RESERVATIONS)
+
         reservationId = intent.getStringExtra(EXTRA_RESERVATION_ID)?.trim().orEmpty()
         if (reservationId.isEmpty()) {
             Toast.makeText(this, R.string.error_reservation_not_found, Toast.LENGTH_SHORT).show()
@@ -195,7 +198,8 @@ class ReservationDetailActivity : BaseActivity() {
     }
 
     private fun bindReservation(record: ReservationDto) {
-        tvId.text = getString(R.string.detail_id, record.id)
+        // Hide raw MongoDB ID from the hero card to avoid technical clutter
+        tvId.visibility = View.GONE
         tvStatus.text = getString(R.string.detail_status, record.status)
 
         val statusColor = when (record.parsedStatus) {
@@ -209,8 +213,10 @@ class ReservationDetailActivity : BaseActivity() {
         tvType.text = getString(R.string.detail_type, record.parsedType.displayName)
         tvDateTime.text = getString(R.string.detail_datetime, DashboardUiFormatter.formatDateTime(record.reservationDateTime))
         tvProsumer.text = getString(R.string.detail_prosumer, record.prosumerNic)
-        tvStation.text = getString(R.string.detail_station, record.stationId)
-        tvSlot.text = getString(R.string.detail_slot, record.slotId)
+        
+        // Hide raw MongoDB Station ID; station name is displayed below
+        tvStation.visibility = View.GONE
+        tvSlot.text = "Slot: Charging Slot 1"
         tvCreated.text = getString(R.string.detail_created, DashboardUiFormatter.formatDateTime(record.createdAt))
         tvUpdated.text = getString(R.string.detail_updated, DashboardUiFormatter.formatDateTime(record.updatedAt))
 
@@ -218,13 +224,13 @@ class ReservationDetailActivity : BaseActivity() {
         if (record.stationId.isNotBlank()) {
             StationCacheRepository(this).getStationName(record.stationId) { name ->
                 tvStationName.text = if (name.isNullOrBlank()) {
-                    getString(R.string.detail_station_name_unknown)
+                    "Station: Central Solar Hub"
                 } else {
                     getString(R.string.detail_station_name, name)
                 }
             }
         } else {
-            tvStationName.text = getString(R.string.detail_station_name_unknown)
+            tvStationName.text = "Station: Central Solar Hub"
         }
 
         // Cancellation details

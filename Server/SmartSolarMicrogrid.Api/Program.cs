@@ -21,7 +21,7 @@ using SmartSolarMicrogrid.Api.Services;
 var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
     ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-if (string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase))
+if (string.IsNullOrEmpty(environmentName) || string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase))
 {
     // Load local development values before ASP.NET Core builds IConfiguration.
     var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -51,7 +51,18 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
         .GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
         .Value;
 
-    return new MongoClient(settings.ConnectionString);
+    if (string.IsNullOrWhiteSpace(settings.ConnectionString))
+    {
+        return new MongoClient();
+    }
+
+    var mongoClientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
+    mongoClientSettings.SslSettings = new SslSettings
+    {
+        EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12
+    };
+
+    return new MongoClient(mongoClientSettings);
 });
 
 builder.Services.AddSingleton<IMongoDatabase>(serviceProvider =>
@@ -81,7 +92,8 @@ builder.Services.AddScoped<IReservationMonitoringService, ReservationMonitoringS
 builder.Services.AddScoped<IMember4DashboardService, Member4DashboardService>();
 builder.Services.AddScoped<INearbyStationsService, NearbyStationsService>();
 builder.Services.AddScoped<IActiveReservationChecker, ActiveReservationChecker>();
-builder.Services.AddSingleton<ICurrentProsumerAccessor, UnavailableCurrentProsumerAccessor>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentProsumerAccessor, HttpCurrentProsumerAccessor>();
 
 builder.Services.AddScoped<IWebUserRepository, WebUserRepository>();
 builder.Services.AddScoped<IWebUserService, WebUserService>();
@@ -102,7 +114,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {

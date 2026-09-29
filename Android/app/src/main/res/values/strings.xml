@@ -164,7 +164,7 @@
     <string name="error_qr_render_failed">Failed to render QR barcode.</string>
     <string name="action_qr_done">Done</string>
 
-    <!-- Member 1 Operator Mode -->
+    <!-- Member 1 Operator Mode & Unified Auth -->
     <string name="operator_login_title">Grid Operator Login</string>
     <string name="operator_login_subtitle">Authenticate operational credentials</string>
     <string name="operator_username_hint">Username</string>
@@ -180,4 +180,56 @@
     <string name="operator_clear_action">Clear / Next Scan</string>
     <string name="operator_status_completed">Transfer Completed</string>
     <string name="operator_logout_action">Sign Out</string>
+
+    <string name="app_login_title">Smart Solar Microgrid</string>
+    <string name="app_login_subtitle">Sign in to manage solar power trading</string>
+    <string name="prosumer_register_title">Register Prosumer</string>
+    <string name="prosumer_register_subtitle">Create a new solar prosumer trading profile</string>
+    <string name="prosumer_nic_hint">National Identity Card (NIC)</string>
+    <string name="prosumer_name_hint">Full Name</string>
+    <string name="prosumer_email_hint">Email Address</string>
+    <string name="prosumer_phone_hint">Phone Number (Optional)</string>
+    <string name="prosumer_address_hint">Residential Address (Optional)</string>
+    <string name="prosumer_register_action">Create Account</string>
+    <string name="prosumer_login_title">Prosumer Sign In</string>
+    <string name="prosumer_login_subtitle">Enter your registered NIC to access your account</string>
+    <string name="prosumer_login_action">Sign In</string>
+    <string name="prosumer_status_label">Account Status: %1$s</string>
+    <string name="prosumer_save_action">Update Profile</string>
+    <string name="prosumer_deactivate_action">Request Account Deactivation</string>
+    <string name="prosumer_deactivate_confirm_title">Request Deactivation?</string>
+    <string name="prosumer_deactivate_confirm_msg">Are you sure you want to request deactivation for your prosumer account? This action cannot be reversed without Backoffice approval.</string>
+    <string name="auth_tab_prosumer">Solar Prosumer</string>
+    <string name="auth_tab_operator">Grid Operator</string>
+    <string name="auth_register_link">New Prosumer? Create an Account</string>
+    <string name="auth_login_link">Already have an account? Sign In</string>
+    <string name="msg_registration_pending">Registration successful! Your account is currently Pending Activation. A Backoffice administrator will review and activate your account before you can log in.</string>
+
+    <!-- Professional Home & Visual System Strings -->
+    <string name="home_platform_badge">SOLAR MICROGRID</string>
+    <string name="home_tagline">Smart Solar Microgrid Trading</string>
+    <string name="home_desc">Solar energy slot reservations, microgrid nodes &amp; charging</string>
+    <string name="home_status_online">Microgrid System Connected</string>
+    <string name="home_modules_header">SYSTEM SERVICES</string>
+    <string name="home_module_reservation_tag">Booking</string>
+    <string name="home_module_dashboard_tag">Live</string>
+    <string name="home_module_operator_tag">Staff</string>
+    <string name="home_module_prosumer_tag">Account</string>
+    <string name="reservation_detail_hero_subtitle">Microgrid Energy Slot Schedule</string>
+    <string name="reservation_detail_section_station">Station &amp; Booking Information</string>
+    <string name="reservation_detail_section_actions">Reservation Actions</string>
+
+    <!-- Member 3 Prosumer Account Strings -->
+    <string name="prosumer_profile_title">Prosumer Profile</string>
+    <string name="prosumer_profile_subtitle">Microgrid identity, solar account &amp; contact info</string>
+    <string name="prosumer_registration_title">Register Prosumer</string>
+    <string name="prosumer_registration_subtitle">Enroll your NIC identity for renewable energy trading</string>
+    <string name="prosumer_edit_title">Edit Profile</string>
+    <string name="prosumer_edit_subtitle">Update contact details. NIC and status are server-managed.</string>
+    <string name="action_register_prosumer">Register Account</string>
+    <string name="action_edit_prosumer">Edit Profile</string>
+    <string name="action_deactivate_prosumer">Request Deactivation</string>
+    <string name="action_new_registration">New Registration</string>
+    <string name="action_save_profile">Save Changes</string>
+    <string name="action_view_profile">View Profile</string>
 </resources>

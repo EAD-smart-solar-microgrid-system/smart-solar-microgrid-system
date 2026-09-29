@@ -17,7 +17,13 @@ public class WebUserRepository : IWebUserRepository
 
     // Filter to isolate WebUser documents from Prosumer records sharing the UsersDetail collection
     private static FilterDefinition<WebUser> WebUserFilter =>
-        Builders<WebUser>.Filter.Exists("PasswordHash", true);
+        Builders<WebUser>.Filter.And(
+            Builders<WebUser>.Filter.Exists("PasswordHash", true),
+            Builders<WebUser>.Filter.Or(
+                Builders<WebUser>.Filter.In("Role", new[] { "Backoffice", "GridOperator" }),
+                Builders<WebUser>.Filter.In("Role", new[] { 0, 1 })
+            )
+        );
 
     public WebUserRepository(MongoDbContext dbContext)
     {

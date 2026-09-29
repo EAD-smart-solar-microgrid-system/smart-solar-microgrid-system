@@ -16,7 +16,7 @@ class CommonFoundationUnitTest {
 
     @Test
     fun testAppConfigConstants() {
-        assertEquals("http://10.0.2.2:5278/api/", AppConfig.BASE_URL)
+        assertEquals("http://127.0.0.1:5278/api/", AppConfig.BASE_URL)
         assertEquals(15000, AppConfig.CONNECT_TIMEOUT_MS)
         assertEquals(15000, AppConfig.READ_TIMEOUT_MS)
     }
@@ -67,21 +67,24 @@ class CommonFoundationUnitTest {
     @Test
     fun testDatabaseContract() {
         assertEquals("smart_solar_microgrid.db", DatabaseContract.DATABASE_NAME)
-        assertEquals(1, DatabaseContract.DATABASE_VERSION)
+        assertEquals(2, DatabaseContract.DATABASE_VERSION)
         assertEquals("local_session", DatabaseContract.SessionEntry.TABLE_NAME)
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("CREATE TABLE local_session"))
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("user_identifier TEXT NOT NULL"))
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("role TEXT NOT NULL"))
+        assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("token TEXT NOT NULL"))
         assertTrue(DatabaseContract.SessionEntry.SQL_CREATE_TABLE.contains("last_updated INTEGER NOT NULL"))
+        assertEquals("prosumer_profile", DatabaseContract.ProsumerProfileEntry.TABLE_NAME)
+        assertTrue(DatabaseContract.ProsumerProfileEntry.SQL_CREATE_TABLE.contains("nic TEXT PRIMARY KEY"))
     }
 
     @Test
     fun testApiClientResolveUrl() {
         val resolvedWithSlash = ApiClient.resolveUrl("/energy/slots")
-        assertEquals("http://10.0.2.2:5278/api/energy/slots", resolvedWithSlash)
+        assertEquals("${AppConfig.BASE_URL}energy/slots", resolvedWithSlash)
 
         val resolvedWithoutSlash = ApiClient.resolveUrl("energy/slots")
-        assertEquals("http://10.0.2.2:5278/api/energy/slots", resolvedWithoutSlash)
+        assertEquals("${AppConfig.BASE_URL}energy/slots", resolvedWithoutSlash)
 
         val absoluteUrl = ApiClient.resolveUrl("http://example.com/api/test")
         assertEquals("http://example.com/api/test", absoluteUrl)

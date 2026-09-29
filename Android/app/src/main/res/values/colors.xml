@@ -6,4 +6,59 @@
     <color name="status_approved">#2EA043</color>
     <color name="status_cancelled">#F85149</color>
     <color name="status_completed">#388E3C</color>
+    <color name="color_error">#BA1A1A</color>
+    <color name="solar_orange">#D97706</color>
+    <color name="solar_orange_light">#FFFBEB</color>
+    <color name="color_primary">#D97706</color>
+    <color name="color_primary_container">#FEF3C7</color>
+
+    <!-- Warm Solar Energy Design System (VoltiX-inspired) -->
+    <color name="home_bg">#F7F6F1</color>
+    <color name="home_card_bg">#FFFFFFFF</color>
+    <color name="home_card_stroke">#EAE7DF</color>
+    <color name="home_solar_primary">#FF7A1A</color>
+    <color name="home_solar_light">#FFF7ED</color>
+    <color name="home_solar_border">#FED7AA</color>
+    <color name="home_icon_bg_reservation">#FFF4E6</color>
+    <color name="home_icon_tint_reservation">#EA580C</color>
+    <color name="home_icon_bg_dashboard">#E0F2FE</color>
+    <color name="home_icon_tint_dashboard">#0284C7</color>
+    <color name="home_icon_bg_operator">#F1F5F9</color>
+    <color name="home_icon_tint_operator">#475569</color>
+    <color name="home_icon_bg_prosumer">#F5F3FF</color>
+    <color name="home_icon_tint_prosumer">#7C3AED</color>
+
+    <!-- Member 3 Prosumer Account Color Tokens -->
+    <color name="member3_purple_primary">#7C3AED</color>
+    <color name="member3_purple_dark">#6D28D9</color>
+    <color name="member3_purple_container">#EDE9FE</color>
+    <color name="member3_purple_on_container">#5B21B6</color>
+    <color name="member3_purple_border">#DDD6FE</color>
+
+    <!-- Member 2 Color Tokens -->
+    <color name="member2_bg">#F7F6F1</color>
+    <color name="member2_surface">#FFFFFFFF</color>
+    <color name="member2_surface_variant">#F4F2EC</color>
+    <color name="member2_surface_hero">#FFF8F1</color>
+    <color name="member2_card_stroke">#EAE7DF</color>
+    <color name="member2_card_stroke_subtle">#F1EEE6</color>
+    <color name="member2_solar_primary">#FF7A1A</color>
+    <color name="member2_solar_primary_dark">#E56300</color>
+    <color name="member2_solar_container">#FFF4E6</color>
+    <color name="member2_solar_on_container">#9A3B00</color>
+    <color name="member2_solar_border">#FED7AA</color>
+
+    <color name="member2_text_primary">#1C1C1E</color>
+    <color name="member2_text_secondary">#686870</color>
+    <color name="member2_text_tertiary">#8E8E93</color>
+
+    <!-- Status pill containers and labels -->
+    <color name="member2_status_pending_bg">#FEF3C7</color>
+    <color name="member2_status_pending_text">#B45309</color>
+    <color name="member2_status_approved_bg">#DCFCE7</color>
+    <color name="member2_status_approved_text">#15803D</color>
+    <color name="member2_status_cancelled_bg">#FEE2E2</color>
+    <color name="member2_status_cancelled_text">#B91C1C</color>
+    <color name="member2_status_completed_bg">#F1F5F9</color>
+    <color name="member2_status_completed_text">#475569</color>
 </resources>

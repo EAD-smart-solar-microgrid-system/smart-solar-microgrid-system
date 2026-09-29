@@ -5,24 +5,30 @@
     android:id="@+id/editReservationRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/member2_bg"
     tools:context=".feature.reservationqr.ui.EditReservationActivity">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbarEditReservation"
         android:layout_width="0dp"
         android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="?attr/homeAsUpIndicator"
-        app:title="@string/edit_reservation_title"
+        android:background="@color/member2_surface"
+        android:elevation="1dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:navigationIconTint="@color/member2_text_primary"
+        app:title="@string/edit_reservation_title"
+        app:titleTextColor="@color/member2_text_primary" />
 
     <ScrollView
         android:id="@+id/scrollEditReservation"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavRoot"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbarEditReservation">
@@ -31,40 +37,62 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingStart="20dp"
+            android:paddingTop="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="36dp">
 
             <TextView
                 android:id="@+id/tvEditReservationSubtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
+                android:lineSpacingExtra="3dp"
                 android:text="@string/edit_reservation_subtitle"
-                android:textColor="?android:attr/textColorSecondary"
+                android:textColor="@color/member2_text_secondary"
                 android:textSize="14sp" />
 
+            <!-- Card 1: Fixed Booking Context (Prosumer & Station) -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeColor="?attr/colorOutline"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/member2_surface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="1dp"
+                app:strokeColor="@color/member2_card_stroke"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="18dp">
 
-                    <!-- Prosumer NIC (Read-only context) -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:letterSpacing="0.06"
+                        android:text="BOOKING CONTEXT (FIXED)"
+                        android:textColor="@color/member2_text_tertiary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <!-- Prosumer NIC (Read-only) -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilEditProsumerNic"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:enabled="false"
-                        android:hint="@string/reservation_prosumer_hint">
+                        android:hint="@string/reservation_prosumer_hint"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:startIconDrawable="@drawable/ic_user_circle"
+                        app:startIconTint="@color/member2_text_tertiary">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etEditProsumerNic"
@@ -72,7 +100,9 @@
                             android:layout_height="wrap_content"
                             android:clickable="false"
                             android:focusable="false"
-                            android:inputType="text" />
+                            android:inputType="text"
+                            android:textColor="@color/member2_text_secondary"
+                            android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <!-- Station Display (Fixed per backend contract) -->
@@ -81,9 +111,15 @@
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="14dp"
                         android:enabled="false"
-                        android:hint="@string/hint_station_readonly">
+                        android:hint="@string/hint_station_readonly"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:startIconDrawable="@drawable/ic_station_24"
+                        app:startIconTint="@color/member2_text_tertiary">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etEditStation"
@@ -91,30 +127,97 @@
                             android:layout_height="wrap_content"
                             android:clickable="false"
                             android:focusable="false"
-                            android:inputType="text" />
+                            android:inputType="text"
+                            android:textColor="@color/member2_text_secondary"
+                            android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Slot Selector Exposed Dropdown -->
+            <!-- Card 2: Editable Slot Selection -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/member2_surface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="1dp"
+                app:strokeColor="@color/member2_card_stroke"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:letterSpacing="0.06"
+                        android:text="STATION CHARGING SLOT"
+                        android:textColor="@color/member2_text_tertiary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <!-- Slot Selector -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilEditSlot"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:hint="@string/hint_slot">
+                        android:hint="@string/hint_slot"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:boxStrokeColor="@color/member2_solar_primary"
+                        app:startIconDrawable="@drawable/ic_slot_24"
+                        app:startIconTint="@color/member2_text_secondary">
 
                         <AutoCompleteTextView
                             android:id="@+id/actvEditSlot"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="none" />
+                            android:inputType="none"
+                            android:textColor="@color/member2_text_primary"
+                            android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 3: Reschedule & Transfer Type -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="@color/member2_surface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="1dp"
+                app:strokeColor="@color/member2_card_stroke"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:letterSpacing="0.06"
+                        android:text="RESCHEDULE &amp; OPERATION TYPE"
+                        android:textColor="@color/member2_text_tertiary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
                     <!-- Date & Time Row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
                         android:baselineAligned="false"
                         android:orientation="horizontal">
 
@@ -125,7 +228,14 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:hint="@string/hint_reservation_date">
+                            android:hint="@string/hint_reservation_date"
+                            app:boxCornerRadiusBottomEnd="14dp"
+                            app:boxCornerRadiusBottomStart="14dp"
+                            app:boxCornerRadiusTopEnd="14dp"
+                            app:boxCornerRadiusTopStart="14dp"
+                            app:boxStrokeColor="@color/member2_solar_primary"
+                            app:startIconDrawable="@drawable/ic_calendar_24"
+                            app:startIconTint="@color/member2_solar_primary">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/etEditReservationDate"
@@ -134,7 +244,9 @@
                                 android:clickable="true"
                                 android:cursorVisible="false"
                                 android:focusable="false"
-                                android:inputType="none" />
+                                android:inputType="none"
+                                android:textColor="@color/member2_text_primary"
+                                android:textSize="14sp" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout
@@ -144,7 +256,14 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:hint="@string/hint_reservation_time">
+                            android:hint="@string/hint_reservation_time"
+                            app:boxCornerRadiusBottomEnd="14dp"
+                            app:boxCornerRadiusBottomStart="14dp"
+                            app:boxCornerRadiusTopEnd="14dp"
+                            app:boxCornerRadiusTopStart="14dp"
+                            app:boxStrokeColor="@color/member2_solar_primary"
+                            app:startIconDrawable="@drawable/ic_clock_24"
+                            app:startIconTint="@color/member2_solar_primary">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/etEditReservationTime"
@@ -153,7 +272,9 @@
                                 android:clickable="true"
                                 android:cursorVisible="false"
                                 android:focusable="false"
-                                android:inputType="none" />
+                                android:inputType="none"
+                                android:textColor="@color/member2_text_primary"
+                                android:textSize="14sp" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
 
@@ -164,29 +285,33 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:text="@string/label_reservation_type"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="14sp"
+                        android:textColor="@color/member2_text_primary"
+                        android:textSize="13sp"
                         android:textStyle="bold" />
 
                     <RadioGroup
                         android:id="@+id/rgEditReservationType"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
+                        android:layout_marginTop="8dp"
                         android:orientation="horizontal">
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/rbEditTypeDropOff"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="16dp"
-                            android:text="@string/type_drop_off" />
+                            android:layout_marginEnd="20dp"
+                            android:text="@string/type_drop_off"
+                            android:textColor="@color/member2_text_primary"
+                            app:buttonTint="@color/member2_solar_primary" />
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/rbEditTypeCharging"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/type_charging" />
+                            android:text="@string/type_charging"
+                            android:textColor="@color/member2_text_primary"
+                            app:buttonTint="@color/member2_solar_primary" />
                     </RadioGroup>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -195,10 +320,12 @@
                 android:id="@+id/tvEditError"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_badge_cancelled"
                 android:gravity="center"
-                android:textColor="@android:color/holo_red_dark"
-                android:textSize="14sp"
+                android:padding="12dp"
+                android:textColor="@color/member2_status_cancelled_text"
+                android:textSize="13sp"
                 android:visibility="gone" />
 
             <ProgressBar
@@ -206,18 +333,33 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="16dp"
+                android:indeterminateTint="@color/member2_solar_primary"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSubmitUpdate"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="54dp"
+                android:backgroundTint="@color/member2_solar_primary"
                 android:text="@string/action_update_reservation"
                 android:textAllCaps="false"
-                android:textSize="15sp" />
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:cornerRadius="16dp"
+                app:elevation="2dp" />
 
         </LinearLayout>
     </ScrollView>
+
+    <include
+        android:id="@+id/bottomNavRoot"
+        layout="@layout/layout_bottom_nav"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

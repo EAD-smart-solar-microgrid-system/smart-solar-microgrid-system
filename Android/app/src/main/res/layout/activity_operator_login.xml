@@ -41,11 +41,23 @@
                     android:orientation="vertical"
                     android:padding="24dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⚡"
-                        android:textSize="32sp" />
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        app:cardCornerRadius="14dp"
+                        app:cardElevation="2dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#334155"
+                        app:cardBackgroundColor="#0F172A">
+
+                        <ImageView
+                            android:id="@+id/ivOperatorEmblem"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/brand_emblem"
+                            android:contentDescription="@string/app_name" />
+                    </com.google.android.material.card.MaterialCardView>
 
                     <TextView
                         android:layout_width="wrap_content"

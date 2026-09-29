@@ -83,7 +83,7 @@ The schedule editor sends `dayOfWeek`, `openTime`, and `closeTime` using the API
 
 The API must allow the Vite development origin `http://localhost:5173`. The existing server `Cors:DevelopmentOrigins` configuration already includes it, so no server change was required for this UI.
 
-Member 1 still owns login, JWT issuance, role checks, and protected routes. `apiClient.js` accepts a future real bearer token in one place; it does not create or store a fake token. The `/stations` route should be protected when Member 1's authentication layer is integrated.
+The Web app uses the shared login/JWT boundary for protected routes. `apiClient.js` accepts the real bearer token in one place; it does not create or store a fake token. The `/stations` route is Backoffice-only, and the API enforces the same role server-side.
 
 ## Architecture
 

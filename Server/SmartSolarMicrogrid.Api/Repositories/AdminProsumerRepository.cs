@@ -130,23 +130,28 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
         DateTime updatedAt,
         CancellationToken cancellationToken = default)
     {
-        var filter = Builders<Prosumer>.Filter.Eq(p => p.Nic, normalizedNic);
+        var filter = Builders<BsonDocument>.Filter.Or(
+            Builders<BsonDocument>.Filter.Eq("_id", normalizedNic),
+            Builders<BsonDocument>.Filter.Eq("Nic", normalizedNic));
 
-        var update = Builders<Prosumer>.Update
-            .Set(p => p.FullName, fullName)
-            .Set(p => p.Email, email)
-            .Set(p => p.PhoneNumber, phoneNumber)
-            .Set(p => p.Address, address)
-            .Set(p => p.UpdatedAt, updatedAt);
+        var update = Builders<BsonDocument>.Update
+            .Set("FullName", fullName)
+            .Set("Email", email)
+            .Set("PhoneNumber", phoneNumber)
+            .Set("Phone", phoneNumber)
+            .Set("Address", address)
+            .Set("UpdatedAt", updatedAt);
 
-        return await _prosumers.FindOneAndUpdateAsync(
+        var doc = await _rawCollection.FindOneAndUpdateAsync(
             filter,
             update,
-            new FindOneAndUpdateOptions<Prosumer>
+            new FindOneAndUpdateOptions<BsonDocument>
             {
                 ReturnDocument = ReturnDocument.After
             },
             cancellationToken);
+
+        return doc is null ? null : MapFromBson(doc);
     }
 
     public async Task<Prosumer?> UpdateStatusAsync(
@@ -155,20 +160,25 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
         DateTime updatedAt,
         CancellationToken cancellationToken = default)
     {
-        var filter = Builders<Prosumer>.Filter.Eq(p => p.Nic, normalizedNic);
+        var filter = Builders<BsonDocument>.Filter.Or(
+            Builders<BsonDocument>.Filter.Eq("_id", normalizedNic),
+            Builders<BsonDocument>.Filter.Eq("Nic", normalizedNic));
 
-        var update = Builders<Prosumer>.Update
-            .Set(p => p.AccountStatus, status)
-            .Set(p => p.UpdatedAt, updatedAt);
+        var update = Builders<BsonDocument>.Update
+            .Set("AccountStatus", (int)status)
+            .Set("Status", status.ToString())
+            .Set("UpdatedAt", updatedAt);
 
-        return await _prosumers.FindOneAndUpdateAsync(
+        var doc = await _rawCollection.FindOneAndUpdateAsync(
             filter,
             update,
-            new FindOneAndUpdateOptions<Prosumer>
+            new FindOneAndUpdateOptions<BsonDocument>
             {
                 ReturnDocument = ReturnDocument.After
             },
             cancellationToken);
+
+        return doc is null ? null : MapFromBson(doc);
     }
 
     private static Prosumer? MapFromBson(BsonDocument doc)

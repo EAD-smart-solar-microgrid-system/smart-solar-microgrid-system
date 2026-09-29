@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home_24"
+        android:title="Home" />
+    <item
+        android:id="@+id/nav_reservations"
+        android:icon="@drawable/ic_reservation_box"
+        android:title="Reservations" />
+    <item
+        android:id="@+id/nav_dashboard"
+        android:icon="@drawable/ic_dashboard_24"
+        android:title="Dashboard" />
+    <item
+        android:id="@+id/nav_patrol"
+        android:icon="@drawable/ic_patrol_route_24"
+        android:title="Patrol" />
+    <item
+        android:id="@+id/nav_prosumer"
+        android:icon="@drawable/ic_user_circle"
+        android:title="Account" />
+</menu>

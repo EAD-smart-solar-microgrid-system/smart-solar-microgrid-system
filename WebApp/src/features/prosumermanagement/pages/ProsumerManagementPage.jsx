@@ -8,6 +8,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes.js';
 import { PageHeader } from '../../../components/common/PageHeader.jsx';
 import { LoadingIndicator } from '../../../components/common/LoadingIndicator.jsx';
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
@@ -187,6 +189,23 @@ export const ProsumerManagementPage = () => {
           + Register Prosumer
         </button>
       </PageHeader>
+
+      {/* DIRECTORY SWITCHER TABS */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+        <Link
+          to={ROUTES.USER_MANAGEMENT}
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+        >
+          <span>Staff &amp; Operator Accounts</span>
+        </Link>
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
+        >
+          <span>Solar Prosumers</span>
+          <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{prosumers.length}</span>
+        </button>
+      </div>
 
       {/* Success / Feedback Alert */}
       {feedback && (
