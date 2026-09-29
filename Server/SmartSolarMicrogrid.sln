@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartSolarMicrogrid.Api", "SmartSolarMicrogrid.Api\SmartSolarMicrogrid.Api.csproj", "{EAD9BB42-66BD-4D3F-98EB-3872F8F1C5CF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartSolarMicrogrid.Api.Tests", "SmartSolarMicrogrid.Api.Tests\SmartSolarMicrogrid.Api.Tests.csproj", "{B1A7E3B7-4D41-4C05-9D8C-5F7C4F0A91F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{EAD9BB42-66BD-4D3F-98EB-3872F8F1C5CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAD9BB42-66BD-4D3F-98EB-3872F8F1C5CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAD9BB42-66BD-4D3F-98EB-3872F8F1C5CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1A7E3B7-4D41-4C05-9D8C-5F7C4F0A91F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1A7E3B7-4D41-4C05-9D8C-5F7C4F0A91F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1A7E3B7-4D41-4C05-9D8C-5F7C4F0A91F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1A7E3B7-4D41-4C05-9D8C-5F7C4F0A91F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
