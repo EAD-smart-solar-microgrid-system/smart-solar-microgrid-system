@@ -87,8 +87,8 @@ export const SlotList = ({
                       {isToggling
                         ? 'Updating…'
                         : slot.isAvailable
-                          ? 'Unavailable'
-                          : 'Available'}
+                          ? 'Make unavailable'
+                          : 'Make available'}
                     </button>
                     <button
                       type="button"

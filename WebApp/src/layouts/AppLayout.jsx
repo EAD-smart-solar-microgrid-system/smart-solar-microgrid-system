@@ -43,7 +43,7 @@ export const AppLayout = () => {
       </header>
       <main role="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"><Outlet /></main>
       <footer className="border-t border-slate-200 bg-white px-4 py-5 text-center text-xs text-slate-500 sm:px-6">
-        <div className="mx-auto max-w-7xl"><p>Shared Web Client Foundation · Smart Solar Microgrid Trading System</p></div>
+        <div className="mx-auto max-w-7xl"><p>©2026 Smart Solar Microgrid Trading System</p></div>
       </footer>
     </div>
   );

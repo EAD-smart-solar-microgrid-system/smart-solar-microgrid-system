@@ -20,10 +20,10 @@ const SlotWindowDisplay = ({ slot }) => {
 
   return (
     <div className="small leading-snug">
-      <div>
+      <div className="text-nowrap">
         <span className="text-muted">Start:</span> {parts.start}
       </div>
-      <div>
+      <div className="text-nowrap">
         <span className="text-muted">End:</span> {parts.end}
       </div>
       {parts.capacity ? (

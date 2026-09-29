@@ -13,6 +13,7 @@ import { EmptyState } from '../../../components/common/EmptyState.jsx';
 import { StationSelector } from '../components/StationSelector.jsx';
 import { SlotList } from '../components/SlotList.jsx';
 import { SlotFormModal } from '../components/SlotFormModal.jsx';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog.jsx';
 import {
   createSlot,
   deleteSlot,
@@ -45,6 +46,8 @@ export const EnergySlotReservationsPage = () => {
   const [toggleError, setToggleError] = useState(null);
   const [togglingSlotId, setTogglingSlotId] = useState(null);
   const [deletingSlotId, setDeletingSlotId] = useState(null);
+  const [slotPendingDelete, setSlotPendingDelete] = useState(null);
+  const [slotPendingAvailability, setSlotPendingAvailability] = useState(null);
 
   const [modalMode, setModalMode] = useState(null);
   const [editingSlotId, setEditingSlotId] = useState(null);
@@ -105,6 +108,18 @@ export const EnergySlotReservationsPage = () => {
   useEffect(() => {
     Promise.resolve().then(() => loadSlots(selectedStationId));
   }, [selectedStationId, loadSlots]);
+
+  useEffect(() => {
+    if (!successMessage) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSuccessMessage('');
+    }, 3000);
+
+    return () => window.clearTimeout(timer);
+  }, [successMessage]);
 
   const handleStationChange = (stationId) => {
     setSelectedStationId(stationId);
@@ -199,14 +214,36 @@ export const EnergySlotReservationsPage = () => {
     await loadSlots(selectedStationId);
   };
 
-  const handleToggleAvailability = async (slot) => {
+  const handleToggleAvailability = (slot) => {
+    setSlotPendingAvailability({
+      slot,
+      makeAvailable: !slot.isAvailable,
+    });
+  };
+
+  const closeAvailabilityConfirm = () => {
+    if (togglingSlotId) {
+      return;
+    }
+    setSlotPendingAvailability(null);
+  };
+
+  const confirmToggleAvailability = async () => {
+    if (!slotPendingAvailability) {
+      return;
+    }
+
     setToggleError(null);
     setSuccessMessage('');
-    setTogglingSlotId(slot.id);
+    setTogglingSlotId(slotPendingAvailability.slot.id);
 
-    const response = await updateSlotAvailability(slot.id, !slot.isAvailable);
+    const response = await updateSlotAvailability(
+      slotPendingAvailability.slot.id,
+      slotPendingAvailability.makeAvailable
+    );
 
     setTogglingSlotId(null);
+    setSlotPendingAvailability(null);
 
     if (!response.success) {
       setToggleError(response.error || 'Availability could not be updated.');
@@ -221,21 +258,30 @@ export const EnergySlotReservationsPage = () => {
     await loadSlots(selectedStationId);
   };
 
-  const handleDeleteSlot = async (slot) => {
-    const confirmed = window.confirm(
-      'Delete this energy booking slot? This cannot be undone.'
-    );
-    if (!confirmed) {
+  const handleDeleteSlot = (slot) => {
+    setSlotPendingDelete(slot);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (deletingSlotId) {
+      return;
+    }
+    setSlotPendingDelete(null);
+  };
+
+  const confirmDeleteSlot = async () => {
+    if (!slotPendingDelete) {
       return;
     }
 
     setToggleError(null);
     setSuccessMessage('');
-    setDeletingSlotId(slot.id);
+    setDeletingSlotId(slotPendingDelete.id);
 
-    const response = await deleteSlot(slot.id);
+    const response = await deleteSlot(slotPendingDelete.id);
 
     setDeletingSlotId(null);
+    setSlotPendingDelete(null);
 
     if (!response.success) {
       setToggleError(response.error || 'The slot could not be deleted.');
@@ -253,7 +299,6 @@ export const EnergySlotReservationsPage = () => {
       <PageHeader
         title="Energy Slot Reservation Management"
         subtitle="Manage battery storage slot windows for microgrid stations"
-        badgeText="Member 4"
         badgeVariant="primary"
       >
         <button
@@ -393,6 +438,40 @@ export const EnergySlotReservationsPage = () => {
         onChange={handleFormChange}
         onSubmit={handleFormSubmit}
         onClose={closeModal}
+      />
+
+      <ConfirmDialog
+        show={Boolean(slotPendingDelete)}
+        title="Delete energy slot?"
+        message="Delete this energy booking slot? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        loading={Boolean(deletingSlotId)}
+        onConfirm={confirmDeleteSlot}
+        onCancel={closeDeleteConfirm}
+      />
+
+      <ConfirmDialog
+        show={Boolean(slotPendingAvailability)}
+        title={
+          slotPendingAvailability?.makeAvailable
+            ? 'Mark slot available?'
+            : 'Mark slot unavailable?'
+        }
+        message={
+          slotPendingAvailability?.makeAvailable
+            ? 'This slot will become open for new reservations.'
+            : 'This slot will no longer accept new reservations until it is marked available again.'
+        }
+        confirmLabel={
+          slotPendingAvailability?.makeAvailable ? 'Mark available' : 'Mark unavailable'
+        }
+        cancelLabel="Cancel"
+        confirmVariant={slotPendingAvailability?.makeAvailable ? 'success' : 'warning'}
+        loading={Boolean(togglingSlotId)}
+        onConfirm={confirmToggleAvailability}
+        onCancel={closeAvailabilityConfirm}
       />
     </div>
   );
