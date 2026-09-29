@@ -5,6 +5,7 @@
  * Purpose: Expose public REST endpoints for administrative prosumer management and lifecycle governance.
  */
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.DTOs.Prosumers;
@@ -14,6 +15,7 @@ namespace SmartSolarMicrogrid.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/prosumers")]
+[Authorize(Roles = "Backoffice")]
 public sealed class AdminProsumersController : ControllerBase
 {
     private readonly IAdminProsumerService _adminProsumerService;
