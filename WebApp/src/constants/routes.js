@@ -14,6 +14,8 @@ export const ROUTES = Object.freeze({
   STATIONS: '/stations',
   ENERGY_SLOT_RESERVATIONS: '/energy-slot-reservations',
   RESERVATION_MONITORING: '/reservation-monitoring',
+  RESET_PASSWORD: '/reset-password',
+  VERIFY_EMAIL: '/verify-email',
   NOT_FOUND: '*',
 });
 

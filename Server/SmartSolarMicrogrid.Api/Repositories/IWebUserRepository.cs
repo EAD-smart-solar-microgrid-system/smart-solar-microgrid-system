@@ -13,6 +13,9 @@ public interface IWebUserRepository
     Task<List<WebUser>> GetAllAsync();
     Task<WebUser?> GetByIdAsync(string id);
     Task<WebUser?> GetByUsernameAsync(string username);
+    Task<WebUser?> GetByEmailAsync(string email);
+    Task<WebUser?> GetByResetTokenAsync(string token);
+    Task<WebUser?> GetByVerificationTokenAsync(string token);
     Task CreateAsync(WebUser user);
     Task UpdateAsync(string id, WebUser user);
 }

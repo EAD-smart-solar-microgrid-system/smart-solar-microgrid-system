@@ -63,6 +63,36 @@ public class WebUserRepository : IWebUserRepository
         return await _collection.Find(filter).FirstOrDefaultAsync();
     }
 
+    public async Task<WebUser?> GetByEmailAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var filter = Builders<WebUser>.Filter.And(
+            Builders<WebUser>.Filter.Regex(x => x.Email, new BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(email.Trim())}$", "i")),
+            WebUserFilter
+        );
+        return await _collection.Find(filter).FirstOrDefaultAsync();
+    }
+
+    public async Task<WebUser?> GetByResetTokenAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return null;
+        var filter = Builders<WebUser>.Filter.And(
+            Builders<WebUser>.Filter.Eq(x => x.PasswordResetToken, token),
+            WebUserFilter
+        );
+        return await _collection.Find(filter).FirstOrDefaultAsync();
+    }
+
+    public async Task<WebUser?> GetByVerificationTokenAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return null;
+        var filter = Builders<WebUser>.Filter.And(
+            Builders<WebUser>.Filter.Eq(x => x.EmailVerificationToken, token),
+            WebUserFilter
+        );
+        return await _collection.Find(filter).FirstOrDefaultAsync();
+    }
+
     public async Task CreateAsync(WebUser user)
     {
         // Ensure new web user has a valid unique ObjectId identifier

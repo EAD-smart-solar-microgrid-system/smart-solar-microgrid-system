@@ -8,6 +8,8 @@ import { ReservationMonitoringPage } from './features/energyslotreservations/pag
 import { AuthProvider } from './features/authentication/context/AuthContext.jsx';
 import { AuthContext } from './features/authentication/context/AuthContextValue.js';
 import { LoginPage } from './features/authentication/pages/LoginPage.jsx';
+import { ResetPasswordPage } from './features/authentication/pages/ResetPasswordPage.jsx';
+import { VerifyEmailPage } from './features/authentication/pages/VerifyEmailPage.jsx';
 import { UserManagementPage } from './features/usermanagement/pages/UserManagementPage.jsx';
 import { ProsumerManagementPage } from './features/prosumermanagement/pages/ProsumerManagementPage.jsx';
 import { StationsPage } from './pages/StationsPage.jsx';
@@ -16,8 +18,8 @@ import { useContext } from 'react';
 const ProtectedRoute = ({ children, roleRequired }) => {
   const { user, isLoading } = useContext(AuthContext);
   if (isLoading) return <div>Loading...</div>;
-  if (!user) return <Navigate to={ROUTES.LOGIN} />;
-  if (roleRequired && user.role !== roleRequired) return <Navigate to={ROUTES.HOME} />;
+  if (!user) return <Navigate to={ROUTES.HOME} replace />;
+  if (roleRequired && user.role !== roleRequired) return <Navigate to={ROUTES.HOME} replace />;
   return children;
 };
 
@@ -29,6 +31,8 @@ export function App() {
           <Route path={ROUTES.HOME} element={<AppLayout />}>
             <Route index element={<HomePage />} />
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+            <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmailPage />} />
             <Route path={ROUTES.USER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><UserManagementPage /></ProtectedRoute>} />
             <Route path={ROUTES.ADMIN_SETTINGS} element={<ProtectedRoute roleRequired="Backoffice"><UserManagementPage /></ProtectedRoute>} />
             <Route path={ROUTES.PROSUMER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><ProsumerManagementPage /></ProtectedRoute>} />

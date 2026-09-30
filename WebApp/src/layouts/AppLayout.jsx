@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes.js';
 import { AuthContext } from '../features/authentication/context/AuthContextValue.js';
 import { Logo } from '../components/common/Logo.jsx';
@@ -7,6 +7,13 @@ import { Logo } from '../components/common/Logo.jsx';
 export const AppLayout = () => {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate(ROUTES.HOME, { replace: true });
+    logout();
+  };
+
   const isAdminSettingsActive =
     location.pathname === ROUTES.ADMIN_SETTINGS || location.pathname === ROUTES.USER_MANAGEMENT;
 
@@ -75,7 +82,7 @@ export const AppLayout = () => {
                   <button
                     type="button"
                     className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-100 hover:text-slate-900"
-                    onClick={logout}
+                    onClick={handleLogout}
                   >
                     Logout
                   </button>
