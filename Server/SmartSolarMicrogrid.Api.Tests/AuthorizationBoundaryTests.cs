@@ -41,6 +41,34 @@ public sealed class AuthorizationBoundaryTests
         Assert.Equal("Backoffice", attribute!.Roles);
     }
 
+    [Fact]
+    public void ReservationApprovalRequiresGridOperatorRole()
+    {
+        Assert.Equal("GridOperator", GetMethodAuthorizeAttribute<ReservationsController>("Approve")!.Roles);
+    }
+
+    [Fact]
+    public void ReservationQrTokenRequiresProsumerRole()
+    {
+        Assert.Equal("Prosumer", GetMethodAuthorizeAttribute<ReservationsController>("GenerateQrToken")!.Roles);
+    }
+
+    [Fact]
+    public void ReservationMonitoringRequiresGridOperatorOrBackoffice()
+    {
+        var attribute = typeof(ReservationMonitoringController).GetCustomAttribute<AuthorizeAttribute>();
+        Assert.NotNull(attribute);
+        Assert.Equal("GridOperator,Backoffice", attribute!.Roles);
+    }
+
+    [Fact]
+    public void SlotAvailabilityPatchRequiresGridOperatorRole()
+    {
+        var attribute = GetMethodAuthorizeAttribute<EnergyBookingSlotsController>("UpdateAvailability");
+        Assert.NotNull(attribute);
+        Assert.Equal("GridOperator", attribute!.Roles);
+    }
+
     private static AuthorizeAttribute? GetMethodAuthorizeAttribute<TController>(string methodName)
     {
         var method = typeof(TController).GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);

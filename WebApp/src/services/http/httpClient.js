@@ -62,8 +62,9 @@ export const request = async (endpoint, options = {}) => {
     ...headers,
   };
 
-  if (token) {
-    requestHeaders.Authorization = `Bearer ${token}`;
+  const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+  if (activeToken) {
+    requestHeaders.Authorization = `Bearer ${activeToken}`;
   }
 
   const fetchOptions = {

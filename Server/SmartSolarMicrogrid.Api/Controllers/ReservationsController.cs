@@ -26,6 +26,7 @@ public sealed class ReservationsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Prosumer,GridOperator")]
     public async Task<ActionResult<ReservationResponse>> Create(
         [FromBody] CreateReservationRequest? request,
         CancellationToken cancellationToken)
@@ -47,6 +48,7 @@ public sealed class ReservationsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Prosumer,GridOperator")]
     public async Task<ActionResult<ReservationResponse>> Update(
         string id,
         [FromBody] UpdateReservationRequest? request,
@@ -86,6 +88,7 @@ public sealed class ReservationsController : ControllerBase
     }
 
     [HttpPost("{id}/cancel")]
+    [Authorize(Roles = "Prosumer,GridOperator")]
     public async Task<ActionResult<ReservationResponse>> Cancel(
         string id,
         [FromBody] CancelReservationRequest? request,
@@ -102,7 +105,9 @@ public sealed class ReservationsController : ControllerBase
         return Ok(result.Value);
     }
 
+
     [HttpPost("{id}/qr-token")]
+    [Authorize(Roles = "Prosumer")]
     public async Task<ActionResult<QrTokenResponse>> GenerateQrToken(
         string id,
         CancellationToken cancellationToken)
@@ -128,6 +133,9 @@ public sealed class ReservationsController : ControllerBase
             ReservationServiceErrorType.Validation => BadRequest(new ErrorResponse(message)),
             ReservationServiceErrorType.NotFound => NotFound(new ErrorResponse(message)),
             ReservationServiceErrorType.Conflict => Conflict(new ErrorResponse(message)),
+            ReservationServiceErrorType.Forbidden => StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse(message)),
             ReservationServiceErrorType.DependencyUnavailable => StatusCode(
                 StatusCodes.Status503ServiceUnavailable,
                 new ErrorResponse(message)),

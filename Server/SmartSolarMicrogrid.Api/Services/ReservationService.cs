@@ -5,7 +5,9 @@
  * Purpose: Enforce reservation scheduling windows, notice policies, conflict checks, and secure QR generation.
  */
 
+using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Http;
 using MongoDB.Bson;
 using SmartSolarMicrogrid.Api.Common.Enums;
 using SmartSolarMicrogrid.Api.DTOs.Reservations;
@@ -23,24 +25,54 @@ public sealed class ReservationService : IReservationService
     private readonly IStationRepository _stationRepository;
     private readonly IProsumerRepository _prosumerRepository;
     private readonly ISlotAvailabilityChecker _slotAvailabilityChecker;
+    private readonly ICurrentProsumerAccessor _currentProsumerAccessor;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public ReservationService(
         IReservationRepository reservationRepository,
         IStationRepository stationRepository,
         IProsumerRepository prosumerRepository,
-        ISlotAvailabilityChecker slotAvailabilityChecker)
+        ISlotAvailabilityChecker slotAvailabilityChecker,
+        ICurrentProsumerAccessor currentProsumerAccessor,
+        IHttpContextAccessor httpContextAccessor)
     {
-        // Store all repositories and slot verification dependencies required by reservation rules.
+        // Store all repositories, slot verification, and identity dependencies required by reservation rules.
         _reservationRepository = reservationRepository;
         _stationRepository = stationRepository;
         _prosumerRepository = prosumerRepository;
         _slotAvailabilityChecker = slotAvailabilityChecker;
+        _currentProsumerAccessor = currentProsumerAccessor;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<ReservationServiceResult<ReservationResponse>> CreateAsync(
         CreateReservationRequest request,
         CancellationToken cancellationToken = default)
     {
+        var httpUser = _httpContextAccessor.HttpContext?.User;
+        var isProsumer = httpUser?.IsInRole("Prosumer") ?? false;
+
+        if (isProsumer)
+        {
+            var authNic = ProsumerService.NormalizeNic(await _currentProsumerAccessor.GetCurrentProsumerNicAsync(cancellationToken));
+            if (string.IsNullOrEmpty(authNic))
+            {
+                return ReservationServiceResult<ReservationResponse>.Failure(
+                    ReservationServiceErrorType.Forbidden,
+                    "An authenticated prosumer identity is required.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.ProsumerNic) &&
+                !string.Equals(ProsumerService.NormalizeNic(request.ProsumerNic), authNic, StringComparison.OrdinalIgnoreCase))
+            {
+                return ReservationServiceResult<ReservationResponse>.Failure(
+                    ReservationServiceErrorType.Forbidden,
+                    "You are not authorized to create a reservation for another prosumer.");
+            }
+
+            request.ProsumerNic = authNic;
+        }
+
         // Validate prosumer, station existence, 7-day booking window, and prevent slot booking conflicts.
         var validationError = ValidateCreateInput(request);
         if (validationError is not null)
@@ -172,6 +204,20 @@ public sealed class ReservationService : IReservationService
                 "The requested reservation was not found.");
         }
 
+        var httpUser = _httpContextAccessor.HttpContext?.User;
+        var isProsumer = httpUser?.IsInRole("Prosumer") ?? false;
+
+        if (isProsumer)
+        {
+            var authNic = ProsumerService.NormalizeNic(await _currentProsumerAccessor.GetCurrentProsumerNicAsync(cancellationToken));
+            if (string.IsNullOrEmpty(authNic) || !string.Equals(existing.ProsumerNic, authNic, StringComparison.OrdinalIgnoreCase))
+            {
+                return ReservationServiceResult<ReservationResponse>.Failure(
+                    ReservationServiceErrorType.Forbidden,
+                    "You are not authorized to modify another prosumer's reservation.");
+            }
+        }
+
         if (existing.Status == ReservationStatus.Cancelled)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
@@ -287,6 +333,20 @@ public sealed class ReservationService : IReservationService
                 "The requested reservation was not found.");
         }
 
+        var httpUser = _httpContextAccessor.HttpContext?.User;
+        var isProsumer = httpUser?.IsInRole("Prosumer") ?? false;
+
+        if (isProsumer)
+        {
+            var authNic = ProsumerService.NormalizeNic(await _currentProsumerAccessor.GetCurrentProsumerNicAsync(cancellationToken));
+            if (string.IsNullOrEmpty(authNic) || !string.Equals(existing.ProsumerNic, authNic, StringComparison.OrdinalIgnoreCase))
+            {
+                return ReservationServiceResult<ReservationResponse>.Failure(
+                    ReservationServiceErrorType.Forbidden,
+                    "You are not authorized to cancel another prosumer's reservation.");
+            }
+        }
+
         if (existing.Status == ReservationStatus.Cancelled)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
@@ -335,7 +395,7 @@ public sealed class ReservationService : IReservationService
         string id,
         CancellationToken cancellationToken = default)
     {
-        // Move a pending reservation to Approved without issuing a QR token or completing the transfer.
+        // Enforce that only valid, pending reservations can be approved by Grid Operators.
         if (!ObjectId.TryParse(id, out _))
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
@@ -351,19 +411,40 @@ public sealed class ReservationService : IReservationService
                 "The requested reservation was not found.");
         }
 
+        if (existing.Status == ReservationStatus.Approved)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Validation,
+                "The reservation is already approved.");
+        }
+
+        if (existing.Status == ReservationStatus.Cancelled)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Validation,
+                "Cancelled reservations cannot be approved.");
+        }
+
+        if (existing.Status == ReservationStatus.Completed)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Validation,
+                "Completed reservations cannot be approved.");
+        }
+
         if (existing.Status != ReservationStatus.Pending)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
-                ReservationServiceErrorType.Conflict,
-                "The reservation is no longer pending and cannot be approved.");
+                ReservationServiceErrorType.Validation,
+                "Only pending reservations can be approved.");
         }
 
         var now = DateTime.UtcNow;
         if (NormalizeToUtc(existing.ReservationDateTime) <= now)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
-                ReservationServiceErrorType.Conflict,
-                "Only a future reservation can be approved.");
+                ReservationServiceErrorType.Validation,
+                "Cannot approve an expired reservation date and time.");
         }
 
         var prosumer = await _prosumerRepository.GetByNicAsync(existing.ProsumerNic, cancellationToken);
@@ -394,6 +475,20 @@ public sealed class ReservationService : IReservationService
             return ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Conflict,
                 "Reservations cannot be approved for an inactive microgrid node.");
+        }
+
+        var hasConflict = await _reservationRepository.HasConflictingReservationAsync(
+            existing.StationId,
+            existing.SlotId,
+            existing.ReservationDateTime,
+            excludeReservationId: existing.Id,
+            cancellationToken);
+
+        if (hasConflict)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Conflict,
+                "A conflicting reservation already exists for this station slot at the requested time.");
         }
 
         var slotAvailability = await _slotAvailabilityChecker.CheckSlotAvailabilityAsync(
@@ -449,6 +544,14 @@ public sealed class ReservationService : IReservationService
             return ReservationServiceResult<QrTokenResponse>.Failure(
                 ReservationServiceErrorType.NotFound,
                 "The requested reservation was not found.");
+        }
+
+        var authNic = ProsumerService.NormalizeNic(await _currentProsumerAccessor.GetCurrentProsumerNicAsync(cancellationToken));
+        if (string.IsNullOrEmpty(authNic) || !string.Equals(existing.ProsumerNic, authNic, StringComparison.OrdinalIgnoreCase))
+        {
+            return ReservationServiceResult<QrTokenResponse>.Failure(
+                ReservationServiceErrorType.Forbidden,
+                "You are not authorized to access the QR token for this reservation.");
         }
 
         if (existing.Status == ReservationStatus.Cancelled)

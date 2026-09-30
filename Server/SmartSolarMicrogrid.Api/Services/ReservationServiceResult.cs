@@ -12,7 +12,8 @@ public enum ReservationServiceErrorType
     Validation,
     NotFound,
     Conflict,
-    DependencyUnavailable
+    DependencyUnavailable,
+    Forbidden
 }
 
 public sealed class ReservationServiceResult<T>
