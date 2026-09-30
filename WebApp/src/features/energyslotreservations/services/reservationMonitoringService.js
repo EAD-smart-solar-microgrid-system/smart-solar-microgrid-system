@@ -106,7 +106,52 @@ export const getReservationMonitoringById = async (reservationId, options = {}) 
   return response;
 };
 
+/**
+ * Transitions a pending reservation to approved state under grid operator governance.
+ *
+ * @param {string} reservationId - MongoDB reservation identifier
+ * @param {object} [options={}] - Additional httpClient options
+ * @returns {Promise<object>} httpClient result
+ */
+export const approveReservation = async (reservationId, options = {}) => {
+  if (!reservationId || typeof reservationId !== 'string') {
+    return {
+      success: false,
+      data: null,
+      error: 'A reservation identifier is required.',
+      status: 400,
+    };
+  }
+
+  const endpoint = `reservations/${encodeURIComponent(reservationId.trim())}/approve`;
+  return await httpClient.post(endpoint, {}, options);
+};
+
+/**
+ * Rejects/cancels a pending reservation under grid operator governance.
+ *
+ * @param {string} reservationId - MongoDB reservation identifier
+ * @param {string} [reason='Rejected by Grid Operator'] - Cancellation explanation
+ * @param {object} [options={}] - Additional httpClient options
+ * @returns {Promise<object>} httpClient result
+ */
+export const rejectReservation = async (reservationId, reason = 'Rejected by Grid Operator', options = {}) => {
+  if (!reservationId || typeof reservationId !== 'string') {
+    return {
+      success: false,
+      data: null,
+      error: 'A reservation identifier is required.',
+      status: 400,
+    };
+  }
+
+  const endpoint = `reservations/${encodeURIComponent(reservationId.trim())}/cancel`;
+  return await httpClient.post(endpoint, { reason }, options);
+};
+
 export default {
   getReservationMonitoringList,
   getReservationMonitoringById,
+  approveReservation,
+  rejectReservation,
 };

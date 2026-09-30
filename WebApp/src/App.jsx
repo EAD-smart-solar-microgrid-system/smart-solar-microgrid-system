@@ -13,11 +13,12 @@ import { ProsumerManagementPage } from './features/prosumermanagement/pages/Pros
 import { StationsPage } from './pages/StationsPage.jsx';
 import { useContext } from 'react';
 
-const ProtectedRoute = ({ children, roleRequired }) => {
+const ProtectedRoute = ({ children, roleRequired, rolesAllowed }) => {
   const { user, isLoading } = useContext(AuthContext);
   if (isLoading) return <div>Loading...</div>;
   if (!user) return <Navigate to={ROUTES.LOGIN} />;
   if (roleRequired && user.role !== roleRequired) return <Navigate to={ROUTES.HOME} />;
+  if (rolesAllowed && !rolesAllowed.includes(user.role)) return <Navigate to={ROUTES.HOME} />;
   return children;
 };
 
@@ -31,8 +32,8 @@ export function App() {
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.USER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><UserManagementPage /></ProtectedRoute>} />
             <Route path={ROUTES.PROSUMER_MANAGEMENT} element={<ProtectedRoute roleRequired="Backoffice"><ProsumerManagementPage /></ProtectedRoute>} />
-            <Route path={ROUTES.ENERGY_SLOT_RESERVATIONS} element={<EnergySlotReservationsPage />} />
-            <Route path={ROUTES.RESERVATION_MONITORING} element={<ReservationMonitoringPage />} />
+            <Route path={ROUTES.ENERGY_SLOT_RESERVATIONS} element={<ProtectedRoute roleRequired="GridOperator"><EnergySlotReservationsPage /></ProtectedRoute>} />
+            <Route path={ROUTES.RESERVATION_MONITORING} element={<ProtectedRoute rolesAllowed={['GridOperator', 'Backoffice']}><ReservationMonitoringPage /></ProtectedRoute>} />
             <Route path={ROUTES.STATIONS.slice(1)} element={<ProtectedRoute roleRequired="Backoffice"><StationsPage /></ProtectedRoute>} />
             <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
           </Route>

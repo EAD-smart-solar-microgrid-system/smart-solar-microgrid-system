@@ -16,11 +16,15 @@ public sealed class ProsumerRepository : IProsumerRepository
 {
     private const string CollectionName = "UsersDetail";
     private readonly IMongoCollection<Prosumer> _prosumers;
+    private readonly IAdminProsumerRepository _adminProsumerRepository;
 
-    public ProsumerRepository(MongoDbContext databaseContext)
+    public ProsumerRepository(
+        MongoDbContext databaseContext,
+        IAdminProsumerRepository adminProsumerRepository)
     {
         // Bind the repository to the agreed UsersDetail collection through the shared context.
         _prosumers = databaseContext.Database.GetCollection<Prosumer>(CollectionName);
+        _adminProsumerRepository = adminProsumerRepository;
     }
 
     public async Task<Prosumer?> GetByNicAsync(
@@ -28,9 +32,17 @@ public sealed class ProsumerRepository : IProsumerRepository
         CancellationToken cancellationToken = default)
     {
         // Find one Prosumer by the NIC-backed MongoDB identifier.
-        return await _prosumers
+        var result = await _prosumers
             .Find(prosumer => prosumer.Nic == nic)
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (result is not null)
+        {
+            return result;
+        }
+
+        // Fallback for legacy documents created with ObjectId _id and separate Nic field
+        return await _adminProsumerRepository.GetByNicAsync(nic, cancellationToken);
     }
 
     public async Task<Prosumer> CreateAsync(

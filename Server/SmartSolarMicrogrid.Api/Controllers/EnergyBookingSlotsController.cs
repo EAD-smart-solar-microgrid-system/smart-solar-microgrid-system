@@ -5,6 +5,7 @@
  * Purpose: Expose slot-scoped REST endpoints for energy booking slot updates.
  */
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.DTOs.Slots;
@@ -14,6 +15,7 @@ namespace SmartSolarMicrogrid.Api.Controllers;
 
 [ApiController]
 [Route("api/slots")]
+[Authorize(Roles = "GridOperator,Backoffice")]
 public sealed class EnergyBookingSlotsController : ControllerBase
 {
     private readonly IEnergyBookingSlotService _slotService;
@@ -47,6 +49,7 @@ public sealed class EnergyBookingSlotsController : ControllerBase
     }
 
     [HttpPatch("{slotId}/availability")]
+    [Authorize(Roles = "GridOperator")]
     public async Task<ActionResult<EnergyBookingSlotResponse>> UpdateAvailability(
         string slotId,
         [FromBody] UpdateSlotAvailabilityRequest? request,

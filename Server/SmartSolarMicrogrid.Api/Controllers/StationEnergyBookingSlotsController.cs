@@ -5,6 +5,7 @@
  * Purpose: Expose station-scoped REST endpoints for energy booking slot management.
  */
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.DTOs.Slots;
@@ -25,6 +26,7 @@ public sealed class StationEnergyBookingSlotsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<IReadOnlyList<EnergyBookingSlotResponse>>> GetByStationId(
         string stationId,
         CancellationToken cancellationToken)
@@ -41,6 +43,7 @@ public sealed class StationEnergyBookingSlotsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "GridOperator,Backoffice")]
     public async Task<ActionResult<EnergyBookingSlotResponse>> Create(
         string stationId,
         [FromBody] CreateEnergyBookingSlotRequest? request,

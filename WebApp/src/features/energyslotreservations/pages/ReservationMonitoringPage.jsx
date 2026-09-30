@@ -16,9 +16,10 @@ import { ReservationDetailsModal } from '../components/ReservationDetailsModal.j
 import {
   getReservationMonitoringById,
   getReservationMonitoringList,
+  approveReservation,
+  rejectReservation,
 } from '../services/reservationMonitoringService.js';
 import { getStations, getSlotsByStationId } from '../services/energySlotService.js';
-import { approveReservation } from '../services/reservationCommandService.js';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -33,7 +34,8 @@ const EMPTY_FILTERS = {
 
 export const ReservationMonitoringPage = () => {
   const { user } = useContext(AuthContext);
-  const canApprove = user?.role === 'GridOperator';
+  const isGridOperator = user?.role === 'GridOperator';
+  const canApprove = isGridOperator;
 
   const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
@@ -57,6 +59,78 @@ export const ReservationMonitoringPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [actionError, setActionError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [actionMessage, setActionMessage] = useState(null);
+
+  const handleApprove = async (reservation) => {
+    const targetReservation = reservation?.id ? reservation : detailsReservation;
+    if (!targetReservation?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Approve reservation ${targetReservation.id}? The prosumer can then request a QR token for this booking.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setActionLoading(true);
+    setActionLoadingId(targetReservation.id);
+    setActionError(null);
+    setActionMessage(null);
+
+    const res = await approveReservation(targetReservation.id);
+
+    setActionLoading(false);
+    setActionLoadingId(null);
+
+    if (res.success) {
+      const msg = `Reservation ${targetReservation.id} approved successfully.`;
+      setSuccessMessage(msg);
+      setActionMessage({ type: 'success', text: msg });
+      await loadReservations();
+      if (detailsOpen && detailsReservation?.id === targetReservation.id) {
+        await loadReservationDetails(targetReservation.id);
+      }
+    } else {
+      const err = res.error || 'The reservation could not be approved.';
+      setActionError(err);
+      setActionMessage({ type: 'error', text: err });
+    }
+  };
+
+  const handleReject = async (reservation) => {
+    const targetId = reservation?.id || detailsReservation?.id;
+    if (!targetId) return;
+
+    const reason = window.prompt(`Reject reservation ${targetId}. Enter reason:`, 'Rejected by Grid Operator');
+    if (reason === null) return;
+
+    setActionLoading(true);
+    setActionLoadingId(targetId);
+    setActionError(null);
+    setActionMessage(null);
+
+    const res = await rejectReservation(targetId, reason);
+
+    setActionLoading(false);
+    setActionLoadingId(null);
+
+    if (res.success) {
+      const msg = `Reservation ${targetId} rejected successfully.`;
+      setSuccessMessage(msg);
+      setActionMessage({ type: 'success', text: msg });
+      await loadReservations();
+      if (detailsOpen && detailsReservation?.id === targetId) {
+        await loadReservationDetails(targetId);
+      }
+    } else {
+      const err = res.error || 'Failed to reject reservation.';
+      setActionError(err);
+      setActionMessage({ type: 'error', text: err });
+    }
+  };
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalCount / pageSize) || 1),
@@ -219,32 +293,6 @@ export const ReservationMonitoringPage = () => {
     }
   };
 
-  const handleApprove = async () => {
-    if (!detailsReservation?.id) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Approve reservation ${detailsReservation.id}? The prosumer can then request a QR token for this booking.`
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    setActionLoading(true);
-    setActionError(null);
-    const response = await approveReservation(detailsReservation.id);
-    setActionLoading(false);
-
-    if (!response.success) {
-      setActionError(response.error || 'The reservation could not be approved.');
-      return;
-    }
-
-    setSuccessMessage('Reservation approved.');
-    await loadReservations();
-    await loadReservationDetails(detailsReservation.id);
-  };
 
   const canGoPrevious = page > 1 && !loading;
   const canGoNext = page < totalPages && !loading && totalCount > 0;
@@ -288,6 +336,13 @@ export const ReservationMonitoringPage = () => {
         </div>
       )}
 
+      {actionMessage && (
+        <div className={`alert alert-${actionMessage.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`} role="alert">
+          {actionMessage.text}
+          <button type="button" className="btn-close" aria-label="Close" onClick={() => setActionMessage(null)} />
+        </div>
+      )}
+
       {loading && <LoadingIndicator message="Loading reservations…" />}
 
       {!loading && !error && items.length === 0 && (
@@ -317,6 +372,10 @@ export const ReservationMonitoringPage = () => {
               detailsLoadingId={detailsLoadingId}
               stationNameById={stationNameById}
               slotById={slotById}
+              isGridOperator={isGridOperator}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              actionLoadingId={actionLoadingId}
             />
           </div>
           <div className="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">

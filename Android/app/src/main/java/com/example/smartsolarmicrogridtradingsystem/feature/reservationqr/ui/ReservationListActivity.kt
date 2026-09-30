@@ -100,11 +100,11 @@ class ReservationListActivity : BaseActivity() {
     }
 
     private fun resolveProsumerNic(): String? {
-        val typed = etProsumerNic.text?.toString()?.trim().orEmpty()
-        if (typed.isNotEmpty()) {
-            return typed
+        val sessionNic = sessionManager.getUserIdentifier()?.trim()?.takeIf { it.isNotEmpty() }
+        if (!sessionNic.isNullOrBlank()) {
+            return sessionNic
         }
-        return sessionManager.getUserIdentifier()?.trim()?.takeIf { it.isNotEmpty() }
+        return etProsumerNic.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
     }
 
     private fun loadReservationsFromCache() {
