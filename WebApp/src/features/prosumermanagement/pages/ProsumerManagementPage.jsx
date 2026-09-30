@@ -42,7 +42,7 @@ const getErrorMessage = (err) => {
   return err?.message || 'The prosumer request could not be completed. Please try again.';
 };
 
-export const ProsumerManagementPage = () => {
+export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false }) => {
   const [prosumers, setProsumers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -177,35 +177,66 @@ export const ProsumerManagementPage = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Prosumer Management"
-        subtitle="Manage registered solar prosumers, monitor their account status, and oversee microgrid participation."
-      >
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="inline-flex shrink-0 items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+      {!hideHeader && (
+        <PageHeader
+          title="Prosumer Management"
+          subtitle="Manage registered solar prosumers, monitor their account status, and oversee microgrid participation."
         >
-          + Register Prosumer
-        </button>
-      </PageHeader>
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+          >
+            + Register Prosumer
+          </button>
+        </PageHeader>
+      )}
 
-      {/* DIRECTORY SWITCHER TABS */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-        <Link
-          to={ROUTES.USER_MANAGEMENT}
-          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-        >
-          <span>Staff &amp; Operator Accounts</span>
-        </Link>
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
-        >
-          <span>Solar Prosumers</span>
-          <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{prosumers.length}</span>
-        </button>
-      </div>
+      {!hideTabs && (
+        /* DIRECTORY SWITCHER TABS */
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+          <Link
+            to={`${ROUTES.ADMIN_SETTINGS}?tab=accounts`}
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            <span>Admin Settings &amp; Accounts</span>
+          </Link>
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
+          >
+            <span>Solar Prosumers</span>
+            <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{prosumers.length}</span>
+          </button>
+          <Link
+            to={`${ROUTES.ADMIN_SETTINGS}?tab=create`}
+            className="flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50/70 px-4 py-2 text-sm font-bold text-amber-900 transition hover:bg-amber-100"
+          >
+            <svg className="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Create New Administrator Account</span>
+          </Link>
+        </div>
+      )}
+
+      {hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-900">Solar Prosumer Directory</h3>
+            <p className="text-xs text-slate-500">
+              Review and activate solar prosumers registered via the mobile application.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-xs transition hover:bg-amber-400"
+          >
+            + Register Prosumer
+          </button>
+        </div>
+      )}
 
       {/* Success / Feedback Alert */}
       {feedback && (

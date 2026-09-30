@@ -31,6 +31,21 @@ public sealed class WebUser
     [BsonRepresentation(BsonType.String)]
     public WebUserStatus Status { get; set; } = WebUserStatus.Active;
 
+    [BsonElement("Email")]
+    public string Email { get; set; } = string.Empty;
+
+    [BsonElement("IsEmailVerified")]
+    public bool IsEmailVerified { get; set; } = false;
+
+    [BsonElement("EmailVerificationToken")]
+    public string? EmailVerificationToken { get; set; }
+
+    [BsonElement("PasswordResetToken")]
+    public string? PasswordResetToken { get; set; }
+
+    [BsonElement("PasswordResetExpiry")]
+    public DateTime? PasswordResetExpiry { get; set; }
+
     [BsonElement("CreatedAt")]
     public DateTime CreatedAt { get; set; }
 

@@ -17,10 +17,12 @@ namespace SmartSolarMicrogrid.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IWebUserService _userService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IWebUserService userService)
     {
         _authService = authService;
+        _userService = userService;
     }
 
     [HttpPost("login")]
@@ -61,5 +63,55 @@ public class AuthController : ControllerBase
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
         return Ok(new { Id = userId, Username = username, Role = role });
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        // Initiate password reset email workflow with 15-minute secure token
+        if (request == null || string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { message = "Email is required." });
+        }
+
+        var sent = await _userService.ForgotPasswordAsync(request.Email.Trim());
+        // For security, always return success message so email enumeration is mitigated
+        return Ok(new { message = "If an account with that email exists, password reset instructions have been sent." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        // Complete password reset workflow using token and new password
+        if (request == null || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "Token and NewPassword are required." });
+        }
+
+        var (success, message) = await _userService.ResetPasswordAsync(request.Token.Trim(), request.NewPassword);
+        if (!success)
+        {
+            return BadRequest(new { message });
+        }
+
+        return Ok(new { message });
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+    {
+        // Verify user email address token
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return BadRequest(new { message = "Verification token is required." });
+        }
+
+        var (success, message) = await _userService.VerifyEmailAsync(token.Trim());
+        if (!success)
+        {
+            return BadRequest(new { message });
+        }
+
+        return Ok(new { message });
     }
 }

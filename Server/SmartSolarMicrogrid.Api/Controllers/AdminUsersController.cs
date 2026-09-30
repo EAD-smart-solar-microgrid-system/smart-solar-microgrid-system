@@ -57,4 +57,17 @@ public class AdminUsersController : ControllerBase
         if (!success) return NotFound();
         return NoContent();
     }
+
+    [HttpPost("broadcast-email")]
+    public async Task<IActionResult> BroadcastEmail([FromBody] BroadcastEmailRequest request)
+    {
+        // Send an email broadcast to all platform users or by role
+        if (request == null || string.IsNullOrWhiteSpace(request.Subject) || string.IsNullOrWhiteSpace(request.Message))
+        {
+            return BadRequest(new { message = "Subject and Message are required." });
+        }
+
+        var sentCount = await _userService.BroadcastEmailAsync(request.Subject, request.Message, request.TargetRole);
+        return Ok(new { message = $"Broadcast notification successfully sent to {sentCount} user(s).", count = sentCount });
+    }
 }

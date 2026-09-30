@@ -15,4 +15,8 @@ public interface IWebUserService
     Task<WebUserDto?> CreateUserAsync(CreateWebUserRequest request);
     Task<bool> UpdateUserAsync(string id, UpdateWebUserRequest request);
     Task<bool> UpdateUserStatusAsync(string id, UpdateWebUserStatusRequest request);
+    Task<bool> ForgotPasswordAsync(string email);
+    Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword);
+    Task<(bool Success, string Message)> VerifyEmailAsync(string token);
+    Task<int> BroadcastEmailAsync(string subject, string message, string? targetRole);
 }
