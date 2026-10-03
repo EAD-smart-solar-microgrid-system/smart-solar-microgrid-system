@@ -2,12 +2,13 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: StationService.cs
- * Purpose: Apply station validation, lifecycle rules, and DTO/model mapping.
+ * Purpose: Apply station validation, lifecycle rules, and DTO/model mapping using HubId.
  */
 
 using System.Globalization;
 using MongoDB.Bson;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Utilities;
 using SmartSolarMicrogrid.Api.DTOs.Stations;
 using SmartSolarMicrogrid.Api.Models;
 using SmartSolarMicrogrid.Api.Repositories;
@@ -16,6 +17,7 @@ namespace SmartSolarMicrogrid.Api.Services;
 
 public sealed class StationService : IStationService
 {
+    private const int MaxHubIdGenerationAttempts = 5;
     private readonly IActiveReservationChecker _activeReservationChecker;
     private readonly IStationRepository _stationRepository;
 
@@ -38,6 +40,30 @@ public sealed class StationService : IStationService
         return StationServiceResult<IReadOnlyList<StationResponse>>.Success(responses);
     }
 
+    public async Task<StationServiceResult<StationResponse>> GetByHubIdAsync(
+        string hubId,
+        CancellationToken cancellationToken = default)
+    {
+        // Enforce strict HUB-XXXXXXXX format before querying persistence.
+        if (!HubIdGenerator.IsValid(hubId))
+        {
+            return StationServiceResult<StationResponse>.Failure(
+                StationServiceErrorType.Validation,
+                "The station hubId must follow the format HUB-XXXXXXXX (8 uppercase alphanumeric characters).");
+        }
+
+        var station = await _stationRepository.GetByHubIdAsync(hubId.Trim(), cancellationToken);
+
+        if (station is null)
+        {
+            return StationServiceResult<StationResponse>.Failure(
+                StationServiceErrorType.NotFound,
+                "The requested station was not found.");
+        }
+
+        return StationServiceResult<StationResponse>.Success(MapToResponse(station));
+    }
+
     public async Task<StationServiceResult<StationResponse>> CreateAsync(
         CreateStationRequest request,
         CancellationToken cancellationToken = default)
@@ -58,10 +84,13 @@ public sealed class StationService : IStationService
                 validationMessage);
         }
 
+        var hubId = await GenerateUniqueHubIdAsync(cancellationToken);
         var now = DateTime.UtcNow;
+
         var station = new SolarStation
         {
             Id = ObjectId.GenerateNewId().ToString(),
+            HubId = hubId,
             StationName = request.StationName!.Trim(),
             Latitude = request.Latitude,
             Longitude = request.Longitude,
@@ -79,16 +108,23 @@ public sealed class StationService : IStationService
     }
 
     public async Task<StationServiceResult<StationResponse>> UpdateDetailsAsync(
-        string id,
+        string hubId,
         UpdateStationRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Validate the identifier and editable station fields before loading the station.
-        if (!ObjectId.TryParse(id, out _))
+        // Validate the HubId format and prevent clients from modifying immutable identifiers.
+        if (!HubIdGenerator.IsValid(hubId))
         {
             return StationServiceResult<StationResponse>.Failure(
                 StationServiceErrorType.Validation,
-                "The station id must be a valid MongoDB ObjectId.");
+                "The station hubId must follow the format HUB-XXXXXXXX (8 uppercase alphanumeric characters).");
+        }
+
+        if (request.HubId is not null && !string.Equals(request.HubId.Trim(), hubId.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return StationServiceResult<StationResponse>.Failure(
+                StationServiceErrorType.Validation,
+                "The station HubId is immutable and cannot be changed.");
         }
 
         var validationMessage = ValidateStationInput(
@@ -106,7 +142,7 @@ public sealed class StationService : IStationService
                 validationMessage);
         }
 
-        var existingStation = await _stationRepository.GetByIdAsync(id, cancellationToken);
+        var existingStation = await _stationRepository.GetByHubIdAsync(hubId.Trim(), cancellationToken);
 
         if (existingStation is null)
         {
@@ -138,19 +174,19 @@ public sealed class StationService : IStationService
     }
 
     public async Task<StationServiceResult<StationResponse>> ChangeStatusAsync(
-        string id,
+        string hubId,
         UpdateStationStatusRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Validate the station, requested enum value, and deactivation dependency before writing.
-        if (!ObjectId.TryParse(id, out _))
+        // Validate the station HubId, requested enum value, and deactivation dependency before writing.
+        if (!HubIdGenerator.IsValid(hubId))
         {
             return StationServiceResult<StationResponse>.Failure(
                 StationServiceErrorType.Validation,
-                "The station id must be a valid MongoDB ObjectId.");
+                "The station hubId must follow the format HUB-XXXXXXXX (8 uppercase alphanumeric characters).");
         }
 
-        var existingStation = await _stationRepository.GetByIdAsync(id, cancellationToken);
+        var existingStation = await _stationRepository.GetByHubIdAsync(hubId.Trim(), cancellationToken);
 
         if (existingStation is null)
         {
@@ -174,6 +210,7 @@ public sealed class StationService : IStationService
 
         if (requestedStatus == StationStatus.Inactive)
         {
+            // Resolve to the internal MongoDB ObjectId before calling the reservation checker.
             var hasActiveReservations = await _activeReservationChecker
                 .HasActiveReservationsAsync(existingStation.Id, cancellationToken);
 
@@ -206,6 +243,21 @@ public sealed class StationService : IStationService
         }
 
         return StationServiceResult<StationResponse>.Success(MapToResponse(updatedStation));
+    }
+
+    private async Task<string> GenerateUniqueHubIdAsync(CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < MaxHubIdGenerationAttempts; attempt++)
+        {
+            var candidate = HubIdGenerator.Generate();
+            var existing = await _stationRepository.GetByHubIdAsync(candidate, cancellationToken);
+            if (existing is null)
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException("Failed to generate a collision-free HubId after maximum retry attempts.");
     }
 
     private static string? ValidateStationInput(
@@ -308,10 +360,10 @@ public sealed class StationService : IStationService
 
     private static StationResponse MapToResponse(SolarStation station)
     {
-        // Map a MongoDB model to a response without exposing the model directly.
+        // Map a MongoDB model to a response exposing HubId and keeping internal ObjectId private.
         return new StationResponse
         {
-            Id = station.Id,
+            HubId = station.HubId,
             StationName = station.StationName,
             Latitude = station.Latitude,
             Longitude = station.Longitude,
