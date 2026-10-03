@@ -18,6 +18,9 @@ public sealed class SolarStation
     [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
 
+    [BsonElement("hubId")]
+    public string HubId { get; set; } = string.Empty;
+
     [BsonElement("StationName")]
     public string StationName { get; set; } = string.Empty;
 
