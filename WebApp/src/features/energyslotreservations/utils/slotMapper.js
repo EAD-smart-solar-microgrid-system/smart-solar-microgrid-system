@@ -132,6 +132,21 @@ export const toUpdateSlotRequest = (form) => ({
 });
 
 /**
+ * Formats a Date as a datetime-local input value (local timezone).
+ *
+ * @param {Date} date - Date to format
+ * @returns {string} Value suitable for datetime-local input
+ */
+export const toLocalDateTimeInputValue = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+/**
  * Converts a UTC ISO string to a datetime-local input value.
  *
  * @param {string|null} iso - UTC timestamp from API
@@ -147,8 +162,7 @@ export const utcIsoToLocalDateTimeInput = (iso) => {
     return '';
   }
 
-  const pad = (value) => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return toLocalDateTimeInputValue(date);
 };
 
 /**

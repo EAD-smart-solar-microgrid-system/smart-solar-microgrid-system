@@ -116,6 +116,97 @@ select:focus-visible {
   color: #64748b !important;
 }
 
+.legacy-page .text-danger {
+  color: #dc2626 !important;
+}
+
+.legacy-page .invalid-feedback {
+  display: none;
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: #dc2626;
+}
+
+.legacy-page .invalid-feedback.d-block,
+.legacy-page .is-invalid ~ .invalid-feedback {
+  display: block;
+}
+
+.legacy-page .form-control.is-invalid,
+.legacy-page .form-select.is-invalid {
+  border-color: #f87171;
+}
+
+.legacy-page .form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 0;
+}
+
+.legacy-page .form-check-input {
+  width: 2.4rem;
+  height: 1.25rem;
+  margin: 0;
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #e2e8f0;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.legacy-page .form-check-input::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.2);
+  transition: transform 160ms ease;
+}
+
+.legacy-page .form-check-input:checked {
+  border-color: #0284c7;
+  background: #0284c7;
+}
+
+.legacy-page .form-check-input:checked::after {
+  transform: translateX(1.1rem);
+}
+
+.legacy-page .form-check-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.legacy-page .form-check-label {
+  margin: 0;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+.legacy-page .slot-availability-control {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.625rem;
+  background: #fff;
+}
+
 .legacy-page .btn {
   display: inline-flex;
   align-items: center;
@@ -197,6 +288,39 @@ select:focus-visible {
 
 .legacy-page .btn-outline-warning:hover {
   background: #fffbeb;
+}
+
+.legacy-page .btn-warning {
+  border-color: #f59e0b;
+  background: #fff;
+  color: #b45309;
+}
+
+.legacy-page .btn-warning:hover {
+  border-color: #d97706;
+  background: #fffbeb;
+}
+
+.legacy-page .btn-success {
+  border-color: #22c55e;
+  background: #fff;
+  color: #15803d;
+}
+
+.legacy-page .btn-success:hover {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.legacy-page .btn-danger {
+  border-color: #f43f5e;
+  background: #fff;
+  color: #be123c;
+}
+
+.legacy-page .btn-danger:hover {
+  border-color: #e11d48;
+  background: #fff1f2;
 }
 
 .legacy-page .btn-sm {
