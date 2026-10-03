@@ -8,6 +8,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Utilities;
 using SmartSolarMicrogrid.Api.Data;
 using SmartSolarMicrogrid.Api.DTOs.ReservationMonitoring;
 using SmartSolarMicrogrid.Api.Models;
@@ -24,14 +25,17 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
 
     private readonly IMongoCollection<EnergyReservation> _reservations;
     private readonly IReservationRepository _reservationRepository;
+    private readonly IStationRepository _stationRepository;
 
     public ReservationMonitoringService(
         MongoDbContext databaseContext,
-        IReservationRepository reservationRepository)
+        IReservationRepository reservationRepository,
+        IStationRepository stationRepository)
     {
-        // Bind a read-only collection handle and reuse Member 2's repository for single-document lookups.
+        // Bind a read-only collection handle and repositories for station and reservation lookups.
         _reservations = databaseContext.Database.GetCollection<EnergyReservation>(CollectionName);
         _reservationRepository = reservationRepository;
+        _stationRepository = stationRepository;
     }
 
     public async Task<ReservationMonitoringServiceResult<ReservationMonitoringListResponse>> SearchAsync(
@@ -49,7 +53,33 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
                 validationError);
         }
 
-        var filter = BuildFilter(query, statusFilter);
+        string? resolvedStationId = null;
+        if (!string.IsNullOrWhiteSpace(query.StationId))
+        {
+            var trimmedStationId = query.StationId.Trim();
+            if (HubIdGenerator.IsValid(trimmedStationId))
+            {
+                var station = await _stationRepository.GetByHubIdAsync(trimmedStationId, cancellationToken);
+                if (station is null)
+                {
+                    return ReservationMonitoringServiceResult<ReservationMonitoringListResponse>.Success(
+                        new ReservationMonitoringListResponse
+                        {
+                            Items = [],
+                            TotalCount = 0,
+                            Page = page,
+                            PageSize = pageSize
+                        });
+                }
+                resolvedStationId = station.Id;
+            }
+            else
+            {
+                resolvedStationId = trimmedStationId;
+            }
+        }
+
+        var filter = BuildFilter(query, statusFilter, resolvedStationId);
         var totalCount = (int)await _reservations.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
         var skip = (page - 1) * pageSize;
 
@@ -116,9 +146,10 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
         }
 
         if (!string.IsNullOrWhiteSpace(query.StationId)
-            && !ObjectId.TryParse(query.StationId.Trim(), out _))
+            && !ObjectId.TryParse(query.StationId.Trim(), out _)
+            && !HubIdGenerator.IsValid(query.StationId.Trim()))
         {
-            return "The station id must be a valid MongoDB ObjectId.";
+            return "The station id must be a valid HubId or MongoDB ObjectId.";
         }
 
         if (!string.IsNullOrWhiteSpace(query.ProsumerId)
@@ -153,16 +184,17 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
 
     private static FilterDefinition<EnergyReservation> BuildFilter(
         ReservationMonitoringQuery query,
-        ReservationStatus? statusFilter)
+        ReservationStatus? statusFilter,
+        string? resolvedStationId)
     {
         // Compose optional equality, date-range, and free-text search filters for monitoring.
         var filters = new List<FilterDefinition<EnergyReservation>>();
 
-        if (!string.IsNullOrWhiteSpace(query.StationId))
+        if (!string.IsNullOrWhiteSpace(resolvedStationId))
         {
             filters.Add(Builders<EnergyReservation>.Filter.Eq(
                 reservation => reservation.StationId,
-                query.StationId.Trim()));
+                resolvedStationId));
         }
 
         if (!string.IsNullOrWhiteSpace(query.ProsumerId))
