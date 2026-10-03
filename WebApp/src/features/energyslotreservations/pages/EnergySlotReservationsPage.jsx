@@ -10,6 +10,7 @@ import { PageHeader } from '../../../components/common/PageHeader.jsx';
 import { LoadingIndicator } from '../../../components/common/LoadingIndicator.jsx';
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 import { EmptyState } from '../../../components/common/EmptyState.jsx';
+import { MetricCard } from '../../../components/common/MetricCard.jsx';
 import { StationSelector } from '../components/StationSelector.jsx';
 import { SlotList } from '../components/SlotList.jsx';
 import { SlotFormModal } from '../components/SlotFormModal.jsx';
@@ -74,9 +75,14 @@ export const EnergySlotReservationsPage = () => {
       return;
     }
 
-    setStations(response.data ?? []);
+    const list = response.data ?? [];
+    setStations(list);
+    // If not selected yet, pick the first station
+    if (list.length > 0 && !selectedStationId) {
+      setSelectedStationId(list[0].id);
+    }
     setStationsLoading(false);
-  }, []);
+  }, [selectedStationId]);
 
   const loadSlots = useCallback(async (stationId) => {
     if (!stationId) {
@@ -293,33 +299,69 @@ export const EnergySlotReservationsPage = () => {
   };
 
   const slotsSectionReady = Boolean(selectedStationId) && !slotsLoading && !slotsError;
+  const availableSlotsCount = slots.filter((s) => s.isAvailable).length;
 
   return (
-    <div className="legacy-page energy-slot-reservations-page space-y-4">
+    <div className="legacy-page energy-slot-reservations-page space-y-6">
       <PageHeader
         title="Energy Slot Reservation Management"
-        subtitle="Manage battery storage slot windows for microgrid stations"
+        subtitle="Manage battery storage slot windows and dispatch capacity for microgrid hubs."
         badgeVariant="primary"
       >
         <button
           type="button"
-          className="btn btn-primary"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[#E3511B] px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20] disabled:opacity-50"
           onClick={openCreateModal}
           disabled={!selectedStationId || stationsLoading || slotsLoading || formSubmitting}
         >
-          Create slot
+          <span>+</span>
+          <span>Create Slot</span>
         </button>
       </PageHeader>
 
+      {/* 4 TOP METRIC CARDS */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MetricCard
+          title="Active Hub"
+          value={selectedStation?.hubId || 'HUB-SELECT'}
+          subtitle={selectedStation?.stationName || 'Choose station'}
+          accent="default"
+          icon={<span className="text-sm font-bold text-[#E3511B]">⚡</span>}
+        />
+        <MetricCard
+          title="Hub Capacity"
+          value={selectedStation ? `${selectedStation.capacityKwPerHour} kW` : '—'}
+          subtitle="Max station throughput"
+          accent="default"
+          icon={<span>☀️</span>}
+        />
+        <MetricCard
+          title="Total Slots"
+          value={slotsLoading ? '…' : slots.length}
+          subtitle="Configured time windows"
+          accent="default"
+          icon={<span>📅</span>}
+        />
+        <MetricCard
+          title="Available Slots"
+          value={slotsLoading ? '…' : availableSlotsCount}
+          subtitle="Open for prosumer booking"
+          accent="emerald"
+          icon={<span className="text-[#22C55E]">✓</span>}
+        />
+      </div>
+
       {successMessage && (
-        <div className="alert alert-success alert-dismissible fade show" role="status">
-          {successMessage}
+        <div className="rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/10 p-3.5 text-xs font-semibold text-[#22C55E] flex items-center justify-between" role="status">
+          <span>{successMessage}</span>
           <button
             type="button"
-            className="btn-close"
+            className="text-base leading-none text-[#22C55E] hover:opacity-70"
             aria-label="Dismiss success message"
             onClick={() => setSuccessMessage('')}
-          />
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -332,6 +374,7 @@ export const EnergySlotReservationsPage = () => {
       )}
 
       <div className="row g-4">
+        {/* LEFT COLUMN: STATION SELECTOR & SELECTED STATION CARD */}
         <div className="col-12 col-lg-4">
           <StationSelector
             stations={stations}
@@ -341,41 +384,70 @@ export const EnergySlotReservationsPage = () => {
             disabled={formSubmitting}
           />
           {selectedStation && (
-            <div className="card border-0 shadow-sm mt-3">
-              <div className="card-body small">
-                <h3 className="h6 fw-semibold mb-2">Selected station</h3>
-                <p className="mb-1">
-                  <span className="text-muted">Status:</span> {selectedStation.status || '—'}
-                </p>
-                <p className="mb-1">
-                  <span className="text-muted">Capacity:</span>{' '}
-                  {selectedStation.capacityKwPerHour} kW/h
-                </p>
-                <p className="mb-0">
-                  <span className="text-muted">Configured battery slots:</span>{' '}
-                  {selectedStation.batteryStorageSlotCapacity}
-                </p>
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-lg mt-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#E3511B]">
+                    Selected Solar Hub
+                  </span>
+                  <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                    {selectedStation.stationName}
+                  </h3>
+                </div>
+                <span className="font-mono text-xs font-bold text-[#E3511B] bg-[#E3511B]/10 px-2 py-0.5 rounded-lg border border-[#E3511B]/25">
+                  {selectedStation.hubId || 'HUB-N/A'}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <span>Operational Status:</span>
+                  <span className="font-bold text-[var(--text-primary)]">
+                    {selectedStation.status || 'Active'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <span>Station Capacity:</span>
+                  <span className="font-bold text-[#E3511B]">
+                    {selectedStation.capacityKwPerHour} kW/h
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <span>Battery Slots Configured:</span>
+                  <span className="font-bold text-[var(--text-primary)]">
+                    {selectedStation.batteryStorageSlotCapacity} slots
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <span>Open Available Slots:</span>
+                  <span className="font-bold text-[#22C55E]">
+                    {availableSlotsCount} of {slots.length}
+                  </span>
+                </div>
               </div>
             </div>
           )}
         </div>
 
+        {/* RIGHT COLUMN: SLOTS TABLE */}
         <div className="col-12 col-lg-8">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-              <h2 className="h6 mb-0 fw-semibold">Available energy slots</h2>
+          <div className="rounded-2xl border border-white/7 bg-[#111715] shadow-lg h-100 flex flex-col overflow-hidden">
+            <div className="flex flex-wrap justify-between items-center gap-2 border-b border-white/7 bg-[#151c19] px-5 py-3.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#738079]">
+                Available Energy Slots ({slots.length})
+              </h2>
               {selectedStationId && (
                 <button
                   type="button"
-                  className="btn btn-outline-secondary btn-sm"
+                  className="rounded-lg border border-white/10 bg-[#0d1210] px-3 py-1.5 text-xs font-semibold text-[#a0aaa5] transition hover:bg-white/5 hover:text-[#f4f7f6]"
                   onClick={() => loadSlots(selectedStationId)}
                   disabled={slotsLoading || formSubmitting}
                 >
-                  Refresh
+                  Refresh Slots
                 </button>
               )}
             </div>
-            <div className="card-body">
+            <div className="p-5 flex-1">
               {!selectedStationId && (
                 <EmptyState
                   title="Select a station"
@@ -403,10 +475,14 @@ export const EnergySlotReservationsPage = () => {
               {slotsSectionReady && slots.length === 0 && (
                 <EmptyState
                   title="No energy slots yet"
-                  message="This station has no booking slots. Create the first slot to make capacity available for reservations."
+                  message="This station has no booking slots configured. Create the first slot to make storage capacity available for reservations."
                 >
-                  <button type="button" className="btn btn-primary btn-sm" onClick={openCreateModal}>
-                    Create slot
+                  <button
+                    type="button"
+                    className="rounded-xl bg-[#E3511B] px-4 py-2 text-xs font-bold text-white hover:bg-[#F05A20] transition"
+                    onClick={openCreateModal}
+                  >
+                    Create Slot
                   </button>
                 </EmptyState>
               )}

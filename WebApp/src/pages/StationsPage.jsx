@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createStation, getStations, updateStation, updateStationStatus } from '../services/stationService.js';
 import { StationList } from '../components/stations/StationList.jsx';
+import { StationCardGrid } from '../components/stations/StationCardGrid.jsx';
 import { StationModal } from '../components/stations/StationModal.jsx';
 import { DeactivateStationModal } from '../components/stations/DeactivateStationModal.jsx';
 import { ToastContainer } from '../components/common/Toast.jsx';
-import { ROUTES } from '../constants/routes.js';
+import { MetricCard } from '../components/common/MetricCard.jsx';
 
 const errorMessage = (error) => {
   return error?.message || 'The station request could not be completed.';
@@ -14,6 +14,7 @@ const errorMessage = (error) => {
 export const StationsPage = () => {
   const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
   const [toasts, setToasts] = useState([]);
   const [editingStation, setEditingStation] = useState(undefined);
   const [confirmDeactivationStation, setConfirmDeactivationStation] = useState(null);
@@ -47,7 +48,12 @@ export const StationsPage = () => {
     try {
       const data = await getStations({ signal });
       if (signal?.aborted) return false;
-      setStations(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setStations(list);
+      setSelectedStation((prev) => {
+        if (!prev) return list[0] || null;
+        return list.find((s) => s.hubId === prev.hubId) || list[0] || null;
+      });
       return true;
     } catch (error) {
       if (!signal?.aborted && error.name !== 'AbortError') {
@@ -78,7 +84,8 @@ export const StationsPage = () => {
       try {
         const data = await getStations({ signal: controller.signal });
         if (controller.signal.aborted) return;
-        setStations(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setStations(list);
       } catch (error) {
         if (!controller.signal.aborted && error.name !== 'AbortError') {
           showToast('error', errorMessage(error), {
@@ -100,10 +107,21 @@ export const StationsPage = () => {
     return () => controller.abort();
   }, [loadStations, showToast]);
 
-  const openCreate = () => { setFormError(''); setEditingStation(null); };
-  const openEdit = (station) => { setFormError(''); setEditingStation(station); };
+  const openCreate = () => {
+    setFormError('');
+    setEditingStation(null);
+  };
+
+  const openEdit = (station) => {
+    setFormError('');
+    setEditingStation(station);
+  };
+
   const closeModal = () => {
-    if (!submitting) { setEditingStation(undefined); setFormError(''); }
+    if (!submitting) {
+      setEditingStation(undefined);
+      setFormError('');
+    }
   };
 
   const handleSave = async (payload) => {
@@ -157,48 +175,213 @@ export const StationsPage = () => {
     try {
       const updatedStation = await updateStationStatus(station.hubId, nextStatus);
       setStations((current) => current.map((item) => (item.hubId === station.hubId ? updatedStation : item)));
+      if (selectedStation?.hubId === station.hubId) {
+        setSelectedStation(updatedStation);
+      }
       showToast('success', `${station.stationName} is now ${nextStatus}.`, {
         title: 'Status Updated',
       });
       setConfirmDeactivationStation(null);
     } catch (error) {
-      // Keep the current station state untouched when the authoritative PATCH fails.
       showToast('error', errorMessage(error), {
-        title: 'Status Update Blocked',
+        title: 'Deactivation Blocked',
       });
     } finally {
       setStatusChangingHubId('');
     }
   };
 
+  // KPI Calculations
+  const metrics = useMemo(() => {
+    const totalCount = stations.length;
+    const activeCount = stations.filter((s) => (s.status || '').toLowerCase() === 'active').length;
+    const inactiveCount = stations.filter((s) => (s.status || '').toLowerCase() === 'inactive').length;
+    const totalKw = stations.reduce((sum, s) => sum + (Number(s.capacityKwPerHour) || 0), 0);
+    const totalSlots = stations.reduce((sum, s) => sum + (Number(s.batteryStorageSlotCapacity) || 0), 0);
+
+    return {
+      total: totalCount,
+      active: activeCount,
+      inactive: inactiveCount,
+      capacityStr: totalKw >= 1000 ? `${(totalKw / 1000).toFixed(2)} MW` : `${totalKw} kW`,
+      batterySlots: totalSlots,
+    };
+  }, [stations]);
+
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+      {/* NODE PAGE HEADER */}
+      <header className="flex flex-col gap-4 border-b border-[var(--border-subtle)] pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link to={ROUTES.HOME} className="text-sm font-semibold text-sky-700 hover:text-sky-800">← Back to overview</Link>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-sky-600">Operations / Nodes</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Microgrid node management</h1>
-          <p className="mt-2 max-w-2xl text-slate-600">Register stations, maintain their operating schedules, and control availability for the trading system.</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#E3511B]">
+            Operations / Nodes
+          </p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+            Microgrid Node Management
+          </h1>
+          <p className="mt-1.5 max-w-2xl text-xs sm:text-sm text-[var(--text-secondary)]">
+            Manage solar hubs, generation capacity, battery storage lockers, and operating availability for the trading system.
+          </p>
         </div>
-        <button type="button" onClick={openCreate} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-sky-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700">+ Add station</button>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#E3511B] px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20]"
+          >
+            <span>+</span>
+            <span>Add Hub</span>
+          </button>
+        </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Registered nodes</p><p className="mt-2 text-3xl font-bold text-slate-950">{stations.length}</p></div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Active nodes</p><p className="mt-2 text-3xl font-bold text-emerald-600">{stations.filter((station) => station.status === 'Active').length}</p></div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Inactive nodes</p><p className="mt-2 text-3xl font-bold text-slate-600">{stations.filter((station) => station.status === 'Inactive').length}</p></div>
+      {/* 5 COMPACT KPI METRIC CARDS */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <MetricCard
+          title="Registered Nodes"
+          value={loading ? '—' : metrics.total}
+          subtitle="Total microgrid hubs"
+          icon={<span className="text-sm font-bold">#</span>}
+        />
+        <MetricCard
+          title="Active Nodes"
+          value={loading ? '—' : metrics.active}
+          subtitle="Accepting power flow"
+          trend={`${metrics.total > 0 ? Math.round((metrics.active / metrics.total) * 100) : 0}% Active`}
+          trendPositive={true}
+          icon={<span className="text-[#22C55E]">⚡</span>}
+        />
+        <MetricCard
+          title="Inactive Nodes"
+          value={loading ? '—' : metrics.inactive}
+          subtitle="Offline or standby"
+          icon={<span className="text-[var(--text-muted)]">⏸</span>}
+        />
+        <MetricCard
+          title="Total Capacity"
+          value={loading ? '—' : metrics.capacityStr}
+          subtitle="Clean solar generation"
+          trend="Grid Dispatch"
+          trendPositive={true}
+          icon={<span className="text-[#E3511B]">☀️</span>}
+        />
+        <MetricCard
+          title="Storage Slots"
+          value={loading ? '—' : `${metrics.batterySlots} Slots`}
+          subtitle="Available swap lockers"
+          icon={<span className="text-[#E3511B]">🔋</span>}
+        />
       </div>
 
+      {/* NODE LIST TOOLBAR: TITLE + TABLE/GRID TOGGLE */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-[var(--border-subtle)] pt-5">
+        <div>
+          <h2 className="text-base font-bold text-[var(--text-primary)]">
+            Configured Microgrid Nodes ({stations.length})
+          </h2>
+          <p className="text-xs text-[var(--text-muted)]">
+            Detailed telemetry, GPS locations, and operational controls
+          </p>
+        </div>
+
+        {/* View Toggle: Table / Grid */}
+        <div className="inline-flex rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-1">
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              viewMode === 'table'
+                ? 'bg-[#E3511B] text-white font-bold shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>Table</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('grid')}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              viewMode === 'grid'
+                ? 'bg-[#E3511B] text-white font-bold shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span>Grid Cards</span>
+          </button>
+        </div>
+      </div>
+
+      {/* NODE CONTENT: LOADING / EMPTY / TABLE / GRID */}
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm" role="status"><div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" /><p className="mt-4 text-sm text-slate-500">Loading microgrid nodes…</p></div>
+        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-6 py-16 text-center shadow-[var(--shadow-card)]" role="status">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-default)] border-t-[#E3511B]" />
+          <p className="mt-4 text-xs font-semibold text-[var(--text-muted)]">Loading microgrid nodes…</p>
+        </div>
       ) : stations.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-2xl text-sky-700">⌁</div><h2 className="mt-4 text-xl font-bold text-slate-950">No microgrid nodes have been registered yet.</h2><p className="mx-auto mt-2 max-w-md text-sm text-slate-500">Add the first station to make its capacity and operating schedule available to the system.</p><button type="button" onClick={openCreate} className="mt-5 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700">Add first station</button></div>
+        <div className="rounded-2xl border border-dashed border-[var(--border-default)] bg-[var(--bg-surface)] px-6 py-16 text-center shadow-[var(--shadow-card)]">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E3511B]/10 text-2xl text-[#E3511B] border border-[#E3511B]/20">
+            ⚡
+          </div>
+          <h2 className="mt-4 text-lg font-bold text-[var(--text-primary)]">
+            No microgrid hubs have been registered yet.
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-xs text-[var(--text-muted)]">
+            Add the first station to make its solar generation capacity and operating availability open to prosumers.
+          </p>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="mt-5 rounded-xl bg-[#E3511B] px-4 py-2 text-xs font-bold text-white hover:bg-[#F05A20] transition"
+          >
+            Add First Solar Hub
+          </button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <StationCardGrid
+          stations={stations}
+          onEdit={openEdit}
+          onStatusChange={handleStatusChange}
+          onView={(st) => {
+            setSelectedStation(st);
+            setShowMap(true);
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+          }}
+          statusChangingId={statusChangingHubId}
+        />
       ) : (
-        <StationList stations={stations} onEdit={openEdit} onStatusChange={handleStatusChange} statusChangingId={statusChangingHubId} />
+        <StationList
+          stations={stations}
+          onEdit={openEdit}
+          onStatusChange={handleStatusChange}
+          onView={(st) => {
+            setSelectedStation(st);
+            setShowMap(true);
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+          }}
+          statusChangingId={statusChangingHubId}
+        />
       )}
 
-      {editingStation !== undefined && <StationModal station={editingStation} onSubmit={handleSave} onCancel={closeModal} submitting={submitting} serverError={formError} />}
+      {/* CREATE / EDIT MODAL */}
+      {editingStation !== undefined && (
+        <StationModal
+          station={editingStation}
+          onSubmit={handleSave}
+          onCancel={closeModal}
+          submitting={submitting}
+          serverError={formError}
+        />
+      )}
 
+      {/* DEACTIVATE CONFIRMATION MODAL */}
       {confirmDeactivationStation && (
         <DeactivateStationModal
           station={confirmDeactivationStation}
@@ -213,6 +396,7 @@ export const StationsPage = () => {
         />
       )}
 
+      {/* FLOATING TOAST NOTIFICATIONS */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );

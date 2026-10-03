@@ -1,17 +1,9 @@
+import React from 'react';
 import { ProsumerStatusBadge } from './ProsumerStatusBadge.jsx';
 
 /**
  * ProsumerTable Component
- *
- * Renders a responsive, accessible table of registered solar prosumers.
- * Supports row-level View, Edit, and contextual lifecycle actions (Activate, Deactivate, Reactivate).
- *
- * @param {{
- *   prosumers: Array<object>,
- *   onView?: (prosumer: object) => void,
- *   onEdit?: (prosumer: object) => void,
- *   onStatusAction?: (prosumer: object, targetStatus: string) => void
- * }} props
+ * Dashboard table for registered solar prosumers with theme styling.
  */
 export const ProsumerTable = ({
   prosumers = [],
@@ -25,7 +17,7 @@ export const ProsumerTable = ({
         <button
           type="button"
           onClick={() => onStatusAction && onStatusAction(prosumer, 'Active')}
-          className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+          className="rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/10 px-2.5 py-1 text-xs font-semibold text-[#22C55E] transition hover:bg-[#22C55E]/20"
         >
           Activate
         </button>
@@ -37,7 +29,7 @@ export const ProsumerTable = ({
         <button
           type="button"
           onClick={() => onStatusAction && onStatusAction(prosumer, 'Deactivated')}
-          className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
+          className="rounded-lg border border-[#EF4444]/30 bg-[#EF4444]/10 px-2.5 py-1 text-xs font-semibold text-[#EF4444] transition hover:bg-[#EF4444]/20"
         >
           Deactivate
         </button>
@@ -49,7 +41,7 @@ export const ProsumerTable = ({
         <button
           type="button"
           onClick={() => onStatusAction && onStatusAction(prosumer, 'Active')}
-          className="rounded-lg border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+          className="rounded-lg border border-[#E3511B]/30 bg-[#E3511B]/10 px-2.5 py-1 text-xs font-semibold text-[#E3511B] transition hover:bg-[#E3511B]/20"
         >
           Reactivate
         </button>
@@ -60,54 +52,54 @@ export const ProsumerTable = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-card)]">
       <div className="overflow-x-auto">
-        <table className="min-w-full w-full text-left text-sm" aria-label="Solar Prosumers">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <table className="min-w-full w-full text-left text-xs" aria-label="Solar Prosumers">
+          <thead className="border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
             <tr>
-              <th scope="col" className="px-5 py-4 font-bold">NIC</th>
-              <th scope="col" className="px-5 py-4 font-bold">Full Name</th>
-              <th scope="col" className="px-5 py-4 font-bold">Email</th>
-              <th scope="col" className="px-5 py-4 font-bold">Phone</th>
-              <th scope="col" className="px-5 py-4 font-bold">Address</th>
-              <th scope="col" className="px-5 py-4 font-bold">Status</th>
-              <th scope="col" className="px-5 py-4 font-bold text-right">Actions</th>
+              <th scope="col" className="px-5 py-3.5 font-bold">NIC</th>
+              <th scope="col" className="px-5 py-3.5 font-bold">Full Name</th>
+              <th scope="col" className="px-5 py-3.5 font-bold">Email</th>
+              <th scope="col" className="px-5 py-3.5 font-bold">Phone</th>
+              <th scope="col" className="px-5 py-3.5 font-bold">Address</th>
+              <th scope="col" className="px-5 py-3.5 font-bold">Status</th>
+              <th scope="col" className="px-5 py-3.5 font-bold text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--border-subtle)]">
             {prosumers.map((prosumer) => (
-              <tr key={prosumer.nic} className="transition hover:bg-slate-50/70">
-                <td className="px-5 py-4 font-mono font-medium text-slate-900">
+              <tr key={prosumer.nic} className="transition hover:bg-[var(--bg-hover)]">
+                <td className="px-5 py-3.5 font-mono font-medium text-[var(--text-muted)]">
                   {prosumer.nic}
                 </td>
-                <td className="px-5 py-4 font-semibold text-slate-900">
+                <td className="px-5 py-3.5 font-bold text-[var(--text-primary)]">
                   {prosumer.fullName || '—'}
                 </td>
-                <td className="px-5 py-4 text-slate-600">
+                <td className="px-5 py-3.5 text-[var(--text-secondary)]">
                   {prosumer.email || '—'}
                 </td>
-                <td className="px-5 py-4 text-slate-600">
+                <td className="px-5 py-3.5 text-[var(--text-secondary)]">
                   {prosumer.phone || '—'}
                 </td>
-                <td className="max-w-xs truncate px-5 py-4 text-slate-600" title={prosumer.address || ''}>
+                <td className="max-w-xs truncate px-5 py-3.5 text-[var(--text-muted)]" title={prosumer.address || ''}>
                   {prosumer.address || '—'}
                 </td>
-                <td className="px-5 py-4">
+                <td className="px-5 py-3.5">
                   <ProsumerStatusBadge status={prosumer.status} />
                 </td>
-                <td className="px-5 py-4 text-right">
-                  <div className="inline-flex items-center justify-end gap-2">
+                <td className="px-5 py-3.5 text-right">
+                  <div className="inline-flex items-center justify-end gap-1.5">
                     <button
                       type="button"
                       onClick={() => onView && onView(prosumer)}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                      className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2.5 py-1 text-xs font-semibold text-[var(--text-primary)] transition hover:border-[#E3511B]/40 hover:text-[#E3511B]"
                     >
                       View
                     </button>
                     <button
                       type="button"
                       onClick={() => onEdit && onEdit(prosumer)}
-                      className="rounded-lg border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+                      className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2.5 py-1 text-xs font-semibold text-[var(--text-primary)] transition hover:border-[#E3511B]/40 hover:text-[#E3511B]"
                     >
                       Edit
                     </button>

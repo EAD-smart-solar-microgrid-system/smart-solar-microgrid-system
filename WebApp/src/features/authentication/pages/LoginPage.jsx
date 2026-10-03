@@ -63,91 +63,113 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="legacy-page flex justify-center py-6 sm:py-10">
-      <div className="col-md-4">
-        <div className="card w-full max-w-md shadow-md border border-slate-200/80">
-          <div className="card-body">
-            <div className="mb-4 flex flex-col items-center justify-center text-center">
-              <Logo size="lg" showText={false} />
-              <h1 className="mt-3 text-xl font-bold text-slate-900">Sign in to Smart Solar Microgrid</h1>
-            </div>
-            {error && <div className="alert alert-danger">{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="login-username" className="form-label">Username</label>
-                <input
-                  id="login-username"
-                  type="text"
-                  className="form-control"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between">
-                  <label htmlFor="login-password" className="form-label mb-0">Password</label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForgotMessage('');
-                      setForgotError('');
-                      setShowForgotModal(true);
-                    }}
-                    className="text-xs font-semibold text-amber-600 hover:text-amber-700"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                <input
-                  id="login-password"
-                  type="password"
-                  className="form-control mt-1"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <button type="submit" className="btn btn-primary w-full">Sign in</button>
-            </form>
+    <div className="flex justify-center items-center py-10 sm:py-16">
+      <div className="w-full max-w-md">
+        <div className="rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-7 sm:p-8 shadow-[var(--shadow-modal)]">
+          <div className="mb-6 flex flex-col items-center justify-center text-center">
+            <Logo size="lg" showText={false} />
+            <h1 className="mt-4 text-xl font-extrabold text-[var(--text-primary)]">
+              Sign In to SolarGrid
+            </h1>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Smart Solar Microgrid Energy Trading System
+            </p>
           </div>
+
+          {error && (
+            <div className="mb-5 rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-3 text-xs font-semibold text-[#EF4444]">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="login-username" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
+                Username
+              </label>
+              <input
+                id="login-username"
+                type="text"
+                className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter staff username"
+                required
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="login-password" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotMessage('');
+                    setForgotError('');
+                    setShowForgotModal(true);
+                  }}
+                  className="text-xs font-semibold text-[#E3511B] hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+              <input
+                id="login-password"
+                type="password"
+                className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="mt-2 w-full rounded-xl bg-[#E3511B] py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20]"
+            >
+              Sign In to Dashboard
+            </button>
+          </form>
         </div>
       </div>
 
       {/* FORGOT PASSWORD MODAL */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-base font-bold text-slate-900">Reset Your Password</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-[var(--shadow-modal)]">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3 mb-4">
+              <h3 className="text-base font-bold text-[var(--text-primary)]">Reset Your Password</h3>
               <button
                 type="button"
                 onClick={() => setShowForgotModal(false)}
-                className="text-slate-400 hover:text-slate-700 text-lg leading-none"
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-lg leading-none"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 mb-4">
+            <p className="text-xs text-[var(--text-secondary)] mb-4">
               Enter your registered email address. We will send you a secure link to reset your credentials.
             </p>
 
             {forgotError && (
-              <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+              <div className="mb-3 rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-3 text-xs text-[#EF4444]">
                 {forgotError}
               </div>
             )}
 
             {forgotMessage ? (
               <div className="space-y-4">
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800">
+                <div className="rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/10 p-4 text-xs font-semibold text-[#22C55E]">
                   {forgotMessage}
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="w-full rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800"
+                  className="w-full rounded-xl bg-[#E3511B] py-2.5 text-xs font-bold text-white transition hover:bg-[#F05A20]"
                 >
                   Done
                 </button>
@@ -155,8 +177,8 @@ export const LoginPage = () => {
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div>
-                  <label htmlFor="forgot-email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Email Address <span className="text-rose-500">*</span>
+                  <label htmlFor="forgot-email" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                    Email Address <span className="text-[#EF4444]">*</span>
                   </label>
                   <input
                     id="forgot-email"
@@ -165,7 +187,7 @@ export const LoginPage = () => {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 focus:bg-white focus:border-amber-500 outline-none"
+                    className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[#E3511B]"
                   />
                 </div>
 
@@ -173,14 +195,14 @@ export const LoginPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowForgotModal(false)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                    className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={forgotLoading}
-                    className="rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 transition hover:bg-amber-400 disabled:opacity-50"
+                    className="rounded-xl bg-[#E3511B] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#F05A20] disabled:opacity-50"
                   >
                     {forgotLoading ? 'Sending...' : 'Send Reset Link'}
                   </button>

@@ -7,13 +7,14 @@
  * Integrates create, details, and edit modal workflows.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes.js';
 import { PageHeader } from '../../../components/common/PageHeader.jsx';
 import { LoadingIndicator } from '../../../components/common/LoadingIndicator.jsx';
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 import { EmptyState } from '../../../components/common/EmptyState.jsx';
+import { MetricCard } from '../../../components/common/MetricCard.jsx';
 import { ProsumerTable } from '../components/ProsumerTable.jsx';
 import { CreateProsumerModal } from '../components/CreateProsumerModal.jsx';
 import { ProsumerDetailsModal } from '../components/ProsumerDetailsModal.jsx';
@@ -31,13 +32,10 @@ const STATUS_FILTERS = [
 
 /**
  * Normalizes error objects into human-readable messages.
- *
- * @param {Error|ApiError|any} err
- * @returns {string} Formatted error message
  */
 const getErrorMessage = (err) => {
   if (err instanceof ApiError && err.status) {
-    return `API error (${err.status}): ${err.message}`;
+    return err.message;
   }
   return err?.message || 'The prosumer request could not be completed. Please try again.';
 };
@@ -58,7 +56,6 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
 
   /**
    * Fetches prosumer profiles from the backend service.
-   * Status 'All' fetches all prosumers; specific statuses pass the status query parameter.
    */
   const loadProsumers = useCallback(async (status, { signal } = {}) => {
     setLoading(true);
@@ -139,7 +136,6 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
 
   /**
    * Client-side search across currently loaded prosumers.
-   * Matches case-insensitively against NIC, Full Name, Email, and Phone.
    */
   const filteredProsumers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -162,9 +158,6 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
     });
   }, [prosumers, searchTerm]);
 
-  /**
-   * Accurate result count text based on currently loaded and searched records.
-   */
   const countText = useMemo(() => {
     const totalLoaded = prosumers.length;
     const displayed = filteredProsumers.length;
@@ -172,68 +165,108 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
     if (searchTerm.trim()) {
       return `Showing ${displayed} of ${totalLoaded} prosumer${totalLoaded === 1 ? '' : 's'}`;
     }
-    return `${totalLoaded} prosumer${totalLoaded === 1 ? '' : 's'} loaded`;
+    return `${totalLoaded} prosumer${totalLoaded === 1 ? '' : 's'} registered`;
   }, [prosumers.length, filteredProsumers.length, searchTerm]);
+
+  // Counts for top cards
+  const pendingCount = prosumers.filter((p) => p.status === 'Pending').length;
+  const activeCount = prosumers.filter((p) => p.status === 'Active').length;
 
   return (
     <div className="space-y-6">
       {!hideHeader && (
         <PageHeader
           title="Prosumer Management"
-          subtitle="Manage registered solar prosumers, monitor their account status, and oversee microgrid participation."
+          subtitle="Manage registered solar prosumers, review NIC profiles, and oversee microgrid trading participation."
         >
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#E3511B] px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20]"
           >
-            + Register Prosumer
+            <span>+</span>
+            <span>Register Prosumer</span>
           </button>
         </PageHeader>
       )}
 
+      {/* TOP KPI CARDS (Only show when not embedded) */}
+      {!hideHeader && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricCard
+            title="Total Prosumers"
+            value={loading ? '…' : prosumers.length}
+            subtitle="Registered rooftop solar citizens"
+            accent="default"
+            icon={<span>👥</span>}
+          />
+          <MetricCard
+            title="Active Traders"
+            value={loading ? '…' : activeCount}
+            subtitle="Verified for energy slots"
+            accent="emerald"
+            icon={<span className="text-[#22C55E]">⚡</span>}
+          />
+          <MetricCard
+            title="Pending NIC Review"
+            value={loading ? '…' : pendingCount}
+            subtitle="Awaiting backoffice activation"
+            accent="amber"
+            icon={<span className="text-[#F59E0B]">⏳</span>}
+          />
+          <MetricCard
+            title="Deactivated"
+            value={loading ? '…' : prosumers.filter((p) => p.status === 'Deactivated').length}
+            subtitle="Suspended accounts"
+            accent="default"
+            icon={<span className="text-[var(--text-muted)]">⏸</span>}
+          />
+        </div>
+      )}
+
       {!hideTabs && (
         /* DIRECTORY SWITCHER TABS */
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border-subtle)] pb-3">
           <Link
             to={`${ROUTES.ADMIN_SETTINGS}?tab=accounts`}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+            className="flex items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-4 py-2 text-xs font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           >
             <span>Admin Settings &amp; Accounts</span>
           </Link>
           <button
             type="button"
-            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-xs"
+            className="flex items-center gap-2 rounded-xl border border-[#E3511B]/40 bg-[#E3511B]/10 px-4 py-2 text-xs font-bold text-[#E3511B] shadow-sm"
           >
             <span>Solar Prosumers</span>
-            <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-semibold">{prosumers.length}</span>
+            <span className="rounded-full bg-[#E3511B] px-2 py-0.5 text-[10px] font-black text-white">
+              {prosumers.length}
+            </span>
           </button>
           <Link
             to={`${ROUTES.ADMIN_SETTINGS}?tab=create`}
-            className="flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50/70 px-4 py-2 text-sm font-bold text-amber-900 transition hover:bg-amber-100"
+            className="flex items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-4 py-2 text-xs font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           >
-            <svg className="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Create New Administrator Account</span>
+            <span className="text-[#E3511B] font-bold">+</span>
+            <span>Create New Administrator</span>
           </Link>
         </div>
       )}
 
       {hideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Solar Prosumer Directory</h3>
-            <p className="text-xs text-slate-500">
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">Solar Prosumer Directory</h3>
+            <p className="text-xs text-[var(--text-muted)]">
               Review and activate solar prosumers registered via the mobile application.
             </p>
           </div>
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-xs transition hover:bg-amber-400"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#E3511B] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#F05A20]"
           >
-            + Register Prosumer
+            <span>+</span>
+            <span>Register Prosumer</span>
           </button>
         </div>
       )}
@@ -241,17 +274,17 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
       {/* Success / Feedback Alert */}
       {feedback && (
         <div
-          className="flex items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"
+          className="flex items-center justify-between gap-4 rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/10 px-4 py-3 text-xs font-semibold text-[#22C55E]"
           role="status"
         >
           <span>{feedback}</span>
           <button
             type="button"
             onClick={() => setFeedback('')}
-            className="text-xl leading-none text-emerald-700 hover:text-emerald-950"
+            className="text-base leading-none text-[#22C55E] hover:opacity-70"
             aria-label="Dismiss success message"
           >
-            ×
+            ✕
           </button>
         </div>
       )}
@@ -260,7 +293,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Status filter tabs */}
         <div
-          className="inline-flex flex-wrap rounded-xl border border-slate-200 bg-slate-100 p-1"
+          className="inline-flex flex-wrap rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-1"
           role="group"
           aria-label="Filter by status"
         >
@@ -273,8 +306,8 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
                 onClick={() => handleStatusChange(value)}
                 className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                   isActive
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#E3511B] text-white font-bold shadow-xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 aria-pressed={isActive}
               >
@@ -290,7 +323,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             Search prosumers
           </label>
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <span className="text-sm text-slate-400" aria-hidden="true">
+            <span className="text-xs text-[var(--text-muted)]" aria-hidden="true">
               🔍
             </span>
           </div>
@@ -301,16 +334,16 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             placeholder="Search NIC, name, email, phone…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-8 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] py-2 pl-8 pr-8 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
               aria-label="Clear search input"
-              className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600"
+              className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
-              <span className="text-sm font-bold leading-none">×</span>
+              ✕
             </button>
           )}
         </div>
@@ -318,11 +351,11 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
 
       {/* Counts Summary */}
       {!loading && !error && (
-        <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
           <span>{countText}</span>
           {statusFilter !== 'All' && (
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
-              Filtered: {statusFilter}
+            <span className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2 py-0.5 font-medium text-[var(--text-secondary)]">
+              Filter: {statusFilter}
             </span>
           )}
         </div>
@@ -336,7 +369,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             <button
               type="button"
               onClick={handleRetry}
-              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50"
+              className="inline-flex items-center rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             >
               Retry
             </button>
@@ -370,7 +403,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
           <button
             type="button"
             onClick={() => setSearchTerm('')}
-            className="inline-flex items-center rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-sky-700"
+            className="inline-flex items-center rounded-xl bg-[#E3511B] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#F05A20]"
           >
             Clear search
           </button>

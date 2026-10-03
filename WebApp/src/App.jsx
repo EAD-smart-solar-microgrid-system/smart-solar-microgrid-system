@@ -14,6 +14,7 @@ import { ReservationMonitoringPage } from './features/energyslotreservations/pag
 
 import { AuthProvider } from './features/authentication/context/AuthContext.jsx';
 import { AuthContext } from './features/authentication/context/AuthContextValue.js';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 import { LoginPage } from './features/authentication/pages/LoginPage.jsx';
 import { ResetPasswordPage } from './features/authentication/pages/ResetPasswordPage.jsx';
 import { VerifyEmailPage } from './features/authentication/pages/VerifyEmailPage.jsx';
@@ -48,95 +49,97 @@ const ProtectedRoute = ({ children, roleRequired, rolesAllowed }) => {
 
 export function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path={ROUTES.HOME} element={<AppLayout />}>
-            <Route index element={<HomePage />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path={ROUTES.HOME} element={<AppLayout />}>
+              <Route index element={<HomePage />} />
 
-            {/* Authentication routes */}
-            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-            <Route
-              path={ROUTES.RESET_PASSWORD}
-              element={<ResetPasswordPage />}
-            />
-            <Route
-              path={ROUTES.VERIFY_EMAIL}
-              element={<VerifyEmailPage />}
-            />
+              {/* Authentication routes */}
+              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+              <Route
+                path={ROUTES.RESET_PASSWORD}
+                element={<ResetPasswordPage />}
+              />
+              <Route
+                path={ROUTES.VERIFY_EMAIL}
+                element={<VerifyEmailPage />}
+              />
 
-            {/* Backoffice user management */}
-            <Route
-              path={ROUTES.USER_MANAGEMENT}
-              element={
-                <ProtectedRoute roleRequired="Backoffice">
-                  <UserManagementPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Backoffice user management */}
+              <Route
+                path={ROUTES.USER_MANAGEMENT}
+                element={
+                  <ProtectedRoute roleRequired="Backoffice">
+                    <UserManagementPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Backoffice admin settings */}
-            <Route
-              path={ROUTES.ADMIN_SETTINGS}
-              element={
-                <ProtectedRoute roleRequired="Backoffice">
-                  <UserManagementPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Backoffice admin settings */}
+              <Route
+                path={ROUTES.ADMIN_SETTINGS}
+                element={
+                  <ProtectedRoute roleRequired="Backoffice">
+                    <UserManagementPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Backoffice prosumer management */}
-            <Route
-              path={ROUTES.PROSUMER_MANAGEMENT}
-              element={
-                <ProtectedRoute roleRequired="Backoffice">
-                  <ProsumerManagementPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Backoffice prosumer management */}
+              <Route
+                path={ROUTES.PROSUMER_MANAGEMENT}
+                element={
+                  <ProtectedRoute roleRequired="Backoffice">
+                    <ProsumerManagementPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Grid Operator energy slot management */}
-            <Route
-              path={ROUTES.ENERGY_SLOT_RESERVATIONS}
-              element={
-                <ProtectedRoute roleRequired="GridOperator">
-                  <EnergySlotReservationsPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Grid Operator energy slot management */}
+              <Route
+                path={ROUTES.ENERGY_SLOT_RESERVATIONS}
+                element={
+                  <ProtectedRoute roleRequired="GridOperator">
+                    <EnergySlotReservationsPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/*
-              Reservation monitoring:
-              - GridOperator: view + operational Approve/Reject actions
-              - Backoffice: read-only monitoring
-            */}
-            <Route
-              path={ROUTES.RESERVATION_MONITORING}
-              element={
-                <ProtectedRoute
-                  rolesAllowed={['GridOperator', 'Backoffice']}
-                >
-                  <ReservationMonitoringPage />
-                </ProtectedRoute>
-              }
-            />
+              {/*
+                Reservation monitoring:
+                - GridOperator: view + operational Approve/Reject actions
+                - Backoffice: read-only monitoring
+              */}
+              <Route
+                path={ROUTES.RESERVATION_MONITORING}
+                element={
+                  <ProtectedRoute
+                    rolesAllowed={['GridOperator', 'Backoffice']}
+                  >
+                    <ReservationMonitoringPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Backoffice station administration */}
-            <Route
-              path={ROUTES.STATIONS.slice(1)}
-              element={
-                <ProtectedRoute roleRequired="Backoffice">
-                  <StationsPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Backoffice station administration */}
+              <Route
+                path={ROUTES.STATIONS.slice(1)}
+                element={
+                  <ProtectedRoute roleRequired="Backoffice">
+                    <StationsPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Fallback */}
-            <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+              {/* Fallback */}
+              <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
