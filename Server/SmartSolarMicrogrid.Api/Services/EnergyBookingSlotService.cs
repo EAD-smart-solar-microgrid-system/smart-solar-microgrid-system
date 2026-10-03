@@ -316,6 +316,17 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
             return "SlotEndUtc must be later than SlotStartUtc.";
         }
 
+        var nowUtc = DateTime.UtcNow;
+        if (normalizedStart < nowUtc)
+        {
+            return "SlotStartUtc cannot be in the past.";
+        }
+
+        if (normalizedEnd < nowUtc)
+        {
+            return "SlotEndUtc cannot be in the past.";
+        }
+
         if (!double.IsFinite(capacityKw) || capacityKw <= 0)
         {
             return "CapacityKw must be greater than 0.";

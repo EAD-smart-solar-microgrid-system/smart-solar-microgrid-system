@@ -4,6 +4,8 @@
  * Bootstrap modal for creating or editing an energy booking slot.
  */
 
+import { toLocalDateTimeInputValue } from '../utils/slotMapper.js';
+
 export const SlotFormModal = ({
   show,
   mode,
@@ -22,6 +24,12 @@ export const SlotFormModal = ({
   if (!show) {
     return null;
   }
+
+  const nowLocal = toLocalDateTimeInputValue(new Date());
+  const endMin =
+    form.slotStartLocal && form.slotStartLocal > nowLocal
+      ? form.slotStartLocal
+      : nowLocal;
 
   return (
     <>
@@ -49,7 +57,7 @@ export const SlotFormModal = ({
                 <div className="row g-3">
                   <div className="col-12 col-md-6">
                     <label htmlFor="slot-start-local" className="form-label">
-                      Start (local time)
+                      Start
                     </label>
                     <input
                       id="slot-start-local"
@@ -57,17 +65,20 @@ export const SlotFormModal = ({
                       type="datetime-local"
                       className={`form-control ${fieldErrors.slotStartLocal ? 'is-invalid' : ''}`}
                       value={form.slotStartLocal}
+                      min={nowLocal}
                       onChange={onChange}
                       disabled={submitting}
                       required
                     />
                     {fieldErrors.slotStartLocal && (
-                      <div className="invalid-feedback">{fieldErrors.slotStartLocal}</div>
+                      <div className="invalid-feedback d-block text-danger">
+                        {fieldErrors.slotStartLocal}
+                      </div>
                     )}
                   </div>
                   <div className="col-12 col-md-6">
                     <label htmlFor="slot-end-local" className="form-label">
-                      End (local time)
+                      End
                     </label>
                     <input
                       id="slot-end-local"
@@ -75,12 +86,15 @@ export const SlotFormModal = ({
                       type="datetime-local"
                       className={`form-control ${fieldErrors.slotEndLocal ? 'is-invalid' : ''}`}
                       value={form.slotEndLocal}
+                      min={endMin}
                       onChange={onChange}
                       disabled={submitting}
                       required
                     />
                     {fieldErrors.slotEndLocal && (
-                      <div className="invalid-feedback">{fieldErrors.slotEndLocal}</div>
+                      <div className="invalid-feedback d-block text-danger">
+                        {fieldErrors.slotEndLocal}
+                      </div>
                     )}
                   </div>
                   <div className="col-12 col-md-6">
@@ -101,29 +115,33 @@ export const SlotFormModal = ({
                     />
                     {Number.isFinite(stationCapacityKw) && stationCapacityKw > 0 && (
                       <div className="form-text">
-                        Station limit: {stationCapacityKw} kW per hour (authoritative checks apply
-                        on the server).
+                        Station limit: {stationCapacityKw} kW per hour.
                       </div>
                     )}
                     {fieldErrors.capacityKw && (
-                      <div className="invalid-feedback">{fieldErrors.capacityKw}</div>
+                      <div className="invalid-feedback d-block text-danger">
+                        {fieldErrors.capacityKw}
+                      </div>
                     )}
                   </div>
-                  <div className="col-12 col-md-6 d-flex align-items-end">
-                    <div className="form-check form-switch">
-                      <input
-                        id="slot-is-available"
-                        name="isAvailable"
-                        className="form-check-input"
-                        type="checkbox"
-                        role="switch"
-                        checked={form.isAvailable}
-                        onChange={onChange}
-                        disabled={submitting}
-                      />
-                      <label className="form-check-label" htmlFor="slot-is-available">
-                        Slot is available for booking
-                      </label>
+                  <div className="col-12 col-md-6">
+                    <span className="form-label d-block">Availability</span>
+                    <div className="slot-availability-control">
+                      <div className="form-check form-switch mb-0">
+                        <input
+                          id="slot-is-available"
+                          name="isAvailable"
+                          className="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          checked={form.isAvailable}
+                          onChange={onChange}
+                          disabled={submitting}
+                        />
+                        <label className="form-check-label" htmlFor="slot-is-available">
+                          Slot is available for booking
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
