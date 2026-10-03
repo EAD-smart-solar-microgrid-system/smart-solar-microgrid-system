@@ -11,6 +11,7 @@ import { LoadingIndicator } from '../../../components/common/LoadingIndicator.js
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 import { EmptyState } from '../../../components/common/EmptyState.jsx';
 import { MetricCard } from '../../../components/common/MetricCard.jsx';
+import { MaterialIcon } from '../../../components/common/MaterialIcon.jsx';
 import { ReservationMonitoringFilters } from '../components/ReservationMonitoringFilters.jsx';
 import { ReservationMonitoringTable } from '../components/ReservationMonitoringTable.jsx';
 import { ReservationDetailsModal } from '../components/ReservationDetailsModal.jsx';
@@ -319,28 +320,28 @@ export const ReservationMonitoringPage = () => {
           value={loading ? '…' : totalCount}
           subtitle="All recorded bookings"
           accent="blue"
-          icon={<span>📋</span>}
+          icon={<MaterialIcon name="event" size={20} className="text-white" />}
         />
         <MetricCard
           title="Pending Action"
           value={loading ? '…' : pendingCount}
           subtitle="Awaiting operator review"
           accent="amber"
-          icon={<span className="text-[#f5b942]">⏳</span>}
+          icon={<MaterialIcon name="hourglass" size={20} className="text-white" />}
         />
         <MetricCard
           title="Approved Bookings"
           value={loading ? '…' : approvedCount}
           subtitle="Ready for QR tokens"
           accent="emerald"
-          icon={<span className="text-[#22C55E]">✓</span>}
+          icon={<MaterialIcon name="check_circle" size={20} className="text-white" />}
         />
         <MetricCard
           title="Monitored Hubs"
           value={stationsLoading ? '…' : stations.length}
           subtitle="Connected solar nodes"
           accent="default"
-          icon={<span>⚡</span>}
+          icon={<MaterialIcon name="hub" size={20} className="text-white" />}
         />
       </div>
 

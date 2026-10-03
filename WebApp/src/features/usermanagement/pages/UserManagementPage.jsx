@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import appConfig from '../../../config/appConfig';
 import { AuthContext } from '../../authentication/context/AuthContextValue.js';
 import { ProsumerManagementPage } from '../../prosumermanagement/pages/ProsumerManagementPage.jsx';
+import { MaterialIcon } from '../../../components/common/MaterialIcon.jsx';
 
 export const UserManagementPage = () => {
   const { token } = useContext(AuthContext);
@@ -318,7 +319,7 @@ export const UserManagementPage = () => {
               </>
             ) : (
               <>
-                <span className="text-base font-bold leading-none">+</span>
+                <MaterialIcon name="add" size={15} className="text-white" />
                 <span>Create New Administrator</span>
               </>
             )}

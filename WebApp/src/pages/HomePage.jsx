@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { apiRequest } from '../services/apiClient.js';
 import { ROUTES } from '../constants/routes.js';
 import { MetricCard } from '../components/common/MetricCard.jsx';
+import { MaterialIcon } from '../components/common/MaterialIcon.jsx';
 import { SolarHubMap } from '../components/common/SolarHubMap.jsx';
 import { SelectedHubDetailsPanel } from '../components/common/SelectedHubDetailsPanel.jsx';
 import microgridNetworkImg from '../assets/microgrid-network.jpg';
@@ -136,9 +137,10 @@ export const HomePage = () => {
           <button
             type="button"
             onClick={() => fetchDashboardData(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition"
+            disabled={refreshing}
+            className="flex items-center gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-hover)] transition"
           >
-            <span className="text-[13px]">⟲</span>
+            <MaterialIcon name="refresh" size={14} className={`text-white ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>
@@ -156,11 +158,7 @@ export const HomePage = () => {
           trendPositive={true}
           actionLabel="Explore fleet"
           onAction={() => setShowMap(true)}
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          }
+          icon={<MaterialIcon name="solar_power" size={22} className="text-white" />}
         />
 
         {/* KPI 2: Active Solar Hubs */}
@@ -172,11 +170,7 @@ export const HomePage = () => {
           trendPositive={true}
           actionLabel="View all nodes"
           onAction={() => {}}
-          icon={
-            <svg className="h-5 w-5 text-[#22C55E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon={<MaterialIcon name="bolt" size={22} className="text-white" />}
         />
 
         {/* KPI 3: Available Battery Storage */}
@@ -188,11 +182,7 @@ export const HomePage = () => {
           trendPositive={true}
           actionLabel="Check lockers"
           onAction={() => {}}
-          icon={
-            <svg className="h-5 w-5 text-[#E3511B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          }
+          icon={<MaterialIcon name="battery" size={22} className="text-white" />}
         />
 
         {/* KPI 4: Active Reservations */}
@@ -204,11 +194,7 @@ export const HomePage = () => {
           trendPositive={true}
           actionLabel="Review bookings"
           onAction={() => {}}
-          icon={
-            <svg className="h-5 w-5 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
+          icon={<MaterialIcon name="event" size={22} className="text-white" />}
         />
       </div>
 
@@ -238,9 +224,10 @@ export const HomePage = () => {
 
                 <Link
                   to={ROUTES.STATIONS}
-                  className="inline-flex items-center gap-1 rounded-xl bg-[#E3511B] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#F05A20]"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#E3511B] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#F05A20]"
                 >
-                  <span>+ Add Hub</span>
+                  <MaterialIcon name="add" size={14} className="text-white" />
+                  <span>Add Hub</span>
                 </Link>
               </div>
             </div>
@@ -415,22 +402,15 @@ export const HomePage = () => {
                 onChange={(e) => setActivitySearch(e.target.value)}
                 className="w-44 sm:w-56 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-1.5 pl-8 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none focus:border-[#E3511B]"
               />
-              <svg
-                className="absolute left-2.5 top-2 h-3.5 w-3.5 text-[var(--text-muted)]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <MaterialIcon name="search" size={14} className="absolute left-2.5 top-2.5 text-white/50" />
             </div>
 
             <button
               type="button"
-              className="flex items-center gap-1 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="flex items-center gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-white"
             >
+              <MaterialIcon name="filter_list" size={14} className="text-white" />
               <span>Filter</span>
-              <span className="text-[10px]">⚙</span>
             </button>
           </div>
         </div>
@@ -455,8 +435,8 @@ export const HomePage = () => {
                   <tr key={st.hubId} className="hover:bg-[var(--bg-hover)] transition">
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E3511B]/15 text-[#E3511B]">
-                          ⚡
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E3511B]/15 text-white">
+                          <MaterialIcon name="bolt" size={14} className="text-white" />
                         </span>
                         <div>
                           <p className="font-bold text-[var(--text-primary)]">{st.stationName}</p>

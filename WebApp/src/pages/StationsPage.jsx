@@ -6,6 +6,7 @@ import { StationModal } from '../components/stations/StationModal.jsx';
 import { DeactivateStationModal } from '../components/stations/DeactivateStationModal.jsx';
 import { ToastContainer } from '../components/common/Toast.jsx';
 import { MetricCard } from '../components/common/MetricCard.jsx';
+import { MaterialIcon } from '../components/common/MaterialIcon.jsx';
 
 const errorMessage = (error) => {
   return error?.message || 'The station request could not be completed.';
@@ -50,10 +51,6 @@ export const StationsPage = () => {
       if (signal?.aborted) return false;
       const list = Array.isArray(data) ? data : [];
       setStations(list);
-      setSelectedStation((prev) => {
-        if (!prev) return list[0] || null;
-        return list.find((s) => s.hubId === prev.hubId) || list[0] || null;
-      });
       return true;
     } catch (error) {
       if (!signal?.aborted && error.name !== 'AbortError') {
@@ -175,9 +172,6 @@ export const StationsPage = () => {
     try {
       const updatedStation = await updateStationStatus(station.hubId, nextStatus);
       setStations((current) => current.map((item) => (item.hubId === station.hubId ? updatedStation : item)));
-      if (selectedStation?.hubId === station.hubId) {
-        setSelectedStation(updatedStation);
-      }
       showToast('success', `${station.stationName} is now ${nextStatus}.`, {
         title: 'Status Updated',
       });
@@ -230,7 +224,7 @@ export const StationsPage = () => {
             onClick={openCreate}
             className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#E3511B] px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20]"
           >
-            <span>+</span>
+            <MaterialIcon name="add" size={16} className="text-white" />
             <span>Add Hub</span>
           </button>
         </div>
@@ -242,7 +236,7 @@ export const StationsPage = () => {
           title="Registered Nodes"
           value={loading ? '—' : metrics.total}
           subtitle="Total microgrid hubs"
-          icon={<span className="text-sm font-bold">#</span>}
+          icon={<MaterialIcon name="hub" size={20} className="text-white" />}
         />
         <MetricCard
           title="Active Nodes"
@@ -250,13 +244,13 @@ export const StationsPage = () => {
           subtitle="Accepting power flow"
           trend={`${metrics.total > 0 ? Math.round((metrics.active / metrics.total) * 100) : 0}% Active`}
           trendPositive={true}
-          icon={<span className="text-[#22C55E]">⚡</span>}
+          icon={<MaterialIcon name="bolt" size={20} className="text-white" />}
         />
         <MetricCard
           title="Inactive Nodes"
           value={loading ? '—' : metrics.inactive}
           subtitle="Offline or standby"
-          icon={<span className="text-[var(--text-muted)]">⏸</span>}
+          icon={<MaterialIcon name="pause" size={20} className="text-white" />}
         />
         <MetricCard
           title="Total Capacity"
@@ -264,13 +258,13 @@ export const StationsPage = () => {
           subtitle="Clean solar generation"
           trend="Grid Dispatch"
           trendPositive={true}
-          icon={<span className="text-[#E3511B]">☀️</span>}
+          icon={<MaterialIcon name="solar_power" size={20} className="text-white" />}
         />
         <MetricCard
           title="Storage Slots"
           value={loading ? '—' : `${metrics.batterySlots} Slots`}
           subtitle="Available swap lockers"
-          icon={<span className="text-[#E3511B]">🔋</span>}
+          icon={<MaterialIcon name="battery" size={20} className="text-white" />}
         />
       </div>
 
@@ -296,9 +290,7 @@ export const StationsPage = () => {
                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
+            <MaterialIcon name="table_chart" size={15} className={viewMode === 'table' ? 'text-white' : 'text-[var(--text-muted)]'} />
             <span>Table</span>
           </button>
 
@@ -311,9 +303,7 @@ export const StationsPage = () => {
                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
+            <MaterialIcon name="grid" size={15} className={viewMode === 'grid' ? 'text-white' : 'text-[var(--text-muted)]'} />
             <span>Grid Cards</span>
           </button>
         </div>
@@ -327,8 +317,8 @@ export const StationsPage = () => {
         </div>
       ) : stations.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--border-default)] bg-[var(--bg-surface)] px-6 py-16 text-center shadow-[var(--shadow-card)]">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E3511B]/10 text-2xl text-[#E3511B] border border-[#E3511B]/20">
-            ⚡
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E3511B]/10 text-white border border-[#E3511B]/20">
+            <MaterialIcon name="bolt" size={26} className="text-white" />
           </div>
           <h2 className="mt-4 text-lg font-bold text-[var(--text-primary)]">
             No microgrid hubs have been registered yet.
@@ -349,11 +339,6 @@ export const StationsPage = () => {
           stations={stations}
           onEdit={openEdit}
           onStatusChange={handleStatusChange}
-          onView={(st) => {
-            setSelectedStation(st);
-            setShowMap(true);
-            window.scrollTo({ top: 120, behavior: 'smooth' });
-          }}
           statusChangingId={statusChangingHubId}
         />
       ) : (
@@ -361,11 +346,6 @@ export const StationsPage = () => {
           stations={stations}
           onEdit={openEdit}
           onStatusChange={handleStatusChange}
-          onView={(st) => {
-            setSelectedStation(st);
-            setShowMap(true);
-            window.scrollTo({ top: 120, behavior: 'smooth' });
-          }}
           statusChangingId={statusChangingHubId}
         />
       )}

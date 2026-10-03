@@ -15,6 +15,7 @@ import { LoadingIndicator } from '../../../components/common/LoadingIndicator.js
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 import { EmptyState } from '../../../components/common/EmptyState.jsx';
 import { MetricCard } from '../../../components/common/MetricCard.jsx';
+import { MaterialIcon } from '../../../components/common/MaterialIcon.jsx';
 import { ProsumerTable } from '../components/ProsumerTable.jsx';
 import { CreateProsumerModal } from '../components/CreateProsumerModal.jsx';
 import { ProsumerDetailsModal } from '../components/ProsumerDetailsModal.jsx';
@@ -184,7 +185,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             onClick={handleOpenCreate}
             className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#E3511B] px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20]"
           >
-            <span>+</span>
+            <MaterialIcon name="add" size={16} className="text-white" />
             <span>Register Prosumer</span>
           </button>
         </PageHeader>
@@ -198,28 +199,28 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             value={loading ? '…' : prosumers.length}
             subtitle="Registered rooftop solar citizens"
             accent="default"
-            icon={<span>👥</span>}
+            icon={<MaterialIcon name="group" size={20} className="text-white" />}
           />
           <MetricCard
             title="Active Traders"
             value={loading ? '…' : activeCount}
             subtitle="Verified for energy slots"
             accent="emerald"
-            icon={<span className="text-[#22C55E]">⚡</span>}
+            icon={<MaterialIcon name="bolt" size={20} className="text-white" />}
           />
           <MetricCard
             title="Pending NIC Review"
             value={loading ? '…' : pendingCount}
             subtitle="Awaiting backoffice activation"
             accent="amber"
-            icon={<span className="text-[#F59E0B]">⏳</span>}
+            icon={<MaterialIcon name="hourglass" size={20} className="text-white" />}
           />
           <MetricCard
             title="Deactivated"
             value={loading ? '…' : prosumers.filter((p) => p.status === 'Deactivated').length}
             subtitle="Suspended accounts"
             accent="default"
-            icon={<span className="text-[var(--text-muted)]">⏸</span>}
+            icon={<MaterialIcon name="pause" size={20} className="text-white" />}
           />
         </div>
       )}
@@ -246,7 +247,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             to={`${ROUTES.ADMIN_SETTINGS}?tab=create`}
             className="flex items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-4 py-2 text-xs font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           >
-            <span className="text-[#E3511B] font-bold">+</span>
+            <MaterialIcon name="add" size={14} className="text-white" />
             <span>Create New Administrator</span>
           </Link>
         </div>
@@ -265,7 +266,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             onClick={handleOpenCreate}
             className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#E3511B] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#F05A20]"
           >
-            <span>+</span>
+            <MaterialIcon name="add" size={16} className="text-white" />
             <span>Register Prosumer</span>
           </button>
         </div>
@@ -323,9 +324,7 @@ export const ProsumerManagementPage = ({ hideHeader = false, hideTabs = false })
             Search prosumers
           </label>
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <span className="text-xs text-[var(--text-muted)]" aria-hidden="true">
-              🔍
-            </span>
+            <MaterialIcon name="search" size={14} className="text-white/50" />
           </div>
           <input
             id="prosumer-search"

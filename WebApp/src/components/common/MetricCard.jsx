@@ -112,7 +112,7 @@ export const MetricCard = ({
         </div>
 
         {icon && (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--text-secondary)]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] text-white shadow-xs">
             {icon}
           </div>
         )}

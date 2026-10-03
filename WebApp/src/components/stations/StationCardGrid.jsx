@@ -15,7 +15,6 @@ export const StationCardGrid = ({
   stations,
   onEdit,
   onStatusChange,
-  onView,
   statusChangingId,
 }) => {
   return (
@@ -77,15 +76,6 @@ export const StationCardGrid = ({
 
             {/* Actions Bar */}
             <div className="mt-5 flex items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-3">
-              {onView && (
-                <button
-                  type="button"
-                  onClick={() => onView(station)}
-                  className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] transition hover:border-[#E3511B]/40 hover:text-[#E3511B]"
-                >
-                  View
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => onEdit(station)}

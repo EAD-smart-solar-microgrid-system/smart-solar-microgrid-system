@@ -9,7 +9,7 @@ const formatDate = (value) => {
 
 const formatSchedule = (schedule = []) => schedule.map((row) => `${row.dayOfWeek}: ${row.openTime}–${row.closeTime}`);
 
-export const StationList = ({ stations, onEdit, onStatusChange, onView, statusChangingId }) => (
+export const StationList = ({ stations, onEdit, onStatusChange, statusChangingId }) => (
   <div className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-card)]">
     <div className="overflow-x-auto">
       <table className="min-w-[900px] w-full text-left text-xs">
@@ -71,15 +71,6 @@ export const StationList = ({ stations, onEdit, onStatusChange, onView, statusCh
                 {/* ACTIONS: Compact treatment */}
                 <td className="px-5 py-4 text-right">
                   <div className="flex items-center justify-end gap-1.5">
-                    {onView && (
-                      <button
-                        type="button"
-                        onClick={() => onView(station)}
-                        className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] transition hover:border-[#E3511B]/40 hover:text-[#E3511B]"
-                      >
-                        View
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => onEdit(station)}
