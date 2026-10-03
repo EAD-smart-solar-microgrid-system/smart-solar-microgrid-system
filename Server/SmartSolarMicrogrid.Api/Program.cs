@@ -258,7 +258,7 @@ try
         {
             Id = ObjectId.GenerateNewId().ToString(),
             Username = "admin",
-            PasswordHash = "admin123",
+            PasswordHash = SmartSolarMicrogrid.Api.Services.PasswordHasher.Hash("admin123"),
             Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.Backoffice,
             Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
             CreatedAt = DateTime.UtcNow,
@@ -274,7 +274,7 @@ try
         {
             Id = ObjectId.GenerateNewId().ToString(),
             Username = "operator",
-            PasswordHash = "operator123",
+            PasswordHash = SmartSolarMicrogrid.Api.Services.PasswordHasher.Hash("operator123"),
             Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.GridOperator,
             Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
             CreatedAt = DateTime.UtcNow,

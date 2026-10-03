@@ -227,15 +227,15 @@ Feature development responsibilities are distributed among the four team members
 - [x] Git configuration updated with ignore rules for build files, IDE settings, and credential files.
 - [x] Unit test suite verifying foundation classes, network URL resolvers, and database contracts.
 
-### Not Implemented Yet (Reserved for Individual Member Tasks):
-- [ ] Prosumer Account Control (Member 3 feature)
-- [ ] Reservation & QR Dispatch (Member 2 feature)
-- [ ] Dashboard & Maps (Member 4 feature)
-- [ ] Operator Mode (Member 1 feature)
-- [ ] Google Maps integration and API keys
-- [ ] Camera hardware integration and QR scanner libraries
-- [ ] Feature-specific API endpoints and DTO serialization
-- [ ] Feature-specific SQLite tables and repositories
+### Feature Modules (Implemented):
+- [x] Prosumer Account Control (Member 3) — register, profile edit, deactivation request
+- [x] Reservation & QR Dispatch (Member 2) — reserve / modify / cancel, approved QR token
+- [x] Dashboard & Maps (Member 4) — counts, pending/history/search, Google Maps nearby stations
+- [x] Operator Mode (Member 1) — operator login, QR scan, verify, finalize transfer
+- [x] Google Maps integration via `secrets.properties` (`MAPS_API_KEY`)
+- [x] Camera / QR scanning (ZXing) for Operator Mode and QR dispatch
+- [x] Feature-specific API repositories and DTOs
+- [x] Feature-specific SQLite caches (reservations + station reference data)
 
 ---
 

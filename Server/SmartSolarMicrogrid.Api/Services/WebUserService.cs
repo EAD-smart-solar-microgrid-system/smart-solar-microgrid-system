@@ -74,7 +74,7 @@ public class WebUserService : IWebUserService
         {
             Id = ObjectId.GenerateNewId().ToString(),
             Username = request.Username.Trim(),
-            PasswordHash = request.Password,
+            PasswordHash = PasswordHasher.Hash(request.Password),
             Role = request.Role,
             Status = WebUserStatus.Active,
             Email = email,
@@ -201,7 +201,7 @@ public class WebUserService : IWebUserService
             return (false, "This password reset token has expired. Please request a new one.");
         }
 
-        user.PasswordHash = newPassword;
+        user.PasswordHash = PasswordHasher.Hash(newPassword);
         user.PasswordResetToken = null;
         user.PasswordResetExpiry = null;
         user.UpdatedAt = DateTime.UtcNow;
