@@ -67,12 +67,12 @@ export const LoginPage = () => {
       <div className="w-full max-w-md">
         <div className="rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-7 sm:p-8 shadow-[var(--shadow-modal)]">
           <div className="mb-6 flex flex-col items-center justify-center text-center">
-            <Logo size="lg" showText={false} />
+            <Logo size="lg" />
             <h1 className="mt-4 text-xl font-extrabold text-[var(--text-primary)]">
-              Sign In to SolarGrid
+              Staff Portal Access
             </h1>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Smart Solar Microgrid Energy Trading System
+              Sign in with authorized credentials to access grid trading and node operations
             </p>
           </div>
 

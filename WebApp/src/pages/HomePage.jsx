@@ -137,10 +137,10 @@ export const HomePage = () => {
           <button
             type="button"
             onClick={() => fetchDashboardData(true)}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-hover)] transition"
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-hover)] transition disabled:opacity-50"
           >
-            <MaterialIcon name="refresh" size={14} className={`text-white ${refreshing ? 'animate-spin' : ''}`} />
+            <MaterialIcon name="refresh" size={14} className={`text-white ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>
