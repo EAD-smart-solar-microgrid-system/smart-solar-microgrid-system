@@ -143,6 +143,9 @@ export const ReservationMonitoringPage = () => {
       if (station?.id) {
         map[station.id] = station.stationName || 'Unnamed station';
       }
+      if (station?.hubId) {
+        map[station.hubId] = station.stationName || 'Unnamed station';
+      }
     });
     return map;
   }, [stations]);
