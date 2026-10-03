@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ApiError } from '../services/apiClient.js';
 import { createStation, getStations, updateStation, updateStationStatus } from '../services/stationService.js';
 import { StationList } from '../components/stations/StationList.jsx';
 import { StationModal } from '../components/stations/StationModal.jsx';
@@ -9,7 +8,6 @@ import { ToastContainer } from '../components/common/Toast.jsx';
 import { ROUTES } from '../constants/routes.js';
 
 const errorMessage = (error) => {
-  if (error instanceof ApiError && error.status) return `API error (${error.status}): ${error.message}`;
   return error?.message || 'The station request could not be completed.';
 };
 
