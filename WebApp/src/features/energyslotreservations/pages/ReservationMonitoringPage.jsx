@@ -10,6 +10,7 @@ import { PageHeader } from '../../../components/common/PageHeader.jsx';
 import { LoadingIndicator } from '../../../components/common/LoadingIndicator.jsx';
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 import { EmptyState } from '../../../components/common/EmptyState.jsx';
+import { MetricCard } from '../../../components/common/MetricCard.jsx';
 import { ReservationMonitoringFilters } from '../components/ReservationMonitoringFilters.jsx';
 import { ReservationMonitoringTable } from '../components/ReservationMonitoringTable.jsx';
 import { ReservationDetailsModal } from '../components/ReservationDetailsModal.jsx';
@@ -296,27 +297,64 @@ export const ReservationMonitoringPage = () => {
     }
   };
 
-
   const canGoPrevious = page > 1 && !loading;
   const canGoNext = page < totalPages && !loading && totalCount > 0;
 
+  // Metric counts
+  const pendingCount = items.filter((i) => (i.status || '').toLowerCase() === 'pending').length;
+  const approvedCount = items.filter((i) => (i.status || '').toLowerCase() === 'approved').length;
+
   return (
-    <div className="legacy-page reservation-monitoring-page space-y-4">
+    <div className="legacy-page reservation-monitoring-page space-y-6">
       <PageHeader
         title="Reservation Monitoring"
-        subtitle="Monitor energy slot reservations and approve pending bookings for QR dispatch."
+        subtitle="Monitor energy slot reservations and approve pending bookings for secure QR token dispatch."
         badgeVariant="info"
       />
 
+      {/* TOP KPI CARDS */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MetricCard
+          title="Total Reservations"
+          value={loading ? '…' : totalCount}
+          subtitle="All recorded bookings"
+          accent="blue"
+          icon={<span>📋</span>}
+        />
+        <MetricCard
+          title="Pending Action"
+          value={loading ? '…' : pendingCount}
+          subtitle="Awaiting operator review"
+          accent="amber"
+          icon={<span className="text-[#f5b942]">⏳</span>}
+        />
+        <MetricCard
+          title="Approved Bookings"
+          value={loading ? '…' : approvedCount}
+          subtitle="Ready for QR tokens"
+          accent="emerald"
+          icon={<span className="text-[#22C55E]">✓</span>}
+        />
+        <MetricCard
+          title="Monitored Hubs"
+          value={stationsLoading ? '…' : stations.length}
+          subtitle="Connected solar nodes"
+          accent="default"
+          icon={<span>⚡</span>}
+        />
+      </div>
+
       {successMessage && (
-        <div className="alert alert-success alert-dismissible fade show" role="status">
-          {successMessage}
+        <div className="rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/10 p-3.5 text-xs font-semibold text-[#22C55E] flex items-center justify-between" role="status">
+          <span>{successMessage}</span>
           <button
             type="button"
-            className="btn-close"
+            className="text-base leading-none text-[#22C55E] hover:opacity-70"
             aria-label="Dismiss"
             onClick={() => setSuccessMessage('')}
-          />
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -331,7 +369,7 @@ export const ReservationMonitoringPage = () => {
       />
 
       {error && (
-        <div className="mb-3">
+        <div className="mb-3 space-y-2">
           <ErrorAlert message={error} />
           <button type="button" className="btn btn-outline-primary btn-sm" onClick={loadReservations}>
             Retry
@@ -360,9 +398,9 @@ export const ReservationMonitoringPage = () => {
       )}
 
       {!loading && !error && items.length > 0 && (
-        <div className="card border-0 shadow-sm">
-          <div className="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <h2 className="h6 mb-0 fw-semibold">Reservations</h2>
+        <div className="card border-0 shadow-lg">
+          <div className="card-header bg-[#151c19] d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h2 className="h6 mb-0 fw-semibold text-[#f4f7f6]">Reservations Fleet</h2>
             <span className="small text-muted">
               Showing {(page - 1) * pageSize + 1}–
               {Math.min(page * pageSize, totalCount)} of {totalCount}
@@ -381,7 +419,7 @@ export const ReservationMonitoringPage = () => {
               actionLoadingId={actionLoadingId}
             />
           </div>
-          <div className="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div className="card-footer bg-[#151c19] d-flex flex-wrap justify-content-between align-items-center gap-2">
             <span className="small text-muted">
               Page {page} of {totalPages}
             </span>

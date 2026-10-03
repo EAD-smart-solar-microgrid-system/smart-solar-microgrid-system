@@ -1,9 +1,9 @@
+import React from 'react';
+
 /**
  * StationSelector Component
- *
- * Presentation control for choosing a microgrid station.
+ * Presentation control for choosing a microgrid station, displaying its Hub ID.
  */
-
 export const StationSelector = ({
   stations,
   selectedStationId,
@@ -15,7 +15,7 @@ export const StationSelector = ({
     <div className="card border-0 shadow-sm">
       <div className="card-body">
         <label htmlFor="energy-slot-station-select" className="form-label fw-semibold">
-          Microgrid station
+          Microgrid Station / Solar Hub
         </label>
         <select
           id="energy-slot-station-select"
@@ -30,13 +30,13 @@ export const StationSelector = ({
           </option>
           {stations.map((station) => (
             <option key={station.id} value={station.id}>
-              {station.stationName}
-              {station.status ? ` (${station.status})` : ''}
+              {station.stationName} ({station.hubId || 'HUB'})
+              {station.status ? ` - ${station.status}` : ''}
             </option>
           ))}
         </select>
         <p className="form-text mb-0 mt-2">
-          Choose a station to view available battery storage slots and manage slot windows.
+          Choose a station to view available battery storage slots and manage dispatch windows.
         </p>
       </div>
     </div>
