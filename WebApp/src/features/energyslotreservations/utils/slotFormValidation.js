@@ -21,16 +21,22 @@ export const validateSlotForm = (form, options = {}) => {
   const startIso = localDateTimeInputToUtcIso(form.slotStartLocal);
   const endIso = localDateTimeInputToUtcIso(form.slotEndLocal);
 
+  const now = new Date();
+
   if (!form.slotStartLocal) {
     errors.slotStartLocal = 'Start date and time are required.';
   } else if (!startIso) {
     errors.slotStartLocal = 'Start date and time are invalid.';
+  } else if (new Date(startIso) < now) {
+    errors.slotStartLocal = 'Start date and time cannot be in the past.';
   }
 
   if (!form.slotEndLocal) {
     errors.slotEndLocal = 'End date and time are required.';
   } else if (!endIso) {
     errors.slotEndLocal = 'End date and time are invalid.';
+  } else if (new Date(endIso) < now) {
+    errors.slotEndLocal = 'End date and time cannot be in the past.';
   }
 
   if (startIso && endIso && new Date(endIso) <= new Date(startIso)) {

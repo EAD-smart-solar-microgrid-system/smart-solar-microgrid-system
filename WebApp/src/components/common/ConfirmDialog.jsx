@@ -23,10 +23,10 @@ export const ConfirmDialog = ({
     confirmVariant === 'primary'
       ? 'btn btn-primary'
       : confirmVariant === 'success'
-        ? 'btn btn-success'
+        ? 'btn btn-outline-success'
         : confirmVariant === 'warning'
-          ? 'btn btn-warning'
-          : 'btn btn-danger';
+          ? 'btn btn-outline-warning'
+          : 'btn btn-outline-danger';
 
   return (
     <>
