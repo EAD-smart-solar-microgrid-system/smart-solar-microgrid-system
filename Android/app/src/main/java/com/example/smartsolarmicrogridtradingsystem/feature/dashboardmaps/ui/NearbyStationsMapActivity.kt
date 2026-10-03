@@ -33,6 +33,11 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Member 4 Google Maps screen for nearby microgrid stations.
@@ -60,7 +65,10 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
     private val markerStationIds = mutableMapOf<Marker, String>()
     private var loadedStations: List<NearbyStationDto> = emptyList()
     private var lastKnownLatLng: LatLng? = null
+    private var lastQueryCenter: LatLng? = null
+    private var suppressCameraIdleReload = false
     private var awaitingSettingsReturn = false
+    private var isNearbyRequestInFlight = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -126,13 +134,22 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
         map.setOnMapClickListener {
             hideStationDetails()
         }
+        map.setOnCameraIdleListener {
+            if (suppressCameraIdleReload || isNearbyRequestInFlight) {
+                return@setOnCameraIdleListener
+            }
+            val center = map.cameraPosition.target
+            if (shouldReloadForMapCenter(center)) {
+                loadNearbyStations(center.latitude, center.longitude, fitCameraToResults = false)
+            }
+        }
 
         if (hasLocationPermission()) {
             enableMyLocation(map)
             if (loadedStations.isEmpty() && lastKnownLatLng == null) {
                 resolveCurrentLocationAndLoad()
             } else if (loadedStations.isNotEmpty()) {
-                renderStations(loadedStations)
+                renderStations(loadedStations, fitCameraToResults = true)
             }
         }
     }
@@ -178,13 +195,21 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
             .addOnSuccessListener { location ->
                 if (location != null) {
                     lastKnownLatLng = LatLng(location.latitude, location.longitude)
-                    loadNearbyStations(location.latitude, location.longitude)
+                    loadNearbyStations(
+                        location.latitude,
+                        location.longitude,
+                        fitCameraToResults = true
+                    )
                 } else {
                     client.lastLocation
                         .addOnSuccessListener { last ->
                             if (last != null) {
                                 lastKnownLatLng = LatLng(last.latitude, last.longitude)
-                                loadNearbyStations(last.latitude, last.longitude)
+                                loadNearbyStations(
+                                    last.latitude,
+                                    last.longitude,
+                                    fitCameraToResults = true
+                                )
                             } else {
                                 showLoading(false)
                                 showStatus(
@@ -214,7 +239,17 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
             }
     }
 
-    private fun loadNearbyStations(latitude: Double, longitude: Double) {
+    private fun loadNearbyStations(
+        latitude: Double,
+        longitude: Double,
+        fitCameraToResults: Boolean
+    ) {
+        if (isNearbyRequestInFlight) {
+            return
+        }
+
+        isNearbyRequestInFlight = true
+        lastQueryCenter = LatLng(latitude, longitude)
         showLoading(true)
         hideStationDetails()
 
@@ -225,6 +260,7 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
             bearerToken = sessionManager.getToken(),
             callback = object : ApiCallback<List<NearbyStationDto>> {
                 override fun onSuccess(result: NetworkResult.Success<List<NearbyStationDto>>) {
+                    isNearbyRequestInFlight = false
                     showLoading(false)
                     val stations = result.responseBody
                     stationCacheRepository.upsertNearbyStations(stations)
@@ -235,7 +271,7 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
                     } else {
                         hideStatusCard()
                         loadedStations = stations
-                        renderStations(stations)
+                        renderStations(stations, fitCameraToResults)
                     }
                 }
 
@@ -246,16 +282,21 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
                         longitude = longitude,
                         radiusKm = DEFAULT_RADIUS_KM
                     ) { cached ->
+                        isNearbyRequestInFlight = false
                         showLoading(false)
                         if (cached.isNotEmpty()) {
                             loadedStations = cached
-                            renderStations(cached)
+                            renderStations(cached, fitCameraToResults)
                             showStatus(
                                 message = getString(R.string.nearby_network_error_cache_used),
                                 actionLabel = getString(R.string.action_retry),
                                 action = {
                                     lastKnownLatLng?.let {
-                                        loadNearbyStations(it.latitude, it.longitude)
+                                        loadNearbyStations(
+                                            it.latitude,
+                                            it.longitude,
+                                            fitCameraToResults = true
+                                        )
                                     } ?: resolveCurrentLocationAndLoad()
                                 }
                             )
@@ -267,7 +308,11 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
                                 actionLabel = getString(R.string.action_retry),
                                 action = {
                                     lastKnownLatLng?.let {
-                                        loadNearbyStations(it.latitude, it.longitude)
+                                        loadNearbyStations(
+                                            it.latitude,
+                                            it.longitude,
+                                            fitCameraToResults = true
+                                        )
                                     } ?: resolveCurrentLocationAndLoad()
                                 }
                             )
@@ -278,7 +323,22 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
         )
     }
 
-    private fun renderStations(stations: List<NearbyStationDto>) {
+    private fun shouldReloadForMapCenter(center: LatLng): Boolean {
+        val last = lastQueryCenter ?: return true
+        return distanceKm(last, center) >= RELOAD_DISTANCE_KM
+    }
+
+    private fun distanceKm(from: LatLng, to: LatLng): Double {
+        val earthRadiusKm = 6371.0
+        val dLat = Math.toRadians(to.latitude - from.latitude)
+        val dLon = Math.toRadians(to.longitude - from.longitude)
+        val lat1 = Math.toRadians(from.latitude)
+        val lat2 = Math.toRadians(to.latitude)
+        val a = sin(dLat / 2).pow(2.0) + cos(lat1) * cos(lat2) * sin(dLon / 2).pow(2.0)
+        return 2.0 * earthRadiusKm * asin(sqrt(a))
+    }
+
+    private fun renderStations(stations: List<NearbyStationDto>, fitCameraToResults: Boolean) {
         val map = googleMap ?: return
         clearMarkers()
 
@@ -288,7 +348,6 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
         lastKnownLatLng?.let {
             boundsBuilder.include(it)
             hasPoints = true
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(it, DEFAULT_ZOOM))
         }
 
         stations.forEach { station ->
@@ -312,22 +371,35 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
             hasPoints = true
         }
 
-        if (hasPoints && stations.isNotEmpty()) {
-            try {
-                val padding = resources.displayMetrics.density * 72f
-                map.animateCamera(
-                    CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding.toInt())
-                )
-            } catch (_: Exception) {
-                stations.firstOrNull()?.let {
-                    map.moveCamera(
-                        CameraUpdateFactory.newLatLngZoom(
-                            LatLng(it.latitude, it.longitude),
-                            DEFAULT_ZOOM
-                        )
-                    )
+        if (!fitCameraToResults || !hasPoints || stations.isEmpty()) {
+            return
+        }
+
+        suppressCameraIdleReload = true
+        try {
+            val padding = resources.displayMetrics.density * 72f
+            map.animateCamera(
+                CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding.toInt()),
+                object : GoogleMap.CancelableCallback {
+                    override fun onFinish() {
+                        suppressCameraIdleReload = false
+                    }
+
+                    override fun onCancel() {
+                        suppressCameraIdleReload = false
+                    }
                 }
+            )
+        } catch (_: Exception) {
+            stations.firstOrNull()?.let {
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(it.latitude, it.longitude),
+                        DEFAULT_ZOOM
+                    )
+                )
             }
+            suppressCameraIdleReload = false
         }
     }
 
@@ -375,7 +447,11 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
             actionLabel = getString(R.string.action_retry),
             action = {
                 lastKnownLatLng?.let {
-                    loadNearbyStations(it.latitude, it.longitude)
+                    loadNearbyStations(
+                        it.latitude,
+                        it.longitude,
+                        fitCameraToResults = true
+                    )
                 } ?: resolveCurrentLocationAndLoad()
             }
         )
@@ -441,7 +517,9 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
     }
 
     companion object {
-        const val DEFAULT_RADIUS_KM = 25.0
+        /** Wide enough to show multiple Sri Lanka stations around the map center. */
+        const val DEFAULT_RADIUS_KM = 200.0
+        private const val RELOAD_DISTANCE_KM = 25.0
         private const val DEFAULT_ZOOM = 12f
     }
 }
