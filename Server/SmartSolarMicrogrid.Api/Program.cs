@@ -281,12 +281,23 @@ try
             UpdatedAt = DateTime.UtcNow
         };
         await userRepo.CreateAsync(defaultOperator);
-        Console.WriteLine("Default GridOperator user seeded: operator / operator123");
     }
 }
 catch (Exception ex)
 {
     Console.Error.WriteLine($"Initial web user seed check skipped: {ex.Message}");
+}
+
+try
+{
+    using var stationScope = app.Services.CreateScope();
+    var stationRepo = stationScope.ServiceProvider.GetRequiredService<IStationRepository>();
+    await stationRepo.EnsureIndexesAndBackfillAsync();
+    Console.WriteLine("Solar station HubId migration and unique index verified.");
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"Station HubId index and backfill verification skipped: {ex.Message}");
 }
 
 app.Run();
