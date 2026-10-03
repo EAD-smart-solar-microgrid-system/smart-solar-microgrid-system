@@ -83,48 +83,10 @@ export const DeactivateStationModal = ({
           </h3>
 
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Are you sure you want to change the operating status of this station to{' '}
+            Are you sure you want to deactivate{' '}
+            <span className="font-semibold text-slate-900">{station.stationName}</span> and set its status to{' '}
             <span className="font-semibold text-rose-600">Inactive</span>?
           </p>
-
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-slate-900">{station.stationName}</span>
-              {station.hubId && (
-                <span className="rounded-md bg-white px-2 py-0.5 font-mono text-xs font-semibold text-sky-700 border border-slate-200">
-                  {station.hubId}
-                </span>
-              )}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-              <span>Capacity: {station.capacityKwPerHour} kW/h</span>
-              <span>Slots: {station.batteryStorageSlotCapacity}</span>
-              {station.latitude && station.longitude && (
-                <span>
-                  Coords: {station.latitude.toFixed(4)}, {station.longitude.toFixed(4)}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <svg
-              className="h-4 w-4 shrink-0 text-amber-600 mt-0.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>
-              The system will verify that no active reservations exist before taking this station offline. If bookings are currently active, deactivation will be safely blocked.
-            </span>
-          </div>
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
