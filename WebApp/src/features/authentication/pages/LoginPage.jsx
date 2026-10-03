@@ -26,8 +26,10 @@ export const LoginPage = () => {
       const userData = await login(username, password);
       if (userData?.role === 'Backoffice') {
         navigate(ROUTES.ADMIN_SETTINGS);
+      } else if (userData?.role === 'GridOperator') {
+        navigate(ROUTES.ENERGY_SLOT_RESERVATIONS);
       } else {
-        navigate(ROUTES.STATIONS);
+        navigate(ROUTES.HOME);
       }
     } catch {
       setError("Invalid username or password");
