@@ -36,9 +36,19 @@ public class AuthService : IAuthService
         // Authenticate credentials against active user database and generate signed JWT token
         var user = await _repo.GetByUsernameAsync(request.Username);
         if (user == null || user.Status != WebUserStatus.Active) return null;
-        
-        // In a real app, use BCrypt. Here we just do a plain string check for simplicity of the assignment.
-        if (user.PasswordHash != request.Password) return null;
+
+        if (!PasswordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            return null;
+        }
+
+        // Upgrade legacy plaintext password hashes after a successful login.
+        if (PasswordHasher.NeedsRehash(user.PasswordHash))
+        {
+            user.PasswordHash = PasswordHasher.Hash(request.Password);
+            user.UpdatedAt = DateTime.UtcNow;
+            await _repo.UpdateAsync(user.Id, user);
+        }
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_for_smart_solar_microgrid_12345");
