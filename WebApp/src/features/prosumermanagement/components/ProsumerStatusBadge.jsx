@@ -1,22 +1,19 @@
+import React from 'react';
 import { PROSUMER_STATUS } from '../utils/prosumerMapper.js';
 
 const STATUS_STYLES = {
-  [PROSUMER_STATUS.ACTIVE]: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  [PROSUMER_STATUS.PENDING]: 'border-amber-200 bg-amber-50 text-amber-700',
-  [PROSUMER_STATUS.DEACTIVATED]: 'border-slate-200 bg-slate-100 text-slate-600',
+  [PROSUMER_STATUS.ACTIVE]: 'border-[#22C55E]/30 bg-[#22C55E]/10 text-[#22C55E]',
+  [PROSUMER_STATUS.PENDING]: 'border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#F59E0B]',
+  [PROSUMER_STATUS.DEACTIVATED]: 'border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-muted)]',
 };
 
 /**
  * ProsumerStatusBadge Component
- *
- * Renders an accessible status pill badge for solar prosumer account lifecycle states.
- * Uses text and contrast for accessibility, not color alone.
- *
- * @param {{ status: string }} props
+ * Accessible status badge for solar prosumer account lifecycle states.
  */
 export const ProsumerStatusBadge = ({ status }) => {
   const label = status || 'Unknown';
-  const styles = STATUS_STYLES[label] || 'border-slate-200 bg-slate-100 text-slate-600';
+  const styles = STATUS_STYLES[label] || 'border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-muted)]';
 
   return (
     <span
