@@ -18,7 +18,7 @@ data class StationReferenceDto(
     companion object {
         fun fromJson(json: JSONObject): StationReferenceDto {
             return StationReferenceDto(
-                id = json.optString("id", json.optString("Id", "")),
+                id = json.optString("hubId", json.optString("HubId", json.optString("id", json.optString("Id", "")))),
                 name = json.optString("stationName", json.optString("StationName", "")),
                 latitude = json.optDouble("latitude", json.optDouble("Latitude", 0.0)),
                 longitude = json.optDouble("longitude", json.optDouble("Longitude", 0.0)),

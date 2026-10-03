@@ -16,6 +16,8 @@ public interface IStationRepository
 
     Task<SolarStation?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
 
+    Task<SolarStation?> GetByHubIdAsync(string hubId, CancellationToken cancellationToken = default);
+
     Task<SolarStation> CreateAsync(SolarStation station, CancellationToken cancellationToken = default);
 
     Task<SolarStation?> UpdateDetailsAsync(
@@ -27,4 +29,6 @@ public interface IStationRepository
         StationStatus status,
         DateTime updatedAt,
         CancellationToken cancellationToken = default);
+
+    Task EnsureIndexesAndBackfillAsync(CancellationToken cancellationToken = default);
 }

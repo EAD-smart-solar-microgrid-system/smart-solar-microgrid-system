@@ -2,7 +2,7 @@
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
  * File: StationsController.cs
- * Purpose: Expose the public REST endpoints for microgrid node management.
+ * Purpose: Expose the public REST endpoints for microgrid node management using HubId.
  */
 
 using Microsoft.AspNetCore.Authorization;
@@ -41,6 +41,23 @@ public sealed class StationsController : ControllerBase
         return Ok(result.Value!);
     }
 
+    [HttpGet("{hubId}")]
+    [Authorize]
+    public async Task<ActionResult<StationResponse>> GetByHubId(
+        string hubId,
+        CancellationToken cancellationToken)
+    {
+        // Request an individual station identified by its public HubId.
+        var result = await _stationService.GetByHubIdAsync(hubId, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return CreateErrorResult(result);
+        }
+
+        return Ok(result.Value!);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Backoffice")]
     public async Task<ActionResult<StationResponse>> Create(
@@ -63,10 +80,10 @@ public sealed class StationsController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{hubId}")]
     [Authorize(Roles = "Backoffice")]
     public async Task<ActionResult<StationResponse>> UpdateDetails(
-        string id,
+        string hubId,
         [FromBody] UpdateStationRequest? request,
         CancellationToken cancellationToken)
     {
@@ -76,7 +93,7 @@ public sealed class StationsController : ControllerBase
             return BadRequest(new ErrorResponse("Request body is required."));
         }
 
-        var result = await _stationService.UpdateDetailsAsync(id, request, cancellationToken);
+        var result = await _stationService.UpdateDetailsAsync(hubId, request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -86,10 +103,10 @@ public sealed class StationsController : ControllerBase
         return Ok(result.Value);
     }
 
-    [HttpPatch("{id}/status")]
+    [HttpPatch("{hubId}/status")]
     [Authorize(Roles = "Backoffice")]
     public async Task<ActionResult<StationResponse>> UpdateStatus(
-        string id,
+        string hubId,
         [FromBody] UpdateStationStatusRequest? request,
         CancellationToken cancellationToken)
     {
@@ -99,7 +116,7 @@ public sealed class StationsController : ControllerBase
             return BadRequest(new ErrorResponse("Request body is required."));
         }
 
-        var result = await _stationService.ChangeStatusAsync(id, request, cancellationToken);
+        var result = await _stationService.ChangeStatusAsync(hubId, request, cancellationToken);
 
         if (!result.Succeeded)
         {

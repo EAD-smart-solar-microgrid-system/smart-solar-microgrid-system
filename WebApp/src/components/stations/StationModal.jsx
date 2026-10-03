@@ -7,6 +7,9 @@ export const StationModal = ({ station, onSubmit, onCancel, submitting, serverEr
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Microgrid node</p>
           <h2 id="station-form-title" className="mt-1 text-2xl font-bold text-slate-950">{station ? 'Edit station' : 'Add station'}</h2>
+          {station?.hubId && (
+            <p className="mt-1 font-mono text-xs font-semibold text-sky-700">Hub ID: {station.hubId}</p>
+          )}
           <p className="mt-1 text-sm text-slate-500">Configure location, capacity, storage slots, and operating periods.</p>
         </div>
         <button type="button" onClick={onCancel} className="rounded-lg p-2 text-2xl leading-none text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close station form">×</button>

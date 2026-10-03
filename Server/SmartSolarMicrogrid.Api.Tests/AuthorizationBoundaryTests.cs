@@ -14,6 +14,11 @@ public sealed class AuthorizationBoundaryTests
 
         Assert.NotNull(attribute);
         Assert.Null(attribute!.Roles);
+
+        var getByHubIdAttribute = GetMethodAuthorizeAttribute<StationsController>("GetByHubId");
+
+        Assert.NotNull(getByHubIdAttribute);
+        Assert.Null(getByHubIdAttribute!.Roles);
     }
 
     [Fact]

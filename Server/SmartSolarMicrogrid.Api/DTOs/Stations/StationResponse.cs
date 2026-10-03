@@ -9,7 +9,7 @@ namespace SmartSolarMicrogrid.Api.DTOs.Stations;
 
 public sealed class StationResponse
 {
-    public string Id { get; set; } = string.Empty;
+    public string HubId { get; set; } = string.Empty;
 
     public string StationName { get; set; } = string.Empty;
 
