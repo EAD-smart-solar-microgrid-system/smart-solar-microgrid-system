@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ApiError } from '../services/apiClient.js';
 import { createStation, getStations, updateStation, updateStationStatus } from '../services/stationService.js';
 import { StationList } from '../components/stations/StationList.jsx';
 import { StationModal } from '../components/stations/StationModal.jsx';
+import { DeactivateStationModal } from '../components/stations/DeactivateStationModal.jsx';
 import { ToastContainer } from '../components/common/Toast.jsx';
 import { ROUTES } from '../constants/routes.js';
 
 const errorMessage = (error) => {
-  if (error instanceof ApiError && error.status) return `API error (${error.status}): ${error.message}`;
   return error?.message || 'The station request could not be completed.';
 };
 
@@ -17,6 +16,7 @@ export const StationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [editingStation, setEditingStation] = useState(undefined);
+  const [confirmDeactivationStation, setConfirmDeactivationStation] = useState(null);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [statusChangingHubId, setStatusChangingHubId] = useState('');
@@ -144,16 +144,23 @@ export const StationsPage = () => {
     }
   };
 
-  const handleStatusChange = async (station, nextStatus) => {
-    if (nextStatus === 'Inactive' && !window.confirm(`Deactivate ${station.stationName}? The API will block this if active reservations exist.`)) return;
+  const handleStatusChange = (station, nextStatus) => {
+    if (nextStatus === 'Inactive') {
+      setConfirmDeactivationStation(station);
+      return;
+    }
+    executeStatusChange(station, nextStatus);
+  };
 
+  const executeStatusChange = async (station, nextStatus) => {
     setStatusChangingHubId(station.hubId);
     try {
       const updatedStation = await updateStationStatus(station.hubId, nextStatus);
-      setStations((current) => current.map((item) => item.hubId === station.hubId ? updatedStation : item));
+      setStations((current) => current.map((item) => (item.hubId === station.hubId ? updatedStation : item)));
       showToast('success', `${station.stationName} is now ${nextStatus}.`, {
         title: 'Status Updated',
       });
+      setConfirmDeactivationStation(null);
     } catch (error) {
       // Keep the current station state untouched when the authoritative PATCH fails.
       showToast('error', errorMessage(error), {
@@ -191,6 +198,20 @@ export const StationsPage = () => {
       )}
 
       {editingStation !== undefined && <StationModal station={editingStation} onSubmit={handleSave} onCancel={closeModal} submitting={submitting} serverError={formError} />}
+
+      {confirmDeactivationStation && (
+        <DeactivateStationModal
+          station={confirmDeactivationStation}
+          isOpen={Boolean(confirmDeactivationStation)}
+          onConfirm={() => executeStatusChange(confirmDeactivationStation, 'Inactive')}
+          onCancel={() => {
+            if (!statusChangingHubId) {
+              setConfirmDeactivationStation(null);
+            }
+          }}
+          loading={statusChangingHubId === confirmDeactivationStation.hubId}
+        />
+      )}
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
