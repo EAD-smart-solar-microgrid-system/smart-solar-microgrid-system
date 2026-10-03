@@ -71,8 +71,11 @@ export const mapStation = (dto) => {
     return null;
   }
 
+  const id = (dto.hubId ?? dto.HubId ?? dto.id ?? dto.Id ?? '').trim();
+
   return {
-    id: (dto.id ?? dto.Id ?? '').trim(),
+    id,
+    hubId: (dto.hubId ?? dto.HubId ?? id).trim(),
     stationName: (dto.stationName ?? dto.StationName ?? '').trim(),
     status: (dto.status ?? dto.Status ?? '').trim(),
     capacityKwPerHour: Number(dto.capacityKwPerHour ?? dto.CapacityKwPerHour ?? 0),

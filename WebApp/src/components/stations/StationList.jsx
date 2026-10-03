@@ -25,11 +25,12 @@ export const StationList = ({ stations, onEdit, onStatusChange, statusChangingId
         <tbody className="divide-y divide-slate-100">
           {stations.map((station) => {
             const nextStatus = station.status === 'Active' ? 'Inactive' : 'Active';
-            const isChanging = statusChangingId === station.id;
+            const isChanging = statusChangingId === station.hubId;
             return (
-              <tr key={station.id} className="align-top transition hover:bg-slate-50/70">
+              <tr key={station.hubId} className="align-top transition hover:bg-slate-50/70">
                 <td className="px-5 py-5">
                   <p className="font-bold text-slate-900">{station.stationName}</p>
+                  <p className="mt-0.5 font-mono text-xs font-semibold text-sky-700">Hub ID: {station.hubId}</p>
                   <p className="mt-1 text-xs text-slate-500">Updated {formatDate(station.updatedAt)}</p>
                 </td>
                 <td className="px-5 py-5 text-slate-600">
