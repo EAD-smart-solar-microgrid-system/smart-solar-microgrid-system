@@ -1,11 +1,13 @@
+import React from 'react';
+
 const STATUS_STYLES = {
-  Active: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  Inactive: 'border-slate-200 bg-slate-100 text-slate-600',
+  Active: 'border-[#22C55E]/30 bg-[#22C55E]/10 text-[#22C55E]',
+  Inactive: 'border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-muted)]',
 };
 
 export const StatusBadge = ({ status }) => {
   const label = status || 'Unknown';
-  const styles = STATUS_STYLES[label] || 'border-amber-200 bg-amber-50 text-amber-700';
+  const styles = STATUS_STYLES[label] || 'border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#F59E0B]';
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${styles}`}>
