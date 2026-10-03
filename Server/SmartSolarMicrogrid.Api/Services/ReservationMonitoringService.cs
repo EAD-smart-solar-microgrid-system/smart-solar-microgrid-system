@@ -90,9 +90,23 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
             .Limit(pageSize)
             .ToListAsync(cancellationToken);
 
+        var stationList = await _stationRepository.GetAllAsync(cancellationToken);
+        var stationMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var s in stationList)
+        {
+            if (!string.IsNullOrEmpty(s.Id) && !string.IsNullOrEmpty(s.HubId))
+            {
+                stationMap[s.Id] = s.HubId;
+            }
+            if (!string.IsNullOrEmpty(s.HubId))
+            {
+                stationMap[s.HubId] = s.HubId;
+            }
+        }
+
         var response = new ReservationMonitoringListResponse
         {
-            Items = reservations.Select(MapToItem).ToList(),
+            Items = reservations.Select(r => MapToItem(r, stationMap)).ToList(),
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
@@ -121,8 +135,11 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
                 "The requested reservation was not found.");
         }
 
+        var station = await _stationRepository.GetByIdAsync(reservation.StationId, cancellationToken);
+        var publicStationId = station?.HubId ?? reservation.StationId;
+
         return ReservationMonitoringServiceResult<ReservationMonitoringItemResponse>.Success(
-            MapToItem(reservation));
+            MapToItem(reservation, publicStationId));
     }
 
     private static string? ValidateQuery(
@@ -272,13 +289,26 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
             : Builders<EnergyReservation>.Filter.And(filters);
     }
 
-    private static ReservationMonitoringItemResponse MapToItem(EnergyReservation reservation)
+    private static ReservationMonitoringItemResponse MapToItem(
+        EnergyReservation reservation,
+        IReadOnlyDictionary<string, string> stationMap)
     {
-        // Map persisted reservation fields into the Member 4 monitoring response shape.
+        var publicStationId = stationMap.TryGetValue(reservation.StationId, out var hubId)
+            ? hubId
+            : reservation.StationId;
+
+        return MapToItem(reservation, publicStationId);
+    }
+
+    private static ReservationMonitoringItemResponse MapToItem(
+        EnergyReservation reservation,
+        string publicStationId)
+    {
+        // Map persisted reservation fields into the Member 4 monitoring response shape with public HubId.
         return new ReservationMonitoringItemResponse
         {
             Id = reservation.Id,
-            StationId = reservation.StationId,
+            StationId = publicStationId,
             SlotId = reservation.SlotId,
             ProsumerId = reservation.ProsumerNic,
             ReservationDateTime = reservation.ReservationDateTime,

@@ -20,12 +20,20 @@ import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.Nea
 import com.example.smartsolarmicrogridtradingsystem.data.repository.Member4DashboardRepository
 import com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.data.StationCacheRepository
 import com.example.smartsolarmicrogridtradingsystem.shared.component.BaseActivity
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import androidx.core.graphics.drawable.DrawableCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
@@ -363,6 +371,8 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
                             station.status
                         )
                     )
+                    .icon(getSolarHubMarkerIcon(station.status))
+                    .anchor(0.5f, 0.96f)
             )
             if (marker != null) {
                 markerStationIds[marker] = station.id
@@ -406,6 +416,83 @@ class NearbyStationsMapActivity : BaseActivity(), OnMapReadyCallback {
     private fun clearMarkers() {
         markerStationIds.keys.forEach { it.remove() }
         markerStationIds.clear()
+    }
+
+    private var activeSolarHubIcon: BitmapDescriptor? = null
+    private var inactiveSolarHubIcon: BitmapDescriptor? = null
+
+    /**
+     * Resolves the cached ⚡ solar hub marker icon based on station status.
+     */
+    private fun getSolarHubMarkerIcon(status: String?): BitmapDescriptor {
+        val isActive = !status.equals("Inactive", ignoreCase = true)
+        return if (isActive) {
+            activeSolarHubIcon ?: createSolarHubMarkerBitmap(isActive = true).also { activeSolarHubIcon = it }
+        } else {
+            inactiveSolarHubIcon ?: createSolarHubMarkerBitmap(isActive = false).also { inactiveSolarHubIcon = it }
+        }
+    }
+
+    /**
+     * Generates a teardrop map pin featuring the solar lightning bolt (⚡) icon.
+     */
+    private fun createSolarHubMarkerBitmap(isActive: Boolean): BitmapDescriptor {
+        val density = resources.displayMetrics.density
+        val widthDp = 38f
+        val heightDp = 48f
+        val widthPx = (widthDp * density).toInt()
+        val heightPx = (heightDp * density).toInt()
+        val radius = 15f * density
+        val centerX = widthPx / 2f
+        val centerY = radius + (2.5f * density)
+        val tipY = heightPx - (2f * density)
+
+        val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // Teardrop map pin path
+        val pinPath = Path().apply {
+            arcTo(
+                centerX - radius,
+                centerY - radius,
+                centerX + radius,
+                centerY + radius,
+                140f,
+                260f,
+                false
+            )
+            lineTo(centerX, tipY)
+            close()
+        }
+
+        // Fill background (Solar Orange for active, Slate for inactive)
+        val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isActive) Color.parseColor("#FF7A1A") else Color.parseColor("#64748B")
+            style = Paint.Style.FILL
+        }
+        canvas.drawPath(pinPath, fillPaint)
+
+        // Crisp white border
+        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f * density
+            strokeJoin = Paint.Join.ROUND
+        }
+        canvas.drawPath(pinPath, strokePaint)
+
+        // Draw centered solar lightning bolt (⚡)
+        val boltDrawable = ContextCompat.getDrawable(this, R.drawable.ic_solar_bolt)
+        if (boltDrawable != null) {
+            val iconSize = (18f * density).toInt()
+            val left = (centerX - iconSize / 2f).toInt()
+            val top = (centerY - iconSize / 2f).toInt()
+            boltDrawable.setBounds(left, top, left + iconSize, top + iconSize)
+            DrawableCompat.setTint(boltDrawable.mutate(), Color.WHITE)
+            boltDrawable.draw(canvas)
+        }
+
+        return BitmapDescriptorFactory.fromBitmap(bitmap)
     }
 
     private fun showStationDetails(station: NearbyStationDto) {
