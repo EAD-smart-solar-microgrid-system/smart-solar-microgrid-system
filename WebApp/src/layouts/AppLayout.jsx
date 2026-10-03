@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { ROUTES } from '../constants/routes.js';
 import { AuthContext } from '../features/authentication/context/AuthContextValue.js';
 import { useTheme } from '../context/ThemeContext.jsx';
-import { MaterialIcon } from '../components/common/MaterialIcon.jsx';
+import brandLogo from '../assets/brand-logo.png';
 
 /**
  * Helper to determine current breadcrumb and title
@@ -73,23 +73,17 @@ export const AppLayout = () => {
         }`}
       >
         {/* BRAND LOGO HEADER */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4">
           <Link
             to={ROUTES.HOME}
-            className="flex items-center gap-2.5 transition hover:opacity-90"
+            className="flex items-center transition hover:opacity-95"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E3511B] text-white shadow-md shadow-[#E3511B]/20">
-              <MaterialIcon name="bolt" size={20} className="text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
-                SOLAR<span className="text-[#E3511B]">HUB</span>
-              </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                Microgrid System
-              </span>
-            </div>
+            <img
+              src={brandLogo}
+              alt="Smart Solar Microgrid Trading System"
+              className="h-11 w-auto max-w-[178px] object-contain drop-shadow-sm"
+            />
           </Link>
 
           <button
