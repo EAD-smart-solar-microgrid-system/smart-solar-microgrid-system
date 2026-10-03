@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { ROUTES } from '../constants/routes.js';
 import { AuthContext } from '../features/authentication/context/AuthContextValue.js';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { MaterialIcon } from '../components/common/MaterialIcon.jsx';
 
 /**
  * Helper to determine current breadcrumb and title
@@ -79,7 +80,7 @@ export const AppLayout = () => {
             onClick={() => setMobileMenuOpen(false)}
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E3511B] text-white shadow-md shadow-[#E3511B]/20">
-              <span className="text-lg font-black leading-none">⚡</span>
+              <MaterialIcon name="bolt" size={20} className="text-white" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-extrabold tracking-tight text-[var(--text-primary)]">

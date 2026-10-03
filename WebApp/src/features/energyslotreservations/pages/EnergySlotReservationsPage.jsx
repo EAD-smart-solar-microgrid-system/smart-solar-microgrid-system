@@ -11,6 +11,7 @@ import { LoadingIndicator } from '../../../components/common/LoadingIndicator.js
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 import { EmptyState } from '../../../components/common/EmptyState.jsx';
 import { MetricCard } from '../../../components/common/MetricCard.jsx';
+import { MaterialIcon } from '../../../components/common/MaterialIcon.jsx';
 import { StationSelector } from '../components/StationSelector.jsx';
 import { SlotList } from '../components/SlotList.jsx';
 import { SlotFormModal } from '../components/SlotFormModal.jsx';
@@ -314,7 +315,7 @@ export const EnergySlotReservationsPage = () => {
           onClick={openCreateModal}
           disabled={!selectedStationId || stationsLoading || slotsLoading || formSubmitting}
         >
-          <span>+</span>
+          <MaterialIcon name="add" size={16} className="text-white" />
           <span>Create Slot</span>
         </button>
       </PageHeader>
@@ -326,28 +327,28 @@ export const EnergySlotReservationsPage = () => {
           value={selectedStation?.hubId || 'HUB-SELECT'}
           subtitle={selectedStation?.stationName || 'Choose station'}
           accent="default"
-          icon={<span className="text-sm font-bold text-[#E3511B]">⚡</span>}
+          icon={<MaterialIcon name="hub" size={20} className="text-white" />}
         />
         <MetricCard
           title="Hub Capacity"
           value={selectedStation ? `${selectedStation.capacityKwPerHour} kW` : '—'}
           subtitle="Max station throughput"
           accent="default"
-          icon={<span>☀️</span>}
+          icon={<MaterialIcon name="solar_power" size={20} className="text-white" />}
         />
         <MetricCard
           title="Total Slots"
           value={slotsLoading ? '…' : slots.length}
           subtitle="Configured time windows"
           accent="default"
-          icon={<span>📅</span>}
+          icon={<MaterialIcon name="schedule" size={20} className="text-white" />}
         />
         <MetricCard
           title="Available Slots"
           value={slotsLoading ? '…' : availableSlotsCount}
           subtitle="Open for prosumer booking"
           accent="emerald"
-          icon={<span className="text-[#22C55E]">✓</span>}
+          icon={<MaterialIcon name="check_circle" size={20} className="text-white" />}
         />
       </div>
 
