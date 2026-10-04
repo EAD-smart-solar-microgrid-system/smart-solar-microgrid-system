@@ -7,6 +7,7 @@
 
 using MongoDB.Bson;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Utilities;
 using SmartSolarMicrogrid.Api.DTOs.Slots;
 using SmartSolarMicrogrid.Api.Models;
 using SmartSolarMicrogrid.Api.Repositories;
@@ -31,24 +32,24 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
         string stationId,
         CancellationToken cancellationToken = default)
     {
-        // Validate the station identifier and confirm the parent station exists before listing slots.
-        if (!ObjectId.TryParse(stationId, out _))
-        {
-            return StationServiceResult<IReadOnlyList<EnergyBookingSlotResponse>>.Failure(
-                StationServiceErrorType.Validation,
-                "The station id must be a valid MongoDB ObjectId.");
-        }
-
-        var station = await _stationRepository.GetByIdAsync(stationId, cancellationToken);
+        // Resolve station by client-facing HubId or internal MongoDB ObjectId.
+        var station = await ResolveStationAsync(stationId, cancellationToken);
 
         if (station is null)
         {
+            if (string.IsNullOrWhiteSpace(stationId) || (!HubIdGenerator.IsValid(stationId.Trim()) && !ObjectId.TryParse(stationId.Trim(), out _)))
+            {
+                return StationServiceResult<IReadOnlyList<EnergyBookingSlotResponse>>.Failure(
+                    StationServiceErrorType.Validation,
+                    "The station identifier must be a valid HubId (HUB-XXXXXXXX) or MongoDB ObjectId.");
+            }
+
             return StationServiceResult<IReadOnlyList<EnergyBookingSlotResponse>>.Failure(
                 StationServiceErrorType.NotFound,
                 "The requested station was not found.");
         }
 
-        var slots = await _slotRepository.GetByStationIdAsync(stationId, cancellationToken);
+        var slots = await _slotRepository.GetByStationIdAsync(station.Id, cancellationToken);
         var responses = slots.Select(MapToResponse).ToList();
 
         return StationServiceResult<IReadOnlyList<EnergyBookingSlotResponse>>.Success(responses);
@@ -59,18 +60,18 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
         CreateEnergyBookingSlotRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Validate identifiers, slot input, station existence, and overlap before inserting.
-        if (!ObjectId.TryParse(stationId, out _))
-        {
-            return StationServiceResult<EnergyBookingSlotResponse>.Failure(
-                StationServiceErrorType.Validation,
-                "The station id must be a valid MongoDB ObjectId.");
-        }
-
-        var station = await _stationRepository.GetByIdAsync(stationId, cancellationToken);
+        // Resolve station by client-facing HubId or internal MongoDB ObjectId before inserting.
+        var station = await ResolveStationAsync(stationId, cancellationToken);
 
         if (station is null)
         {
+            if (string.IsNullOrWhiteSpace(stationId) || (!HubIdGenerator.IsValid(stationId.Trim()) && !ObjectId.TryParse(stationId.Trim(), out _)))
+            {
+                return StationServiceResult<EnergyBookingSlotResponse>.Failure(
+                    StationServiceErrorType.Validation,
+                    "The station identifier must be a valid HubId (HUB-XXXXXXXX) or MongoDB ObjectId.");
+            }
+
             return StationServiceResult<EnergyBookingSlotResponse>.Failure(
                 StationServiceErrorType.NotFound,
                 "The requested station was not found.");
@@ -100,7 +101,7 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
         var normalizedEnd = NormalizeToUtc(request.SlotEndUtc);
 
         var overlapMessage = await ValidateNoOverlapAsync(
-            stationId,
+            station.Id,
             normalizedStart,
             normalizedEnd,
             excludeSlotId: null,
@@ -117,7 +118,7 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
         var slot = new EnergyBookingSlot
         {
             Id = ObjectId.GenerateNewId().ToString(),
-            StationId = stationId,
+            StationId = station.Id,
             SlotStartUtc = normalizedStart,
             SlotEndUtc = normalizedEnd,
             CapacityKw = request.CapacityKw,
@@ -129,6 +130,29 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
         var createdSlot = await _slotRepository.CreateAsync(slot, cancellationToken);
 
         return StationServiceResult<EnergyBookingSlotResponse>.Success(MapToResponse(createdSlot));
+    }
+
+    private async Task<SolarStation?> ResolveStationAsync(
+        string? stationIdentifier,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(stationIdentifier))
+        {
+            return null;
+        }
+
+        var trimmed = stationIdentifier.Trim();
+        if (HubIdGenerator.IsValid(trimmed))
+        {
+            return await _stationRepository.GetByHubIdAsync(trimmed, cancellationToken);
+        }
+
+        if (ObjectId.TryParse(trimmed, out _))
+        {
+            return await _stationRepository.GetByIdAsync(trimmed, cancellationToken);
+        }
+
+        return null;
     }
 
     public async Task<StationServiceResult<EnergyBookingSlotResponse>> UpdateAsync(

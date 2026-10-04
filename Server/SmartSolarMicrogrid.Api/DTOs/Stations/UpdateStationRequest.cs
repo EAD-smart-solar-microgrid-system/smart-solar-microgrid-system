@@ -9,6 +9,8 @@ namespace SmartSolarMicrogrid.Api.DTOs.Stations;
 
 public sealed class UpdateStationRequest
 {
+    public string? HubId { get; set; }
+
     public string? StationName { get; set; }
 
     public double Latitude { get; set; }

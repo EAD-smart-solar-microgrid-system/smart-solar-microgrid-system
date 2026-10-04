@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using MongoDB.Bson;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Utilities;
 using SmartSolarMicrogrid.Api.DTOs.Reservations;
 using SmartSolarMicrogrid.Api.Models;
 using SmartSolarMicrogrid.Api.Repositories;
@@ -98,7 +99,11 @@ public sealed class ReservationService : IReservationService
                 "A deactivated solar prosumer profile cannot create energy reservations.");
         }
 
-        var station = await _stationRepository.GetByIdAsync(request.StationId, cancellationToken);
+        var trimmedStationId = request.StationId.Trim();
+        var station = HubIdGenerator.IsValid(trimmedStationId)
+            ? await _stationRepository.GetByHubIdAsync(trimmedStationId, cancellationToken)
+            : await _stationRepository.GetByIdAsync(trimmedStationId, cancellationToken);
+
         if (station is null)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
@@ -113,6 +118,7 @@ public sealed class ReservationService : IReservationService
                 "Reservations cannot be booked for an inactive microgrid node.");
         }
 
+        var internalStationId = station.Id;
         var now = DateTime.UtcNow;
         var requestedUtc = request.ReservationDateTime.ToUniversalTime();
 
@@ -131,7 +137,7 @@ public sealed class ReservationService : IReservationService
         }
 
         var hasConflict = await _reservationRepository.HasConflictingReservationAsync(
-            request.StationId,
+            internalStationId,
             request.SlotId.Trim(),
             requestedUtc,
             excludeReservationId: null,
@@ -145,7 +151,7 @@ public sealed class ReservationService : IReservationService
         }
 
         var slotAvailability = await _slotAvailabilityChecker.CheckSlotAvailabilityAsync(
-            request.StationId,
+            internalStationId,
             request.SlotId.Trim(),
             requestedUtc,
             cancellationToken);
@@ -169,7 +175,7 @@ public sealed class ReservationService : IReservationService
         {
             Id = ObjectId.GenerateNewId().ToString(),
             ProsumerNic = normalizedNic,
-            StationId = request.StationId,
+            StationId = internalStationId,
             SlotId = request.SlotId.Trim(),
             ReservationDateTime = requestedUtc,
             ReservationType = reservationType,
@@ -631,9 +637,10 @@ public sealed class ReservationService : IReservationService
             return "Invalid NIC format. Enter 9 digits followed by V/X or 12 numeric digits.";
         }
 
-        if (string.IsNullOrWhiteSpace(request.StationId) || !ObjectId.TryParse(request.StationId, out _))
+        if (string.IsNullOrWhiteSpace(request.StationId)
+            || (!ObjectId.TryParse(request.StationId.Trim(), out _) && !HubIdGenerator.IsValid(request.StationId.Trim())))
         {
-            return "A valid station id (MongoDB ObjectId) is required.";
+            return "A valid station id (HubId or MongoDB ObjectId) is required.";
         }
 
         if (string.IsNullOrWhiteSpace(request.SlotId))

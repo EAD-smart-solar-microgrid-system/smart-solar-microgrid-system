@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import appConfig from '../../../config/appConfig';
 import { ROUTES } from '../../../constants/routes.js';
 import { Logo } from '../../../components/common/Logo.jsx';
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const token = searchParams.get('token') || '';
   const email = searchParams.get('email') || '';
 

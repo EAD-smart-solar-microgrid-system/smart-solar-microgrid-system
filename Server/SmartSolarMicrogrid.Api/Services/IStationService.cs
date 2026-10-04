@@ -14,17 +14,21 @@ public interface IStationService
     Task<StationServiceResult<IReadOnlyList<StationResponse>>> GetAllAsync(
         CancellationToken cancellationToken = default);
 
+    Task<StationServiceResult<StationResponse>> GetByHubIdAsync(
+        string hubId,
+        CancellationToken cancellationToken = default);
+
     Task<StationServiceResult<StationResponse>> CreateAsync(
         CreateStationRequest request,
         CancellationToken cancellationToken = default);
 
     Task<StationServiceResult<StationResponse>> UpdateDetailsAsync(
-        string id,
+        string hubId,
         UpdateStationRequest request,
         CancellationToken cancellationToken = default);
 
     Task<StationServiceResult<StationResponse>> ChangeStatusAsync(
-        string id,
+        string hubId,
         UpdateStationStatusRequest request,
         CancellationToken cancellationToken = default);
 }

@@ -14,7 +14,7 @@ using SmartSolarMicrogrid.Api.Services;
 namespace SmartSolarMicrogrid.Api.Controllers;
 
 [ApiController]
-[Route("api/stations/{stationId}/slots")]
+[Route("api/stations/{hubId}/slots")]
 public sealed class StationEnergyBookingSlotsController : ControllerBase
 {
     private readonly IEnergyBookingSlotService _slotService;
@@ -28,11 +28,11 @@ public sealed class StationEnergyBookingSlotsController : ControllerBase
     [HttpGet]
     [Authorize]
     public async Task<ActionResult<IReadOnlyList<EnergyBookingSlotResponse>>> GetByStationId(
-        string stationId,
+        string hubId,
         CancellationToken cancellationToken)
     {
         // Request all slots for one station and return an empty list when none exist.
-        var result = await _slotService.GetByStationIdAsync(stationId, cancellationToken);
+        var result = await _slotService.GetByStationIdAsync(hubId, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -45,7 +45,7 @@ public sealed class StationEnergyBookingSlotsController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "GridOperator,Backoffice")]
     public async Task<ActionResult<EnergyBookingSlotResponse>> Create(
-        string stationId,
+        string hubId,
         [FromBody] CreateEnergyBookingSlotRequest? request,
         CancellationToken cancellationToken)
     {
@@ -55,7 +55,7 @@ public sealed class StationEnergyBookingSlotsController : ControllerBase
             return BadRequest(new ErrorResponse("Request body is required."));
         }
 
-        var result = await _slotService.CreateAsync(stationId, request, cancellationToken);
+        var result = await _slotService.CreateAsync(hubId, request, cancellationToken);
 
         if (!result.Succeeded)
         {
