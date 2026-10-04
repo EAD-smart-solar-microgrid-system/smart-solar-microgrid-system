@@ -2,3 +2,7 @@
 # Local Planning
 commit_plan.md
 Smart_Solar_Microgrid_Member_Breakdown.html
+
+# Local API credentials and development overrides
+Server/SmartSolarMicrogrid.Api/.env
+Server/SmartSolarMicrogrid.Api/appsettings.Local.json
