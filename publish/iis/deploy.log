@@ -1,0 +1,6 @@
+﻿SmartSolar IIS deployment started.
+[2026-10-05 01:03:16] VERIFY http://localhost:5278/api/health status=200 error=
+[2026-10-05 01:03:17] VERIFY http://localhost:8080/ status=200 error=
+[2026-10-05 01:03:17] VERIFY API login from localhost status=200 error=
+[2026-10-05 01:03:17] VERIFY http://192.168.1.5:8080/ status=200 error=
+[2026-10-05 01:03:17] Deployment verification succeeded
