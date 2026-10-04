@@ -57,7 +57,7 @@ export const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="flex justify-center py-8 sm:py-14">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bg-app)] px-4 py-8 sm:py-14">
       <div className="w-full max-w-md">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
           <div className="mb-6 flex flex-col items-center justify-center text-center">

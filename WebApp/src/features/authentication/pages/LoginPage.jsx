@@ -1,12 +1,12 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import appConfig from '../../../config/appConfig';
 import { AuthContext } from '../context/AuthContextValue.js';
 import { ROUTES } from '../../../constants/routes';
 import { Logo } from '../../../components/common/Logo.jsx';
 
 export const LoginPage = () => {
-  const { login } = useContext(AuthContext);
+  const { login, user, isLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -62,8 +62,26 @@ export const LoginPage = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-app)] text-[var(--text-muted)] text-sm">
+        Loading...
+      </div>
+    );
+  }
+
+  if (user) {
+    if (user.role === 'Backoffice') {
+      return <Navigate to={ROUTES.ADMIN_SETTINGS} replace />;
+    }
+    if (user.role === 'GridOperator') {
+      return <Navigate to={ROUTES.ENERGY_SLOT_RESERVATIONS} replace />;
+    }
+    return <Navigate to={ROUTES.HOME} replace />;
+  }
+
   return (
-    <div className="flex justify-center items-center py-10 sm:py-16">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bg-app)] px-4 py-10 text-[var(--text-primary)]">
       <div className="w-full max-w-md">
         <div className="rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-7 sm:p-8 shadow-[var(--shadow-modal)]">
           <div className="mb-6 flex flex-col items-center justify-center text-center">

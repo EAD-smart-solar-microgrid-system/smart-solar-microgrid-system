@@ -41,8 +41,8 @@ export const AppLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    navigate(ROUTES.HOME, { replace: true });
     logout();
+    navigate(ROUTES.LOGIN, { replace: true });
   };
 
   const { section, title } = getPageContext(location.pathname);
