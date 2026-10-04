@@ -173,12 +173,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentCorsPolicy", policy =>
     {
-        var developmentOrigins = builder.Configuration
-            .GetSection("Cors:DevelopmentOrigins")
-            .Get<string[]>() ?? [];
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>()
+            ?? builder.Configuration
+                .GetSection("Cors:DevelopmentOrigins")
+                .Get<string[]>()
+            ?? [];
 
         policy
-            .WithOrigins(developmentOrigins)
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
