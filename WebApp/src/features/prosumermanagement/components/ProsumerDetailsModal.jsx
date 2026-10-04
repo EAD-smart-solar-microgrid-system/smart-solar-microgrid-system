@@ -22,52 +22,52 @@ export const ProsumerDetailsModal = ({ isOpen, prosumer, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/50 px-4 py-8"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/75 backdrop-blur-sm p-4"
       role="presentation"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="mx-auto max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-7"
+        className="w-full max-w-lg rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-[var(--shadow-modal)] text-[var(--text-primary)] transition-all sm:p-7"
         role="dialog"
         aria-modal="true"
         aria-labelledby="prosumer-details-title"
       >
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#E3511B]">
               Solar Prosumer Profile
             </p>
-            <h2 id="prosumer-details-title" className="mt-1 text-2xl font-bold text-slate-950">
+            <h2 id="prosumer-details-title" className="mt-1 text-xl font-bold tracking-tight text-[var(--text-primary)]">
               Prosumer Details
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
               Read-only administrative overview of prosumer credentials and records.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-2xl leading-none text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-sm text-[var(--text-muted)] transition hover:text-[var(--text-primary)] hover:border-[var(--border-default)]"
             aria-label="Close dialog"
           >
-            ×
+            ✕
           </button>
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-            <dl className="grid grid-cols-1 gap-y-3.5 sm:grid-cols-2 sm:gap-x-4">
+          <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4 sm:p-5">
+            <dl className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-5">
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   National ID (NIC)
                 </dt>
-                <dd className="mt-1 font-mono text-sm font-semibold text-slate-900">
+                <dd className="mt-1 font-mono text-xs font-bold text-[var(--text-primary)]">
                   {prosumer.nic}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Account Status
                 </dt>
                 <dd className="mt-1">
@@ -76,55 +76,55 @@ export const ProsumerDetailsModal = ({ isOpen, prosumer, onClose }) => {
               </div>
 
               <div className="sm:col-span-2">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Full Name
                 </dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                <dd className="mt-1 text-xs font-semibold text-[var(--text-primary)]">
                   {prosumer.fullName || '—'}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Email Address
                 </dt>
-                <dd className="mt-1 text-sm text-slate-700">
+                <dd className="mt-1 text-xs font-medium text-[var(--text-secondary)]">
                   {prosumer.email || '—'}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Phone Number
                 </dt>
-                <dd className="mt-1 text-sm text-slate-700">
+                <dd className="mt-1 text-xs font-medium text-[var(--text-secondary)]">
                   {prosumer.phone || '—'}
                 </dd>
               </div>
 
               <div className="sm:col-span-2">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Registered Address
                 </dt>
-                <dd className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">
+                <dd className="mt-1 text-xs font-medium text-[var(--text-secondary)] whitespace-pre-wrap">
                   {prosumer.address || '—'}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Registration Date
                 </dt>
-                <dd className="mt-1 text-xs text-slate-600">
+                <dd className="mt-1 text-xs text-[var(--text-muted)]">
                   {formatDate(prosumer.registeredAt || prosumer.createdAt)}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Last Updated
                 </dt>
-                <dd className="mt-1 text-xs text-slate-600">
+                <dd className="mt-1 text-xs text-[var(--text-muted)]">
                   {formatDate(prosumer.updatedAt)}
                 </dd>
               </div>
@@ -132,11 +132,11 @@ export const ProsumerDetailsModal = ({ isOpen, prosumer, onClose }) => {
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end border-t border-slate-200 pt-4">
+        <div className="mt-6 flex justify-end border-t border-[var(--border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-5 py-2.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           >
             Close
           </button>

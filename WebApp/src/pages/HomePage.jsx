@@ -127,12 +127,6 @@ export const HomePage = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Timeframe pill */}
-          <div className="flex items-center rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]">
-            <span>This Month</span>
-            <span className="ml-1.5 text-[10px] text-[var(--text-muted)]">▾</span>
-          </div>
-
           {/* Reset / Refresh button */}
           <button
             type="button"
