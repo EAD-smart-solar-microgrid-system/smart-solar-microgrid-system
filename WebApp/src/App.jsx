@@ -53,23 +53,24 @@ export function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path={ROUTES.HOME} element={<AppLayout />}>
+            {/* Auth-only screens: no sidebar / dashboard chrome */}
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+            <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmailPage />} />
+
+            {/* App shell only after sign-in */}
+            <Route
+              path={ROUTES.HOME}
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<HomePage />} />
 
-              {/* Authentication routes */}
-              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
               <Route
-                path={ROUTES.RESET_PASSWORD}
-                element={<ResetPasswordPage />}
-              />
-              <Route
-                path={ROUTES.VERIFY_EMAIL}
-                element={<VerifyEmailPage />}
-              />
-
-              {/* Backoffice user management */}
-              <Route
-                path={ROUTES.USER_MANAGEMENT}
+                path={ROUTES.USER_MANAGEMENT.slice(1)}
                 element={
                   <ProtectedRoute roleRequired="Backoffice">
                     <UserManagementPage />
@@ -77,9 +78,8 @@ export function App() {
                 }
               />
 
-              {/* Backoffice admin settings */}
               <Route
-                path={ROUTES.ADMIN_SETTINGS}
+                path={ROUTES.ADMIN_SETTINGS.slice(1)}
                 element={
                   <ProtectedRoute roleRequired="Backoffice">
                     <UserManagementPage />
@@ -87,9 +87,8 @@ export function App() {
                 }
               />
 
-              {/* Backoffice prosumer management */}
               <Route
-                path={ROUTES.PROSUMER_MANAGEMENT}
+                path={ROUTES.PROSUMER_MANAGEMENT.slice(1)}
                 element={
                   <ProtectedRoute roleRequired="Backoffice">
                     <ProsumerManagementPage />
@@ -97,9 +96,8 @@ export function App() {
                 }
               />
 
-              {/* Grid Operator energy slot management */}
               <Route
-                path={ROUTES.ENERGY_SLOT_RESERVATIONS}
+                path={ROUTES.ENERGY_SLOT_RESERVATIONS.slice(1)}
                 element={
                   <ProtectedRoute roleRequired="GridOperator">
                     <EnergySlotReservationsPage />
@@ -113,7 +111,7 @@ export function App() {
                 - Backoffice: read-only monitoring
               */}
               <Route
-                path={ROUTES.RESERVATION_MONITORING}
+                path={ROUTES.RESERVATION_MONITORING.slice(1)}
                 element={
                   <ProtectedRoute
                     rolesAllowed={['GridOperator', 'Backoffice']}
@@ -123,7 +121,6 @@ export function App() {
                 }
               />
 
-              {/* Backoffice station administration */}
               <Route
                 path={ROUTES.STATIONS.slice(1)}
                 element={
@@ -133,7 +130,6 @@ export function App() {
                 }
               />
 
-              {/* Fallback */}
               <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
             </Route>
           </Routes>
