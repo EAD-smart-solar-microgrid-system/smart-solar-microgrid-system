@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Solar Energy Gradient -->
+    <linearGradient id="solarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#FBBF24" />
+    </linearGradient>
+
+    <!-- Microgrid Flow Gradient -->
+    <linearGradient id="gridGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+
+    <!-- Core Sun Glow Filter -->
+    <filter id="solarGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Central Solar Core with Subtle Ambient Ring -->
+  <circle cx="50" cy="50" r="14" fill="url(#solarGrad)" filter="url(#solarGlow)" />
+  <circle cx="50" cy="50" r="14" fill="url(#solarGrad)" />
+  <circle cx="50" cy="50" r="18" stroke="url(#solarGrad)" stroke-width="1.5" stroke-dasharray="2 3" opacity="0.6" />
+
+  <!-- Microgrid Connection Nodes and Traces (8-axis solar microgrid topology) -->
+  <!-- Top (0 deg) -->
+  <line x1="50" y1="32" x2="50" y2="15" stroke="url(#gridGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="50" cy="12" r="3.5" fill="#06B6D4" />
+
+  <!-- Top Right (45 deg) -->
+  <line x1="63" y1="37" x2="75" y2="25" stroke="url(#solarGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="77" cy="23" r="3" fill="#FBBF24" />
+
+  <!-- Right (90 deg) -->
+  <line x1="68" y1="50" x2="85" y2="50" stroke="url(#gridGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="88" cy="50" r="3.5" fill="#10B981" />
+
+  <!-- Bottom Right (135 deg) -->
+  <line x1="63" y1="63" x2="75" y2="75" stroke="url(#solarGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="77" cy="77" r="3" fill="#F59E0B" />
+
+  <!-- Bottom (180 deg) -->
+  <line x1="50" y1="68" x2="50" y2="85" stroke="url(#gridGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="50" cy="88" r="3.5" fill="#06B6D4" />
+
+  <!-- Bottom Left (225 deg) -->
+  <line x1="37" y1="63" x2="25" y2="75" stroke="url(#solarGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="23" cy="77" r="3" fill="#FBBF24" />
+
+  <!-- Left (270 deg) -->
+  <line x1="32" y1="50" x2="15" y2="50" stroke="url(#gridGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="12" cy="50" r="3.5" fill="#10B981" />
+
+  <!-- Top Left (315 deg) -->
+  <line x1="37" y1="37" x2="25" y2="25" stroke="url(#solarGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="23" cy="23" r="3" fill="#F59E0B" />
+
+  <!-- Grid Interconnect Loop (Outer energy distribution mesh) -->
+  <path d="M 50 12 L 77 23 L 88 50 L 77 77 L 50 88 L 23 77 L 12 50 L 23 23 Z"
+        stroke="url(#gridGrad)" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.45" fill="none" />
+</svg>
