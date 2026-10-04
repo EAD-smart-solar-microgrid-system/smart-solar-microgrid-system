@@ -1,0 +1,235 @@
+<resources>
+    <string name="app_name">Smart Solar Microgrid Trading System</string>
+    <string name="app_subtitle">Android Application</string>
+    <string name="status_foundation_ready">Common project foundation is ready</string>
+
+    <!-- Future Feature Module Boundaries -->
+    <string name="module_prosumer_account">Prosumer Account Control</string>
+    <string name="module_reservation_qr">Reservation &amp; QR Dispatch</string>
+    <string name="module_dashboard_maps">Dashboard &amp; Maps</string>
+    <string name="module_operator_mode">Operator Mode</string>
+    <string name="module_status_disabled">Pending individual feature development</string>
+    <string name="module_status_ready">Tap to open Member 4 dashboard</string>
+    <string name="module_status_ready_operator">Tap to open Operator Mode</string>
+
+    <!-- Member 4 Dashboard & Booking Views -->
+    <string name="dashboard_title">Prosumer Dashboard</string>
+    <string name="dashboard_subtitle">View reservation counts and recent bookings</string>
+    <string name="dashboard_prosumer_hint">Prosumer NIC</string>
+    <string name="dashboard_pending_label">Pending</string>
+    <string name="dashboard_approved_future_label">Approved (future)</string>
+    <string name="dashboard_recent_header">Recent bookings</string>
+    <string name="dashboard_recent_empty">No recent bookings for this prosumer.</string>
+
+    <string name="booking_history_title">Booking History</string>
+    <string name="booking_history_subtitle">All monitored reservations for this prosumer</string>
+    <string name="pending_bookings_title">Pending Bookings</string>
+    <string name="pending_bookings_subtitle">Reservations awaiting approval</string>
+    <string name="booking_list_empty">No bookings match this view.</string>
+    <string name="search_title">Search &amp; Filter Bookings</string>
+
+    <string name="filter_prosumer_id">Prosumer ID (NIC)</string>
+    <string name="filter_station_id">Station ID</string>
+    <string name="filter_status">Status</string>
+    <string name="filter_search">Reservation ID, station ID, slot ID, or NIC</string>
+
+    <string name="action_load">Load dashboard</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_open_pending">Pending bookings</string>
+    <string name="action_open_history">Booking history</string>
+    <string name="action_open_search">Search / filter</string>
+    <string name="action_apply_filters">Apply filters</string>
+    <string name="action_reset">Reset</string>
+
+    <string name="booking_type_label">Type: %1$s</string>
+    <string name="booking_station_label">Station: %1$s</string>
+    <string name="booking_id_label">Reservation: %1$s</string>
+
+    <string name="detail_title">Reservation details</string>
+    <string name="detail_id">ID: %1$s</string>
+    <string name="detail_status">Status: %1$s</string>
+    <string name="detail_type">Type: %1$s</string>
+    <string name="detail_datetime">Date / time: %1$s</string>
+    <string name="detail_prosumer">Prosumer: %1$s</string>
+    <string name="detail_station">Station ID: %1$s</string>
+    <string name="detail_station_name">Station name: %1$s</string>
+    <string name="detail_station_name_unknown">Station name: not cached</string>
+    <string name="detail_slot">Slot ID: %1$s</string>
+    <string name="detail_created">Created: %1$s</string>
+    <string name="detail_updated">Updated: %1$s</string>
+
+    <string name="error_prosumer_required">Enter a prosumer NIC to load dashboard data.</string>
+    <string name="error_unauthorized">Authentication is required for this request.</string>
+    <string name="error_network">Network communication failed. Check connectivity and API URL.</string>
+    <string name="error_api_generic">API request failed (HTTP %1$d).</string>
+    <string name="error_unknown">An unexpected error occurred.</string>
+
+    <!-- Member 4 Nearby Stations Map -->
+    <string name="nearby_map_title">Nearby Grid Stations</string>
+    <string name="nearby_map_subtitle">Stations within your current location radius</string>
+    <string name="action_open_nearby_map">Nearby stations map</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="nearby_permission_denied">Location permission is required to show nearby stations. Enable it in app settings.</string>
+    <string name="nearby_location_unavailable">Unable to determine your current location. Try again outdoors or with GPS enabled.</string>
+    <string name="nearby_no_results">No grid stations found near your current location.</string>
+    <string name="nearby_network_error_cache_used">Network unavailable. Showing cached stations near you.</string>
+    <string name="nearby_marker_snippet">%1$s km · %2$s</string>
+    <string name="nearby_detail_distance">Distance: %1$s km</string>
+    <string name="nearby_detail_status">Status: %1$s</string>
+    <string name="nearby_detail_capacity">Capacity: %1$s kW/h</string>
+    <string name="nearby_detail_battery">Battery storage slots: %1$d</string>
+    <string name="nearby_detail_schedule_label">Operating schedule</string>
+    <string name="nearby_detail_schedule_empty">No schedule available.</string>
+    <string name="nearby_cache_fallback_hint">Showing cached station data</string>
+
+    <!-- Member 2 Reservation & QR Module -->
+    <string name="module_status_ready_reservation">Tap to open Reservation &amp; QR Dispatch</string>
+    <string name="reservation_list_title">Reservation &amp; QR</string>
+    <string name="reservation_list_subtitle">Local cached bookings &amp; QR dispatch records</string>
+    <string name="reservation_list_empty">No reservations cached yet.</string>
+    <string name="reservation_prosumer_hint">Prosumer NIC</string>
+    <string name="action_refresh_cache">Refresh Cache</string>
+    <string name="status_pending_approval">Pending Approval</string>
+    <string name="status_approved">Approved</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_completed">Completed</string>
+    <string name="reservation_item_slot">Slot: %1$s</string>
+    <string name="reservation_item_station">Station: %1$s</string>
+    <string name="reservation_item_type">Type: %1$s</string>
+    <string name="reservation_item_id">Reservation: %1$s</string>
+    <string name="reservation_item_cancellation">Cancellation Reason: %1$s</string>
+    <string name="reservation_nic_required_prompt">Enter a Prosumer NIC to view cached reservations.</string>
+
+    <!-- Member 2 Create Reservation -->
+    <string name="create_reservation_title">New Reservation</string>
+    <string name="create_reservation_subtitle">Book a microgrid charging or drop-off slot</string>
+    <string name="action_new_reservation">New Reservation</string>
+    <string name="hint_station">Select Grid Station</string>
+    <string name="hint_slot">Select Booking Slot</string>
+    <string name="hint_reservation_date">Reservation Date</string>
+    <string name="hint_reservation_time">Reservation Time</string>
+    <string name="label_reservation_type">Reservation Type</string>
+    <string name="type_drop_off">Drop Off</string>
+    <string name="type_charging">Charging</string>
+    <string name="action_submit_reservation">Confirm &amp; Book Reservation</string>
+    <string name="msg_reservation_created">Reservation booked successfully!</string>
+    <string name="error_station_required">Please select a grid station.</string>
+    <string name="error_slot_required">Please select an available booking slot.</string>
+    <string name="error_date_time_required">Please select both reservation date and time.</string>
+    <string name="error_date_time_future">Reservation date and time must be in the future.</string>
+    <string name="error_date_time_7_days">Reservations must be scheduled within a rolling 7-day forward window.</string>
+    <string name="msg_loading_stations">Loading stations…</string>
+    <string name="msg_loading_slots">Loading available slots…</string>
+    <string name="msg_no_slots_available">No available slots found for this station.</string>
+    <string name="msg_no_stations_available">No active stations available.</string>
+    <string name="error_reservation_cache_failed">Reservation was created on the server (ID: %1$s), but failed to save to local cache.</string>
+
+    <!-- Member 2 Detail, Edit, and Cancellation -->
+    <string name="detail_cancelled_at">Cancelled at: %1$s</string>
+    <string name="detail_cancellation_reason">Reason: %1$s</string>
+    <string name="detail_notice_expired">Modifications and cancellations require at least 12 hours advance notice before the scheduled slot time.</string>
+    <string name="detail_status_locked">This reservation is %1$s and can no longer be modified or cancelled.</string>
+    <string name="action_edit_reservation">Edit Reservation</string>
+    <string name="action_cancel_reservation">Cancel Reservation</string>
+    <string name="dialog_cancel_title">Cancel Reservation</string>
+    <string name="dialog_cancel_message">Are you sure you want to cancel this reservation? Cancellations require at least 12 hours advance notice and cannot be undone.</string>
+    <string name="dialog_cancel_reason_hint">Reason for cancellation (optional)</string>
+    <string name="action_confirm_cancel">Cancel Reservation</string>
+    <string name="action_keep_reservation">Keep Reservation</string>
+    <string name="msg_reservation_cancelled">Reservation cancelled successfully.</string>
+    <string name="edit_reservation_title">Edit Reservation</string>
+    <string name="edit_reservation_subtitle">Update your scheduled slot, time, or transfer type</string>
+    <string name="hint_station_readonly">Grid Station (Fixed)</string>
+    <string name="action_update_reservation">Save Changes</string>
+    <string name="msg_reservation_updated">Reservation updated successfully!</string>
+    <string name="error_reservation_update_cache_failed">Reservation was updated on the server, but local cache failed to save.</string>
+    <string name="error_reservation_cancel_cache_failed">Reservation was cancelled on the server, but local cache failed to update.</string>
+    <string name="error_reservation_not_found">Reservation could not be found.</string>
+    <string name="error_reservation_unauthorized">You do not have access to view this reservation.</string>
+    <string name="error_edit_twelve_hours">Modifications must be made at least 12 hours before the scheduled time.</string>
+
+    <!-- Member 2 QR Dispatch -->
+    <string name="title_qr_dispatch">QR Dispatch Credential</string>
+    <string name="action_view_qr_dispatch">View QR Dispatch</string>
+    <string name="msg_qr_pending_notice">QR becomes available after reservation approval.</string>
+    <string name="msg_qr_not_approved">QR tokens can only be generated for Approved reservations. Current status: %1$s.</string>
+    <string name="qr_instructions">Present this QR code to the microgrid station operator for check-in and energy dispatch. Generating a new QR code will supersede and invalidate any prior code.</string>
+    <string name="qr_status_active">Active QR Credential</string>
+    <string name="qr_status_expired">Expired QR Credential</string>
+    <string name="qr_issued_at">Issued: %1$s</string>
+    <string name="qr_expires_at">Expires: %1$s</string>
+    <string name="msg_qr_token_expired">The dispatch window for this reservation has ended (4 hours post-slot). This QR credential has expired and can no longer be used.</string>
+    <string name="action_refresh_qr">Generate New QR</string>
+    <string name="error_qr_generate_failed">Failed to generate QR credential.</string>
+    <string name="error_qr_render_failed">Failed to render QR barcode.</string>
+    <string name="action_qr_done">Done</string>
+
+    <!-- Member 1 Operator Mode & Unified Auth -->
+    <string name="operator_login_title">Grid Operator Login</string>
+    <string name="operator_login_subtitle">Authenticate operational credentials</string>
+    <string name="operator_username_hint">Username</string>
+    <string name="operator_password_hint">Password</string>
+    <string name="operator_login_action">Sign In</string>
+    <string name="operator_dashboard_title">Operator Mode</string>
+    <string name="operator_dashboard_subtitle">Verify prosumer energy transfer &amp; dispatch</string>
+    <string name="operator_scan_action">Scan Prosumer QR</string>
+    <string name="operator_scan_hint">Scan prosumer transaction QR code to verify server data</string>
+    <string name="operator_verified_title">Verified Transfer Job</string>
+    <string name="operator_verified_subtitle">Review server details before finalizing</string>
+    <string name="operator_finalize_action">Finalize Energy Transfer</string>
+    <string name="operator_clear_action">Clear / Next Scan</string>
+    <string name="operator_status_completed">Transfer Completed</string>
+    <string name="operator_logout_action">Sign Out</string>
+
+    <string name="app_login_title">Smart Solar Microgrid</string>
+    <string name="app_login_subtitle">Sign in to manage solar power trading</string>
+    <string name="prosumer_register_title">Register Prosumer</string>
+    <string name="prosumer_register_subtitle">Create a new solar prosumer trading profile</string>
+    <string name="prosumer_nic_hint">National Identity Card (NIC)</string>
+    <string name="prosumer_name_hint">Full Name</string>
+    <string name="prosumer_email_hint">Email Address</string>
+    <string name="prosumer_phone_hint">Phone Number (Optional)</string>
+    <string name="prosumer_address_hint">Residential Address (Optional)</string>
+    <string name="prosumer_register_action">Create Account</string>
+    <string name="prosumer_login_title">Prosumer Sign In</string>
+    <string name="prosumer_login_subtitle">Enter your registered NIC to access your account</string>
+    <string name="prosumer_login_action">Sign In</string>
+    <string name="prosumer_status_label">Account Status: %1$s</string>
+    <string name="prosumer_save_action">Update Profile</string>
+    <string name="prosumer_deactivate_action">Request Account Deactivation</string>
+    <string name="prosumer_deactivate_confirm_title">Request Deactivation?</string>
+    <string name="prosumer_deactivate_confirm_msg">Are you sure you want to request deactivation for your prosumer account? This action cannot be reversed without Backoffice approval.</string>
+    <string name="auth_tab_prosumer">Solar Prosumer</string>
+    <string name="auth_tab_operator">Grid Operator</string>
+    <string name="auth_register_link">New Prosumer? Create an Account</string>
+    <string name="auth_login_link">Already have an account? Sign In</string>
+    <string name="msg_registration_pending">Registration successful! Your account is currently Pending Activation. A Backoffice administrator will review and activate your account before you can log in.</string>
+
+    <!-- Professional Home & Visual System Strings -->
+    <string name="home_platform_badge">SOLAR MICROGRID</string>
+    <string name="home_tagline">Smart Solar Microgrid Trading</string>
+    <string name="home_desc">Solar energy slot reservations, microgrid nodes &amp; charging</string>
+    <string name="home_status_online">Microgrid System Connected</string>
+    <string name="home_modules_header">SYSTEM SERVICES</string>
+    <string name="home_module_reservation_tag">Booking</string>
+    <string name="home_module_dashboard_tag">Live</string>
+    <string name="home_module_operator_tag">Staff</string>
+    <string name="home_module_prosumer_tag">Account</string>
+    <string name="reservation_detail_hero_subtitle">Microgrid Energy Slot Schedule</string>
+    <string name="reservation_detail_section_station">Station &amp; Booking Information</string>
+    <string name="reservation_detail_section_actions">Reservation Actions</string>
+
+    <!-- Member 3 Prosumer Account Strings -->
+    <string name="prosumer_profile_title">Prosumer Profile</string>
+    <string name="prosumer_profile_subtitle">Microgrid identity, solar account &amp; contact info</string>
+    <string name="prosumer_registration_title">Register Prosumer</string>
+    <string name="prosumer_registration_subtitle">Enroll your NIC identity for renewable energy trading</string>
+    <string name="prosumer_edit_title">Edit Profile</string>
+    <string name="prosumer_edit_subtitle">Update contact details. NIC and status are server-managed.</string>
+    <string name="action_register_prosumer">Register Account</string>
+    <string name="action_edit_prosumer">Edit Profile</string>
+    <string name="action_deactivate_prosumer">Request Deactivation</string>
+    <string name="action_new_registration">New Registration</string>
+    <string name="action_save_profile">Save Changes</string>
+    <string name="action_view_profile">View Profile</string>
+</resources>
