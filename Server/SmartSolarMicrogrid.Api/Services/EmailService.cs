@@ -20,12 +20,14 @@ public sealed class EmailService : IEmailService
 
     public EmailService(IOptions<EmailSettings> options, ILogger<EmailService> logger)
     {
+        // Store SMTP configuration and logging for outbound email delivery.
         _settings = options.Value;
         _logger = logger;
     }
 
     public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlContent)
     {
+        // Validate recipient and send via SMTP, simulating delivery when credentials are absent.
         if (string.IsNullOrWhiteSpace(toEmail))
         {
             _logger.LogWarning("Email sending skipped: recipient email is empty.");
@@ -83,6 +85,7 @@ public sealed class EmailService : IEmailService
 
     public async Task<bool> SendCredentialsEmailAsync(string toEmail, string username, string tempPassword, string role)
     {
+        // Compose the HTML credentials email and dispatch it to the new staff user.
         var loginUrl = $"{_settings.AppBaseUrl}/login";
         var html = $@"
 <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
@@ -133,6 +136,7 @@ public sealed class EmailService : IEmailService
 
     public async Task<bool> SendVerificationEmailAsync(string toEmail, string username, string token)
     {
+        // Compose the HTML verification email with a signed token link.
         var verifyUrl = $"{_settings.AppBaseUrl}/verify-email?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
         var html = $@"
 <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
@@ -161,6 +165,7 @@ public sealed class EmailService : IEmailService
 
     public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string username, string token)
     {
+        // Compose the HTML password reset email with a time-limited token link.
         var resetUrl = $"{_settings.AppBaseUrl}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
         var html = $@"
 <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
@@ -188,6 +193,7 @@ public sealed class EmailService : IEmailService
 
     public async Task<int> SendBroadcastEmailAsync(IEnumerable<string> recipientEmails, string subject, string message)
     {
+        // Deduplicate recipients and send the announcement HTML to each address.
         var distinctEmails = recipientEmails
             .Where(e => !string.IsNullOrWhiteSpace(e))
             .Distinct(StringComparer.OrdinalIgnoreCase)

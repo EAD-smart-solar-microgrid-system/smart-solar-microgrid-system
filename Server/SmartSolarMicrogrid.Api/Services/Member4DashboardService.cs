@@ -109,6 +109,7 @@ public sealed class Member4DashboardService : IMember4DashboardService
         Prosumer prosumer,
         IReadOnlyDictionary<string, (string HubId, string StationName)> stationMap)
     {
+        // Map a reservation document into a compact dashboard booking row with Hub ID and prosumer details.
         string hubId = reservation.StationId;
         string stationName = string.Empty;
 
@@ -126,7 +127,6 @@ public sealed class Member4DashboardService : IMember4DashboardService
             ? $"BK-{reservation.Id[^6..].ToUpperInvariant()}"
             : $"BK-{reservation.Id.ToUpperInvariant()}";
 
-        // Map a reservation document into a compact dashboard booking row with Hub ID and Prosumer details.
         return new DashboardBookingItemResponse
         {
             Id = reservation.Id,

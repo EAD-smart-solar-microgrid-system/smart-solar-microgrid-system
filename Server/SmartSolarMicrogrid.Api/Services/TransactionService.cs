@@ -16,11 +16,13 @@ public class TransactionService : ITransactionService
 
     public TransactionService(IReservationRepository reservationRepo)
     {
+        // Store the reservation repository used for QR verification and completion.
         _reservationRepo = reservationRepo;
     }
 
     public async Task<TransactionResult> VerifyQrAsync(VerifyQrRequest request)
     {
+        // Extract token from payload, validate reservation state, and return booking details.
         var rawToken = request.QrToken?.Trim() ?? string.Empty;
         var token = rawToken;
 
