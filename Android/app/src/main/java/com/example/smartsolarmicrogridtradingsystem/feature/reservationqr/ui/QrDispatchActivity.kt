@@ -140,6 +140,28 @@ class QrDispatchActivity : BaseActivity() {
         btnDone.setOnClickListener {
             finish()
         }
+
+        ivQrCode.setOnClickListener {
+            val record = currentReservation
+            val resId = record?.id ?: reservationId
+            val bookingId = DashboardUiFormatter.formatBookingId(resId)
+            val station = if (currentStationName.isNotBlank()) currentStationName else "Solar Station"
+            val formattedDate = record?.reservationDateTime?.let {
+                DashboardUiFormatter.formatDateTime(it)
+            } ?: ""
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("QR Dispatch Pass")
+                .setMessage(
+                    "Booking ID: $bookingId\n" +
+                    "Station: $station\n" +
+                    (if (formattedDate.isNotBlank()) "Date / time: $formattedDate\n" else "") +
+                    "Slot: Charging Slot 1\n" +
+                    "Prosumer: ${record?.prosumerNic ?: ""}\n" +
+                    "Status: ${record?.status ?: "Approved"}"
+                )
+                .setPositiveButton("OK", null)
+                .show()
+        }
     }
 
     /**
@@ -200,8 +222,13 @@ class QrDispatchActivity : BaseActivity() {
         }
     }
 
+    private var currentStationName: String = "Solar Station"
+
     private fun bindReservationHeader(record: ReservationDto) {
-        tvReservationId.visibility = View.GONE
+        val rawId = record.id.ifBlank { reservationId }
+        val displayBookingId = DashboardUiFormatter.formatBookingId(rawId)
+        tvReservationId.visibility = View.VISIBLE
+        tvReservationId.text = getString(R.string.booking_id_label, displayBookingId)
         tvStation.visibility = View.GONE
         tvSlot.text = "Slot: Charging Slot 1"
         tvProsumer.text = getString(R.string.detail_prosumer, record.prosumerNic)
@@ -209,14 +236,13 @@ class QrDispatchActivity : BaseActivity() {
 
         if (record.stationId.isNotBlank()) {
             StationCacheRepository(this).getStationName(record.stationId) { name ->
-                tvStationName.text = if (name.isNullOrBlank()) {
-                    "Station: Central Solar Hub"
-                } else {
-                    getString(R.string.detail_station_name, name)
-                }
+                currentStationName = if (!name.isNullOrBlank()) name else "Solar Station"
+                tvStationName.text = getString(R.string.detail_station_name, currentStationName)
+                currentQrTokenDto?.let { renderQr(it.qrToken) }
             }
         } else {
-            tvStationName.text = "Station: Central Solar Hub"
+            currentStationName = "Solar Station"
+            tvStationName.text = "Station: Solar Station"
         }
     }
 
@@ -335,8 +361,43 @@ class QrDispatchActivity : BaseActivity() {
     }
 
     /**
-     * Renders strictly the raw [qrToken] into a 512x512 QR code bitmap using ZXing.
-     * Never logs, prints, or exposes the raw token.
+     * Builds the human-readable reservation dispatch credential payload to encode in the QR code.
+     * Contains station, date/time, slot, prosumer, status, type, reservation ID, and verification token.
+     */
+    private fun buildQrPayload(token: String): String {
+        val record = currentReservation
+        val station = if (currentStationName.isNotBlank()) currentStationName else "Solar Station"
+        val formattedDate = record?.reservationDateTime?.let { 
+            DashboardUiFormatter.formatDateTime(it) 
+        } ?: ""
+        val slot = "Charging Slot 1"
+        val prosumer = record?.prosumerNic ?: ""
+        val status = record?.status ?: "Approved"
+        val type = record?.parsedType?.displayName ?: "Charging"
+        val resId = record?.id ?: reservationId
+        val bookingId = DashboardUiFormatter.formatBookingId(resId)
+
+        return buildString {
+            appendLine("Station: $station")
+            if (formattedDate.isNotBlank()) {
+                appendLine("Date / time: $formattedDate")
+            }
+            appendLine("Slot: $slot")
+            if (prosumer.isNotBlank()) {
+                appendLine("Prosumer: $prosumer")
+            }
+            appendLine("Status: $status")
+            appendLine("Type: $type")
+            if (bookingId.isNotBlank()) {
+                appendLine("Booking ID: $bookingId")
+            }
+            append("QR Token: $token")
+        }
+    }
+
+    /**
+     * Renders the complete reservation credential payload into a 512x512 QR code bitmap using ZXing.
+     * When scanned with any QR scanner / camera, it displays full reservation details.
      */
     private fun renderQr(qrToken: String) {
         if (qrToken.isBlank()) {
@@ -347,8 +408,9 @@ class QrDispatchActivity : BaseActivity() {
         }
 
         try {
+            val payload = buildQrPayload(qrToken)
             val barcodeEncoder = BarcodeEncoder()
-            val bitmap = barcodeEncoder.encodeBitmap(qrToken, BarcodeFormat.QR_CODE, 512, 512)
+            val bitmap = barcodeEncoder.encodeBitmap(payload, BarcodeFormat.QR_CODE, 512, 512)
             ivQrCode.setImageBitmap(bitmap)
             ivQrCode.visibility = View.VISIBLE
         } catch (_: Exception) {

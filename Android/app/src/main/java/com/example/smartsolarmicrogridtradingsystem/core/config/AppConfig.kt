@@ -1,22 +1,48 @@
 package com.example.smartsolarmicrogridtradingsystem.core.config
 
+import android.os.Build
+
 /**
  * Global application configuration settings.
  *
- * IMPORTANT NETWORKING NOTES:
- * - Emulator: use http://10.0.2.2:5278/api/ (maps to the host PC loopback).
- * - Physical phone: use http://YOUR_PC_LAN_IP:5278/api/ on the same Wi-Fi
- *   (current LAN example: http://192.168.1.5:5278/api/), and run the API with
- *   --urls http://0.0.0.0:5278 so it accepts LAN traffic.
- * - Never use localhost/127.0.0.1 on a physical phone — that points at the phone itself.
- * - SECURITY NOTICE: Never commit passwords, private API tokens, or database connection strings.
+ * Automatically resolves emulator loopback (10.0.2.2) vs LAN IP (192.168.1.25)
+ * so networking works seamlessly across both Android Emulator and physical devices.
  */
 object AppConfig {
     /**
-     * Base URL for the central C# Web API endpoints.
-     * Physical phone on same Wi-Fi as this PC (192.168.1.5). Use 10.0.2.2 for emulator.
+     * Detects whether the app is executing inside an Android emulator.
      */
-    const val BASE_URL: String = "http://192.168.1.5:5278/api/"
+    val isEmulator: Boolean
+        get() {
+            val fp = Build.FINGERPRINT.orEmpty()
+            val model = Build.MODEL.orEmpty()
+            val manufacturer = Build.MANUFACTURER.orEmpty()
+            val brand = Build.BRAND.orEmpty()
+            val device = Build.DEVICE.orEmpty()
+            val product = Build.PRODUCT.orEmpty()
+            val hardware = Build.HARDWARE.orEmpty()
+
+            return fp.startsWith("generic") ||
+                    fp.startsWith("unknown") ||
+                    model.contains("google_sdk") ||
+                    model.contains("Emulator") ||
+                    model.contains("Android SDK built for") ||
+                    manufacturer.contains("Genymotion") ||
+                    (brand.startsWith("generic") && device.startsWith("generic")) ||
+                    "google_sdk" == product ||
+                    hardware.contains("goldfish") ||
+                    hardware.contains("ranchu")
+        }
+
+    /**
+     * Base URL for the central C# Web API endpoints.
+     */
+    val BASE_URL: String
+        get() = if (isEmulator) {
+            "http://10.0.2.2:5278/api/"
+        } else {
+            "http://192.168.1.25:5278/api/"
+        }
 
     /**
      * Connection timeout in milliseconds for HTTP connections.

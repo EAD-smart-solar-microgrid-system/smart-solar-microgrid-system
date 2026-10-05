@@ -21,8 +21,18 @@ public class TransactionService : ITransactionService
 
     public async Task<TransactionResult> VerifyQrAsync(VerifyQrRequest request)
     {
+        var rawToken = request.QrToken?.Trim() ?? string.Empty;
+        var token = rawToken;
+
+        // In case the full QR text payload or JSON was submitted directly
+        var hexMatch = System.Text.RegularExpressions.Regex.Match(rawToken, @"\b([0-9a-fA-F]{64})\b");
+        if (hexMatch.Success)
+        {
+            token = hexMatch.Groups[1].Value;
+        }
+
         // Look up the reservation by the QR token issued by Member 2 booking workflows
-        var reservation = await _reservationRepo.GetByQrTokenAsync(request.QrToken);
+        var reservation = await _reservationRepo.GetByQrTokenAsync(token);
 
         if (reservation == null)
         {
@@ -40,10 +50,15 @@ public class TransactionService : ITransactionService
             return new TransactionResult(false, "QR Token has expired. Please request a new token from the prosumer application.");
         }
 
+        var bookingId = reservation.Id.Length >= 6
+            ? $"BK-{reservation.Id[^6..].ToUpperInvariant()}"
+            : $"BK-{reservation.Id.ToUpperInvariant()}";
+
         return new TransactionResult(
             Success: true,
             Message: "QR Verified",
             ReservationId: reservation.Id,
+            BookingId: bookingId,
             ProsumerNic: reservation.ProsumerNic,
             StationId: reservation.StationId,
             SlotId: reservation.SlotId,

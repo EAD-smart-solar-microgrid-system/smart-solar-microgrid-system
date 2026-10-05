@@ -59,4 +59,8 @@ public interface IReservationRepository
     Task<bool> HasActiveReservationsForStationAsync(
         string stationId,
         CancellationToken cancellationToken = default);
+
+    Task<List<EnergyReservation>> GetByProsumerNicAsync(
+        string prosumerNic,
+        CancellationToken cancellationToken = default);
 }

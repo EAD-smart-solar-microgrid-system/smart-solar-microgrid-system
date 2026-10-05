@@ -68,13 +68,17 @@ export const ReservationMonitoringTable = ({
             const isLoadingDetails = detailsLoadingId === reservation.id;
             const isActionLoading = actionLoadingId === reservation.id;
             const stationName =
-              stationNameById[reservation.stationId] || 'Unknown station';
+              reservation.stationName ||
+              stationNameById[reservation.stationId] ||
+              stationNameById[reservation.hubId] ||
+              'Unknown station';
             const isPending = (reservation.status || '').toLowerCase() === 'pending';
+            const bookingIdDisplay = reservation.bookingId || formatBookingId(reservation.id);
 
             return (
               <tr key={reservation.id}>
                 <td>
-                  <span className="fw-semibold">{formatBookingId(reservation.id)}</span>
+                  <span className="fw-semibold">{bookingIdDisplay}</span>
                 </td>
                 <td>{stationName}</td>
                 <td>

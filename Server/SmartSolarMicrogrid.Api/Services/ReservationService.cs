@@ -239,7 +239,9 @@ public sealed class ReservationService : IReservationService
         }
 
         var now = DateTime.UtcNow;
-        if (existing.ReservationDateTime - now < NoticeThreshold)
+        var bookedWithShortNotice = existing.ReservationDateTime - existing.CreatedAt < NoticeThreshold;
+        var withinGracePeriod = existing.CreatedAt >= now.AddHours(-2);
+        if (!bookedWithShortNotice && !withinGracePeriod && existing.ReservationDateTime - now < NoticeThreshold)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Validation,
@@ -368,7 +370,9 @@ public sealed class ReservationService : IReservationService
         }
 
         var now = DateTime.UtcNow;
-        if (existing.ReservationDateTime - now < NoticeThreshold)
+        var bookedWithShortNotice = existing.ReservationDateTime - existing.CreatedAt < NoticeThreshold;
+        var withinGracePeriod = existing.CreatedAt >= now.AddHours(-2);
+        if (!bookedWithShortNotice && !withinGracePeriod && existing.ReservationDateTime - now < NoticeThreshold)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Validation,
@@ -622,6 +626,58 @@ public sealed class ReservationService : IReservationService
         };
 
         return ReservationServiceResult<QrTokenResponse>.Success(response);
+    }
+
+    public async Task<ReservationServiceResult<ReservationResponse>> GetByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        // Enforce valid ObjectId format and retrieve single reservation record.
+        if (!ObjectId.TryParse(id, out _))
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.Validation,
+                "The reservation id must be a valid MongoDB ObjectId.");
+        }
+
+        var existing = await _reservationRepository.GetByIdAsync(id, cancellationToken);
+        if (existing is null)
+        {
+            return ReservationServiceResult<ReservationResponse>.Failure(
+                ReservationServiceErrorType.NotFound,
+                "The requested reservation was not found.");
+        }
+
+        return ReservationServiceResult<ReservationResponse>.Success(MapToResponse(existing));
+    }
+
+    public async Task<ReservationServiceResult<IReadOnlyList<ReservationResponse>>> GetByProsumerNicAsync(
+        string? prosumerNic,
+        CancellationToken cancellationToken = default)
+    {
+        var targetNic = prosumerNic?.Trim();
+        var httpUser = _httpContextAccessor.HttpContext?.User;
+        var isProsumer = httpUser?.IsInRole("Prosumer") ?? false;
+
+        if (isProsumer)
+        {
+            var authNic = ProsumerService.NormalizeNic(await _currentProsumerAccessor.GetCurrentProsumerNicAsync(cancellationToken));
+            if (!string.IsNullOrEmpty(authNic))
+            {
+                targetNic = authNic;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(targetNic))
+        {
+            return ReservationServiceResult<IReadOnlyList<ReservationResponse>>.Failure(
+                ReservationServiceErrorType.Validation,
+                "Prosumer NIC is required to fetch reservations.");
+        }
+
+        var list = await _reservationRepository.GetByProsumerNicAsync(targetNic, cancellationToken);
+        var responses = list.Select(MapToResponse).ToList();
+        return ReservationServiceResult<IReadOnlyList<ReservationResponse>>.Success(responses);
     }
 
     private static string? ValidateCreateInput(CreateReservationRequest request)

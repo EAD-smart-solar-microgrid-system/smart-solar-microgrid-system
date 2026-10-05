@@ -44,15 +44,27 @@ public sealed class StationService : IStationService
         string hubId,
         CancellationToken cancellationToken = default)
     {
+        var trimmed = hubId?.Trim() ?? string.Empty;
+
+        // Support lookup by MongoDB ObjectId if requested
+        if (MongoDB.Bson.ObjectId.TryParse(trimmed, out _))
+        {
+            var stationById = await _stationRepository.GetByIdAsync(trimmed, cancellationToken);
+            if (stationById is not null)
+            {
+                return StationServiceResult<StationResponse>.Success(MapToResponse(stationById));
+            }
+        }
+
         // Enforce strict HUB-XXXXXXXX format before querying persistence.
-        if (!HubIdGenerator.IsValid(hubId))
+        if (!HubIdGenerator.IsValid(trimmed))
         {
             return StationServiceResult<StationResponse>.Failure(
                 StationServiceErrorType.Validation,
                 "The station hubId must follow the format HUB-XXXXXXXX (8 uppercase alphanumeric characters).");
         }
 
-        var station = await _stationRepository.GetByHubIdAsync(hubId.Trim(), cancellationToken);
+        var station = await _stationRepository.GetByHubIdAsync(trimmed, cancellationToken);
 
         if (station is null)
         {
@@ -360,9 +372,10 @@ public sealed class StationService : IStationService
 
     private static StationResponse MapToResponse(SolarStation station)
     {
-        // Map a MongoDB model to a response exposing HubId and keeping internal ObjectId private.
+        // Map a MongoDB model to a response exposing both Id and HubId.
         return new StationResponse
         {
+            Id = station.Id,
             HubId = station.HubId,
             StationName = station.StationName,
             Latitude = station.Latitude,

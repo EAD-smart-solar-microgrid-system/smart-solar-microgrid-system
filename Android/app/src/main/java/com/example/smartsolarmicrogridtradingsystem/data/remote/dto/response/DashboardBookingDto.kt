@@ -15,12 +15,25 @@ data class DashboardBookingDto(
     val status: String,
     val reservationType: String,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val hubId: String = "",
+    val prosumerName: String = "",
+    val stationName: String = "",
+    val bookingId: String = ""
 ) {
     companion object {
         fun fromJson(json: JSONObject): DashboardBookingDto {
+            val rawId = json.optString("id", json.optString("Id", ""))
+            val rawBookingId = json.optString(
+                "bookingId",
+                json.optString(
+                    "BookingId",
+                    com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.ui.DashboardUiFormatter.formatBookingId(rawId)
+                )
+            )
+
             return DashboardBookingDto(
-                id = json.optString("id", json.optString("Id", "")),
+                id = rawId,
                 stationId = json.optString("stationId", json.optString("StationId", "")),
                 slotId = json.optString("slotId", json.optString("SlotId", "")),
                 prosumerId = json.optString("prosumerId", json.optString("ProsumerId", "")),
@@ -34,7 +47,11 @@ data class DashboardBookingDto(
                     json.optString("ReservationType", "")
                 ),
                 createdAt = json.optString("createdAt", json.optString("CreatedAt", "")),
-                updatedAt = json.optString("updatedAt", json.optString("UpdatedAt", ""))
+                updatedAt = json.optString("updatedAt", json.optString("UpdatedAt", "")),
+                hubId = json.optString("hubId", json.optString("HubId", "")),
+                prosumerName = json.optString("prosumerName", json.optString("ProsumerName", "")),
+                stationName = json.optString("stationName", json.optString("StationName", "")),
+                bookingId = rawBookingId
             )
         }
 

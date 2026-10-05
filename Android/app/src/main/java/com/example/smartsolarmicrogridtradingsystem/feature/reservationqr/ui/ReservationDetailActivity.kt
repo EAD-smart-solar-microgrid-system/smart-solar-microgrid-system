@@ -72,6 +72,23 @@ class ReservationDetailActivity : BaseActivity() {
     ) { result ->
         if (result.resultCode == RESULT_OK) {
             setResult(RESULT_OK)
+            loadReservation()
+        }
+    }
+
+    private fun isBookedWithShortNotice(record: ReservationDto): Boolean {
+        return try {
+            val createdDate = ReservationTimeHelper.parseUtcInstant(record.createdAt)
+            val slotDate = ReservationTimeHelper.parseUtcInstant(record.reservationDateTime)
+            if (createdDate != null && slotDate != null) {
+                val windowMs = slotDate.time - createdDate.time
+                val ageMs = System.currentTimeMillis() - createdDate.time
+                windowMs < ReservationTimeHelper.TWELVE_HOURS_MILLIS || ageMs < 2 * 60 * 60 * 1000L
+            } else {
+                false
+            }
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -107,9 +124,18 @@ class ReservationDetailActivity : BaseActivity() {
         }
     }
 
+    private var pollHandler: android.os.Handler? = null
+    private var pollRunnable: Runnable? = null
+
     override fun onResume() {
         super.onResume()
         loadReservation()
+        startStatusPollingIfNeeded()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopStatusPolling()
     }
 
     private fun initViews() {
@@ -138,6 +164,14 @@ class ReservationDetailActivity : BaseActivity() {
     private fun setupListeners() {
         btnEdit.setOnClickListener {
             val record = currentReservation ?: return@setOnClickListener
+            val isShortNotice = isBookedWithShortNotice(record)
+            val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+
+            if (!has12Hours) {
+                Toast.makeText(this, R.string.detail_notice_expired, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val intent = Intent(this, EditReservationActivity::class.java).apply {
                 putExtra(EditReservationActivity.EXTRA_RESERVATION_ID, record.id)
                 putExtra(EditReservationActivity.EXTRA_PROSUMER_NIC, record.prosumerNic)
@@ -165,50 +199,111 @@ class ReservationDetailActivity : BaseActivity() {
         }
     }
 
-    private fun loadReservation() {
-        progress.visibility = View.VISIBLE
-        tvError.visibility = View.GONE
+    private fun loadReservation(isBackgroundPoll: Boolean = false) {
+        if (!isBackgroundPoll) {
+            progress.visibility = View.VISIBLE
+            tvError.visibility = View.GONE
+        }
 
         AppExecutors.executeInBackground {
             val record = localRepository.getById(reservationId)
 
             AppExecutors.executeOnMainThread {
-                progress.visibility = View.GONE
+                if (record != null) {
+                    val expectedNic = intent.getStringExtra(EXTRA_PROSUMER_NIC)?.trim()
+                        ?: sessionManager.getUserIdentifier()?.trim()
 
-                if (record == null) {
-                    Toast.makeText(this@ReservationDetailActivity, R.string.error_reservation_not_found, Toast.LENGTH_SHORT).show()
-                    finish()
-                    return@executeOnMainThread
+                    if (!expectedNic.isNullOrBlank() && !record.prosumerNic.equals(expectedNic, ignoreCase = true)) {
+                        progress.visibility = View.GONE
+                        Toast.makeText(this@ReservationDetailActivity, R.string.error_reservation_unauthorized, Toast.LENGTH_SHORT).show()
+                        finish()
+                        return@executeOnMainThread
+                    }
+
+                    currentReservation = record
+                    bindReservation(record)
                 }
 
-                // Security / scoping check against session context or passed NIC
-                val expectedNic = intent.getStringExtra(EXTRA_PROSUMER_NIC)?.trim()
-                    ?: sessionManager.getUserIdentifier()?.trim()
+                // Fetch latest status from backend API (detect operator approval, cancellation, etc.)
+                reservationRepository.getReservationById(
+                    id = reservationId,
+                    bearerToken = sessionManager.getToken(),
+                    callback = object : ApiCallback<ReservationDto> {
+                        override fun onSuccess(result: NetworkResult.Success<ReservationDto>) {
+                            val fresh = result.responseBody
+                            progress.visibility = View.GONE
 
-                if (!expectedNic.isNullOrBlank() && !record.prosumerNic.equals(expectedNic, ignoreCase = true)) {
-                    Toast.makeText(this@ReservationDetailActivity, R.string.error_reservation_unauthorized, Toast.LENGTH_SHORT).show()
-                    finish()
-                    return@executeOnMainThread
-                }
+                            // Persist fresh server state into SQLite cache
+                            AppExecutors.executeInBackground {
+                                localRepository.upsert(fresh)
+                            }
 
-                currentReservation = record
-                bindReservation(record)
+                            currentReservation = fresh
+                            bindReservation(fresh)
+
+                            // If reservation is no longer pending (e.g. Approved or Cancelled), stop polling
+                            if (fresh.parsedStatus != ReservationStatus.PENDING) {
+                                stopStatusPolling()
+                            }
+                        }
+
+                        override fun onError(error: NetworkResult<Nothing>) {
+                            progress.visibility = View.GONE
+                            if (currentReservation == null && record == null) {
+                                val message = ReservationRepository.extractErrorMessage(error)
+                                tvError.text = message
+                                tvError.visibility = View.VISIBLE
+                            }
+                        }
+                    }
+                )
             }
         }
     }
 
+    private fun startStatusPollingIfNeeded() {
+        stopStatusPolling()
+        pollHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        pollRunnable = object : Runnable {
+            override fun run() {
+                val current = currentReservation
+                if (current == null || current.parsedStatus == ReservationStatus.PENDING) {
+                    loadReservation(isBackgroundPoll = true)
+                    pollHandler?.postDelayed(this, 3000)
+                }
+            }
+        }
+        pollHandler?.postDelayed(pollRunnable!!, 3000)
+    }
+
+    private fun stopStatusPolling() {
+        pollRunnable?.let { pollHandler?.removeCallbacks(it) }
+        pollRunnable = null
+        pollHandler = null
+    }
+
     private fun bindReservation(record: ReservationDto) {
-        // Hide raw MongoDB ID from the hero card to avoid technical clutter
-        tvId.visibility = View.GONE
+        // Show formatted Booking ID instead of raw MongoDB ID
+        val displayBookingId = DashboardUiFormatter.formatBookingId(record.id)
+        tvId.visibility = View.VISIBLE
+        tvId.text = getString(R.string.detail_id, displayBookingId)
         tvStatus.text = getString(R.string.detail_status, record.status)
 
         val statusColor = when (record.parsedStatus) {
             ReservationStatus.PENDING -> ContextCompat.getColor(this, R.color.status_pending)
-            ReservationStatus.APPROVED -> ContextCompat.getColor(this, R.color.status_approved)
+            ReservationStatus.APPROVED -> ContextCompat.getColor(this, R.color.member2_status_approved_text)
             ReservationStatus.CANCELLED -> ContextCompat.getColor(this, R.color.status_cancelled)
             ReservationStatus.COMPLETED -> ContextCompat.getColor(this, R.color.status_completed)
         }
         tvStatus.setTextColor(statusColor)
+
+        val statusBg = when (record.parsedStatus) {
+            ReservationStatus.APPROVED -> R.drawable.bg_badge_approved
+            ReservationStatus.CANCELLED -> R.drawable.bg_badge_cancelled
+            ReservationStatus.COMPLETED -> R.drawable.bg_badge_solar
+            else -> R.drawable.bg_badge_neutral
+        }
+        tvStatus.setBackgroundResource(statusBg)
 
         tvType.text = getString(R.string.detail_type, record.parsedType.displayName)
         tvDateTime.text = getString(R.string.detail_datetime, DashboardUiFormatter.formatDateTime(record.reservationDateTime))
@@ -224,13 +319,13 @@ class ReservationDetailActivity : BaseActivity() {
         if (record.stationId.isNotBlank()) {
             StationCacheRepository(this).getStationName(record.stationId) { name ->
                 tvStationName.text = if (name.isNullOrBlank()) {
-                    "Station: Central Solar Hub"
+                    "Station: Solar Station"
                 } else {
                     getString(R.string.detail_station_name, name)
                 }
             }
         } else {
-            tvStationName.text = "Station: Central Solar Hub"
+            tvStationName.text = "Station: Solar Station"
         }
 
         // Cancellation details
@@ -274,17 +369,16 @@ class ReservationDetailActivity : BaseActivity() {
                 tvQrNotice.text = getString(R.string.msg_qr_pending_notice)
                 tvQrNotice.visibility = View.VISIBLE
 
-                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
+                val isShortNotice = isBookedWithShortNotice(record)
+                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
                 btnEdit.visibility = View.VISIBLE
                 btnCancel.visibility = View.VISIBLE
+                btnEdit.isEnabled = true
+                btnCancel.isEnabled = true
 
                 if (has12Hours) {
-                    btnEdit.isEnabled = true
-                    btnCancel.isEnabled = true
                     tvNoticeExplanation.visibility = View.GONE
                 } else {
-                    btnEdit.isEnabled = false
-                    btnCancel.isEnabled = false
                     tvNoticeExplanation.text = getString(R.string.detail_notice_expired)
                     tvNoticeExplanation.visibility = View.VISIBLE
                 }
@@ -294,17 +388,16 @@ class ReservationDetailActivity : BaseActivity() {
                 btnViewQr.isEnabled = true
                 tvQrNotice.visibility = View.GONE
 
-                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
+                val isShortNotice = isBookedWithShortNotice(record)
+                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
                 btnEdit.visibility = View.VISIBLE
                 btnCancel.visibility = View.VISIBLE
+                btnEdit.isEnabled = true
+                btnCancel.isEnabled = true
 
                 if (has12Hours) {
-                    btnEdit.isEnabled = true
-                    btnCancel.isEnabled = true
                     tvNoticeExplanation.visibility = View.GONE
                 } else {
-                    btnEdit.isEnabled = false
-                    btnCancel.isEnabled = false
                     tvNoticeExplanation.text = getString(R.string.detail_notice_expired)
                     tvNoticeExplanation.visibility = View.VISIBLE
                 }
@@ -315,7 +408,9 @@ class ReservationDetailActivity : BaseActivity() {
     private fun showCancelConfirmationDialog() {
         val record = currentReservation ?: return
 
-        if (!ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)) {
+        val isShortNotice = isBookedWithShortNotice(record)
+        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+        if (!has12Hours) {
             Toast.makeText(this, R.string.detail_notice_expired, Toast.LENGTH_LONG).show()
             return
         }

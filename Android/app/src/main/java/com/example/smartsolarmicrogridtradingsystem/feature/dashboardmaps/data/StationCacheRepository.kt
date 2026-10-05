@@ -22,6 +22,8 @@ class StationCacheRepository(context: Context) {
 
     private val helper = StationCacheHelper.getInstance(context)
 
+    private val appContext = context.applicationContext
+
     fun replaceAll(stations: List<StationReferenceDto>, onComplete: (() -> Unit)? = null) {
         AppExecutors.executeInBackground {
             val db = helper.writableDatabase
@@ -30,6 +32,8 @@ class StationCacheRepository(context: Context) {
                 db.delete(StationCacheContract.StationEntry.TABLE_NAME, null, null)
                 val now = System.currentTimeMillis()
                 stations.forEach { station ->
+                    val resolvedHubId = station.hubId.ifBlank { station.id }
+                    cacheStation(station.id, resolvedHubId, station.name)
                     insertStation(
                         db = db,
                         stationId = station.id,
@@ -42,6 +46,20 @@ class StationCacheRepository(context: Context) {
                         scheduleJson = "[]",
                         lastSynced = now
                     )
+                    if (station.hubId.isNotBlank() && station.hubId != station.id) {
+                        insertStation(
+                            db = db,
+                            stationId = station.hubId,
+                            name = station.name,
+                            latitude = station.latitude,
+                            longitude = station.longitude,
+                            status = station.status,
+                            capacityKwPerHour = station.capacityKwPerHour,
+                            batteryStorageSlotCapacity = station.batteryStorageSlotCapacity,
+                            scheduleJson = "[]",
+                            lastSynced = now
+                        )
+                    }
                 }
                 db.setTransactionSuccessful()
             } finally {
@@ -89,6 +107,17 @@ class StationCacheRepository(context: Context) {
     }
 
     fun getStationName(stationId: String, onResult: (String?) -> Unit) {
+        if (stationId.isBlank()) {
+            onResult(null)
+            return
+        }
+
+        val memName = stationNameMemoryCache[stationId]
+        if (!memName.isNullOrBlank()) {
+            onResult(memName)
+            return
+        }
+
         AppExecutors.executeInBackground {
             val db = helper.readableDatabase
             val cursor = db.query(
@@ -109,10 +138,86 @@ class StationCacheRepository(context: Context) {
                 }
             }
 
-            AppExecutors.executeOnMainThread {
-                onResult(name)
+            if (!name.isNullOrBlank()) {
+                stationNameMemoryCache[stationId] = name!!
+                AppExecutors.executeOnMainThread {
+                    onResult(name)
+                }
+                return@executeInBackground
             }
+
+            // Fallback: If not found in SQLite cache, fetch stations list from API and populate cache
+            val token = com.example.smartsolarmicrogridtradingsystem.core.session.SessionManager(appContext).getToken()
+            com.example.smartsolarmicrogridtradingsystem.core.network.ApiClient.sendRequest(
+                method = com.example.smartsolarmicrogridtradingsystem.core.network.HttpMethod.GET,
+                endpoint = "stations",
+                bearerToken = token,
+                callback = object : com.example.smartsolarmicrogridtradingsystem.core.network.ApiCallback<String> {
+                    override fun onSuccess(result: com.example.smartsolarmicrogridtradingsystem.core.network.NetworkResult.Success<String>) {
+                        try {
+                            val stations = StationReferenceDto.fromJsonPayload(result.responseBody)
+                            if (stations.isNotEmpty()) {
+                                replaceAll(stations) {
+                                    val matched = stations.firstOrNull { it.id == stationId || it.hubId == stationId }
+                                    onResult(matched?.name)
+                                }
+                                return
+                            }
+                        } catch (_: Exception) {}
+                        AppExecutors.executeOnMainThread { onResult(null) }
+                    }
+
+                    override fun onError(error: com.example.smartsolarmicrogridtradingsystem.core.network.NetworkResult<Nothing>) {
+                        AppExecutors.executeOnMainThread { onResult(null) }
+                    }
+                }
+            )
         }
+    }
+
+    fun getHubId(stationId: String, onResult: (String?) -> Unit) {
+        if (stationId.isBlank()) {
+            onResult(null)
+            return
+        }
+
+        if (stationId.startsWith("HUB-", ignoreCase = true)) {
+            onResult(stationId)
+            return
+        }
+
+        val memHub = hubIdMemoryCache[stationId]
+        if (!memHub.isNullOrBlank()) {
+            onResult(memHub)
+            return
+        }
+
+        val token = com.example.smartsolarmicrogridtradingsystem.core.session.SessionManager(appContext).getToken()
+        com.example.smartsolarmicrogridtradingsystem.core.network.ApiClient.sendRequest(
+            method = com.example.smartsolarmicrogridtradingsystem.core.network.HttpMethod.GET,
+            endpoint = "stations",
+            bearerToken = token,
+            callback = object : com.example.smartsolarmicrogridtradingsystem.core.network.ApiCallback<String> {
+                override fun onSuccess(result: com.example.smartsolarmicrogridtradingsystem.core.network.NetworkResult.Success<String>) {
+                    try {
+                        val stations = StationReferenceDto.fromJsonPayload(result.responseBody)
+                        if (stations.isNotEmpty()) {
+                            replaceAll(stations) {
+                                val matched = stations.firstOrNull { it.id.equals(stationId, true) || it.hubId.equals(stationId, true) }
+                                val found = matched?.hubId?.takeIf { it.isNotBlank() } ?: matched?.id
+                                onResult(found)
+                            }
+                            return
+                        }
+                    } catch (_: Exception) {}
+                    AppExecutors.executeOnMainThread { onResult(null) }
+                }
+
+                override fun onError(error: com.example.smartsolarmicrogridtradingsystem.core.network.NetworkResult<Nothing>) {
+                    AppExecutors.executeOnMainThread { onResult(null) }
+                }
+            }
+        )
     }
 
     fun getAll(onResult: (List<StationReferenceDto>) -> Unit) {
@@ -249,6 +354,28 @@ class StationCacheRepository(context: Context) {
 
     companion object {
         private const val EARTH_RADIUS_KM = 6371.0
+
+        private val hubIdMemoryCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+        private val stationNameMemoryCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+        fun resolveHubIdSync(stationId: String): String? {
+            if (stationId.isBlank()) return null
+            if (stationId.startsWith("HUB-", ignoreCase = true)) return stationId
+            return hubIdMemoryCache[stationId]
+        }
+
+        fun cacheStation(id: String, hubId: String, name: String) {
+            if (id.isNotBlank() && hubId.isNotBlank()) {
+                hubIdMemoryCache[id] = hubId
+                hubIdMemoryCache[hubId] = hubId
+            }
+            if (id.isNotBlank() && name.isNotBlank()) {
+                stationNameMemoryCache[id] = name
+            }
+            if (hubId.isNotBlank() && name.isNotBlank()) {
+                stationNameMemoryCache[hubId] = name
+            }
+        }
 
         fun haversineKm(
             latitude1: Double,
