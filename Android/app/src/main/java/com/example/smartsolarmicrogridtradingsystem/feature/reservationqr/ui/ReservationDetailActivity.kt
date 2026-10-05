@@ -76,21 +76,7 @@ class ReservationDetailActivity : BaseActivity() {
         }
     }
 
-    private fun isBookedWithShortNotice(record: ReservationDto): Boolean {
-        return try {
-            val createdDate = ReservationTimeHelper.parseUtcInstant(record.createdAt)
-            val slotDate = ReservationTimeHelper.parseUtcInstant(record.reservationDateTime)
-            if (createdDate != null && slotDate != null) {
-                val windowMs = slotDate.time - createdDate.time
-                val ageMs = System.currentTimeMillis() - createdDate.time
-                windowMs < ReservationTimeHelper.TWELVE_HOURS_MILLIS || ageMs < 2 * 60 * 60 * 1000L
-            } else {
-                false
-            }
-        } catch (_: Exception) {
-            false
-        }
-    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -164,8 +150,7 @@ class ReservationDetailActivity : BaseActivity() {
     private fun setupListeners() {
         btnEdit.setOnClickListener {
             val record = currentReservation ?: return@setOnClickListener
-            val isShortNotice = isBookedWithShortNotice(record)
-            val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+            val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
 
             if (!has12Hours) {
                 Toast.makeText(this, R.string.detail_notice_expired, Toast.LENGTH_SHORT).show()
@@ -369,8 +354,7 @@ class ReservationDetailActivity : BaseActivity() {
                 tvQrNotice.text = getString(R.string.msg_qr_pending_notice)
                 tvQrNotice.visibility = View.VISIBLE
 
-                val isShortNotice = isBookedWithShortNotice(record)
-                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
                 btnEdit.visibility = View.VISIBLE
                 btnCancel.visibility = View.VISIBLE
                 btnEdit.isEnabled = true
@@ -388,8 +372,7 @@ class ReservationDetailActivity : BaseActivity() {
                 btnViewQr.isEnabled = true
                 tvQrNotice.visibility = View.GONE
 
-                val isShortNotice = isBookedWithShortNotice(record)
-                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+                val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
                 btnEdit.visibility = View.VISIBLE
                 btnCancel.visibility = View.VISIBLE
                 btnEdit.isEnabled = true
@@ -408,8 +391,7 @@ class ReservationDetailActivity : BaseActivity() {
     private fun showCancelConfirmationDialog() {
         val record = currentReservation ?: return
 
-        val isShortNotice = isBookedWithShortNotice(record)
-        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
         if (!has12Hours) {
             Toast.makeText(this, R.string.detail_notice_expired, Toast.LENGTH_LONG).show()
             return

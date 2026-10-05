@@ -141,7 +141,7 @@
     <string name="edit_reservation_subtitle">Update your scheduled slot, time, or transfer type</string>
     <string name="hint_station_readonly">Grid Station (Fixed)</string>
     <string name="action_update_reservation">Save Changes</string>
-    <string name="msg_reservation_updated">Reservation updated successfully!</string>
+    <string name="msg_reservation_updated">Reservation updated. The modified reservation requires Grid Operator approval.</string>
     <string name="error_reservation_update_cache_failed">Reservation was updated on the server, but local cache failed to save.</string>
     <string name="error_reservation_cancel_cache_failed">Reservation was cancelled on the server, but local cache failed to update.</string>
     <string name="error_reservation_not_found">Reservation could not be found.</string>
