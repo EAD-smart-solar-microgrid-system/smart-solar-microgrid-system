@@ -145,21 +145,7 @@ class EditReservationActivity : BaseActivity() {
         }
     }
 
-    private fun isBookedWithShortNotice(record: ReservationDto): Boolean {
-        return try {
-            val createdDate = ReservationTimeHelper.parseUtcInstant(record.createdAt)
-            val slotDate = ReservationTimeHelper.parseUtcInstant(record.reservationDateTime)
-            if (createdDate != null && slotDate != null) {
-                val windowMs = slotDate.time - createdDate.time
-                val ageMs = System.currentTimeMillis() - createdDate.time
-                windowMs < ReservationTimeHelper.TWELVE_HOURS_MILLIS || ageMs < 2 * 60 * 60 * 1000L
-            } else {
-                false
-            }
-        } catch (_: Exception) {
-            false
-        }
-    }
+
 
     private fun loadExistingReservation() {
         progress.visibility = View.VISIBLE
@@ -228,8 +214,7 @@ class EditReservationActivity : BaseActivity() {
         selectedSlotId = record.slotId
 
         // Check if modification is permitted under the 12-hour rule
-        val isShortNotice = isBookedWithShortNotice(record)
-        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
         val canModify = record.parsedStatus != ReservationStatus.CANCELLED
                 && record.parsedStatus != ReservationStatus.COMPLETED
                 && has12Hours
@@ -383,9 +368,8 @@ class EditReservationActivity : BaseActivity() {
 
         val record = existingReservation ?: return
 
-        // 12-hour rule check on existing reservation time (unless booked with short notice)
-        val isShortNotice = isBookedWithShortNotice(record)
-        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+        // 12-hour rule check on existing reservation time
+        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
         if (!has12Hours) {
             tvError.text = getString(R.string.error_edit_twelve_hours)
             tvError.visibility = View.VISIBLE
@@ -449,7 +433,7 @@ class EditReservationActivity : BaseActivity() {
                                 Toast.makeText(
                                     this@EditReservationActivity,
                                     R.string.msg_reservation_updated,
-                                    Toast.LENGTH_SHORT
+                                    Toast.LENGTH_LONG
                                 ).show()
                                 setResult(RESULT_OK)
                                 finish()
