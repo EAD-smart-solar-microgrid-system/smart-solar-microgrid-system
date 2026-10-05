@@ -139,19 +139,8 @@ public class WebUserService : IWebUserService
         var user = await _repo.GetByEmailAsync(email);
         if (user == null)
         {
-            // Also check prosumers to see if an email matches
-            var prosumers = await _prosumerRepo.GetAllAsync();
-            var prosumer = prosumers.FirstOrDefault(p => string.Equals(p.Email, email.Trim(), StringComparison.OrdinalIgnoreCase));
-            if (prosumer == null)
-            {
-                _logger.LogInformation("Password reset requested for non-existent email {Email}", email);
-                return false;
-            }
-
-            // For prosumer account with email
-            var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-            await _emailService.SendPasswordResetEmailAsync(prosumer.Email, prosumer.FullName, token);
-            return true;
+            _logger.LogInformation("Password reset requested for non-existent web-user email {Email}", email);
+            return false;
         }
 
         var resetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
@@ -171,9 +160,9 @@ public class WebUserService : IWebUserService
             return (false, "Reset token is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
         {
-            return (false, "Password must be at least 6 characters long.");
+            return (false, "Password must be at least 8 characters long.");
         }
 
         var user = await _repo.GetByResetTokenAsync(token);
@@ -188,6 +177,10 @@ public class WebUserService : IWebUserService
         }
 
         user.PasswordHash = PasswordHasher.Hash(newPassword);
+        // Successfully using the reset link proves control of the registered mailbox.
+        user.IsEmailVerified = true;
+        user.EmailVerificationToken = null;
+        user.EmailVerificationExpiry = null;
         user.PasswordResetToken = null;
         user.PasswordResetExpiry = null;
         user.UpdatedAt = DateTime.UtcNow;
@@ -196,25 +189,38 @@ public class WebUserService : IWebUserService
         return (true, "Password has been successfully updated. You may now log in with your new credentials.");
     }
 
-    public async Task<(bool Success, string Message)> VerifyEmailAsync(string token)
+    public async Task<(bool Success, string Message)> CompleteRegistrationAsync(string token, string newPassword)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            return (false, "Verification token is required.");
+            return (false, "Account setup token is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        {
+            return (false, "Password must be at least 8 characters long.");
         }
 
         var user = await _repo.GetByVerificationTokenAsync(token);
         if (user == null)
         {
-            return (false, "Invalid or expired email verification token.");
+            return (false, "Invalid or already-used account setup link.");
         }
 
+        var expiry = user.EmailVerificationExpiry ?? user.CreatedAt.AddHours(24);
+        if (expiry < DateTime.UtcNow)
+        {
+            return (false, "This account setup link has expired. Please ask an administrator for a new invitation.");
+        }
+
+        user.PasswordHash = PasswordHasher.Hash(newPassword);
         user.IsEmailVerified = true;
         user.EmailVerificationToken = null;
+        user.EmailVerificationExpiry = null;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(user.Id, user);
-        return (true, "Email has been successfully verified!");
+        return (true, "Your email is verified and your password has been created. You can now sign in.");
     }
 
     public async Task<int> BroadcastEmailAsync(string subject, string message, string? targetRole)

@@ -44,6 +44,11 @@ public record ResetPasswordRequest(
     [Required] string NewPassword
 );
 
+public record CompleteRegistrationRequest(
+    [Required] string Token,
+    [Required] string NewPassword
+);
+
 public record BroadcastEmailRequest(
     [Required] string Subject,
     [Required] string Message,
