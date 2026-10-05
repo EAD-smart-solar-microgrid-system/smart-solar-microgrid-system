@@ -8,6 +8,7 @@
 using System.Security.Cryptography;
 using MongoDB.Bson;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Validation;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.Models;
 using SmartSolarMicrogrid.Api.Repositories;
@@ -62,7 +63,15 @@ public class WebUserService : IWebUserService
 
     public async Task<WebUserDto?> CreateUserAsync(CreateWebUserRequest request)
     {
-        var existing = await _repo.GetByUsernameAsync(request.Username);
+        if (AccountValidation.GetUsernameError(request.Username) is not null ||
+            AccountValidation.GetEmailError(request.Email) is not null ||
+            !AccountValidation.IsSupportedRole(request.Role))
+        {
+            return null;
+        }
+
+        var username = request.Username.Trim();
+        var existing = await _repo.GetByUsernameAsync(username);
         if (existing != null) return null;
 
         var email = request.Email.Trim();
@@ -74,7 +83,7 @@ public class WebUserService : IWebUserService
         var user = new WebUser
         {
             Id = ObjectId.GenerateNewId().ToString(),
-            Username = request.Username.Trim(),
+            Username = username,
             PasswordHash = PasswordHasher.Hash(unusableRandomPassword),
             Role = request.Role,
             Status = WebUserStatus.Active,
@@ -103,21 +112,31 @@ public class WebUserService : IWebUserService
         );
     }
 
-    public async Task<bool> UpdateUserAsync(string id, UpdateWebUserRequest request)
+    public async Task<(bool Success, bool Conflict)> UpdateUserAsync(string id, UpdateWebUserRequest request)
     {
         var user = await _repo.GetByIdAsync(id);
-        if (user == null) return false;
+        if (user == null) return (false, false);
+
+        if (AccountValidation.GetUsernameError(request.Username) is not null ||
+            !AccountValidation.IsSupportedRole(request.Role) ||
+            AccountValidation.GetEmailError(request.Email) is not null)
+        {
+            return (false, false);
+        }
+
+        var matchingUsername = await _repo.GetByUsernameAsync(request.Username);
+        if (matchingUsername is not null && matchingUsername.Id != id) return (false, true);
+
+        var matchingEmail = await _repo.GetByEmailAsync(request.Email);
+        if (matchingEmail is not null && matchingEmail.Id != id) return (false, true);
 
         user.Username = request.Username.Trim();
         user.Role = request.Role;
-        if (request.Email != null)
-        {
-            user.Email = request.Email.Trim();
-        }
+        user.Email = request.Email.Trim();
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(id, user);
-        return true;
+        return (true, false);
     }
 
     public async Task<bool> UpdateUserStatusAsync(string id, UpdateWebUserStatusRequest request)
@@ -134,7 +153,7 @@ public class WebUserService : IWebUserService
 
     public async Task<bool> ForgotPasswordAsync(string email)
     {
-        if (string.IsNullOrWhiteSpace(email)) return false;
+        if (AccountValidation.GetEmailError(email) is not null) return false;
 
         var user = await _repo.GetByEmailAsync(email);
         if (user == null)
@@ -155,17 +174,19 @@ public class WebUserService : IWebUserService
 
     public async Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        var tokenError = AccountValidation.GetTokenError(token);
+        if (tokenError is not null)
         {
-            return (false, "Reset token is required.");
+            return (false, tokenError);
         }
 
-        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        var passwordError = AccountValidation.GetNewPasswordError(newPassword);
+        if (passwordError is not null)
         {
-            return (false, "Password must be at least 8 characters long.");
+            return (false, passwordError);
         }
 
-        var user = await _repo.GetByResetTokenAsync(token);
+        var user = await _repo.GetByResetTokenAsync(token.Trim());
         if (user == null)
         {
             return (false, "Invalid or expired password reset token.");
@@ -191,17 +212,19 @@ public class WebUserService : IWebUserService
 
     public async Task<(bool Success, string Message)> CompleteRegistrationAsync(string token, string newPassword)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        var tokenError = AccountValidation.GetTokenError(token);
+        if (tokenError is not null)
         {
-            return (false, "Account setup token is required.");
+            return (false, tokenError);
         }
 
-        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        var passwordError = AccountValidation.GetNewPasswordError(newPassword);
+        if (passwordError is not null)
         {
-            return (false, "Password must be at least 8 characters long.");
+            return (false, passwordError);
         }
 
-        var user = await _repo.GetByVerificationTokenAsync(token);
+        var user = await _repo.GetByVerificationTokenAsync(token.Trim());
         if (user == null)
         {
             return (false, "Invalid or already-used account setup link.");

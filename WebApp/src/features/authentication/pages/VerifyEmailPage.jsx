@@ -3,6 +3,13 @@ import { Link, useSearchParams } from 'react-router-dom';
 import appConfig from '../../../config/appConfig';
 import { ROUTES } from '../../../constants/routes.js';
 import { Logo } from '../../../components/common/Logo.jsx';
+import {
+  firstValidationMessage,
+  getApiValidationMessage,
+  getPasswordRequirements,
+  hasValidationErrors,
+  validateNewPassword,
+} from '../utils/authValidation.js';
 
 export const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
@@ -13,24 +20,18 @@ export const VerifyEmailPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
+  const passwordRequirements = getPasswordRequirements(password);
 
   const handleCompleteRegistration = async (event) => {
     event.preventDefault();
     setError('');
 
-    if (!token) {
-      setError('Invalid or missing account setup token.');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+    const validationErrors = validateNewPassword({ password, confirmPassword, token });
+    setFieldErrors(validationErrors);
+    if (hasValidationErrors(validationErrors)) {
+      setError(firstValidationMessage(validationErrors));
       return;
     }
 
@@ -48,7 +49,7 @@ export const VerifyEmailPage = () => {
         setPassword('');
         setConfirmPassword('');
       } else {
-        setError(data.message || 'Unable to complete account setup. The link may be invalid or expired.');
+        setError(getApiValidationMessage(data, 'Unable to complete account setup. The link may be invalid or expired.'));
       }
     } catch {
       setError('Unable to reach the server. Please try again.');
@@ -98,12 +99,29 @@ export const VerifyEmailPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Minimum 8 characters"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    setFieldErrors((current) => ({ ...current, password: undefined }));
+                    setError('');
+                  }}
                   className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none transition focus:border-[#E3511B]"
                   required
                   minLength={8}
+                  maxLength={128}
                   autoComplete="new-password"
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby="setup-password-requirements"
                 />
+                {fieldErrors.password && (
+                  <p className="mt-1 text-xs font-semibold text-[#EF4444]">{fieldErrors.password}</p>
+                )}
+              </div>
+
+              <div id="setup-password-requirements" className="grid grid-cols-2 gap-1 text-xs text-[var(--text-muted)]">
+                <span className={passwordRequirements.length ? 'text-[#22C55E]' : ''}>✓ 8–128 characters</span>
+                <span className={passwordRequirements.uppercase ? 'text-[#22C55E]' : ''}>✓ Uppercase letter</span>
+                <span className={passwordRequirements.lowercase ? 'text-[#22C55E]' : ''}>✓ Lowercase letter</span>
+                <span className={passwordRequirements.number ? 'text-[#22C55E]' : ''}>✓ Number</span>
               </div>
 
               <div>
@@ -115,12 +133,24 @@ export const VerifyEmailPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Re-enter your password"
                   value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    setFieldErrors((current) => ({ ...current, confirmPassword: undefined }));
+                    setError('');
+                  }}
                   className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none transition focus:border-[#E3511B]"
                   required
                   minLength={8}
+                  maxLength={128}
                   autoComplete="new-password"
+                  aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                  aria-describedby={fieldErrors.confirmPassword ? 'setup-confirm-error' : undefined}
                 />
+                {fieldErrors.confirmPassword && (
+                  <p id="setup-confirm-error" className="mt-1 text-xs font-semibold text-[#EF4444]">
+                    {fieldErrors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               <label className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">

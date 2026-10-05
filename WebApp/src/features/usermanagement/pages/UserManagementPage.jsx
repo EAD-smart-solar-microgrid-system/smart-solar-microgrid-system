@@ -3,6 +3,11 @@ import appConfig from '../../../config/appConfig';
 import { AuthContext } from '../../authentication/context/AuthContextValue.js';
 import { ProsumerManagementPage } from '../../prosumermanagement/pages/ProsumerManagementPage.jsx';
 import { MaterialIcon } from '../../../components/common/MaterialIcon.jsx';
+import {
+  getApiValidationMessage,
+  hasValidationErrors,
+  validateStaffAccount,
+} from '../../authentication/utils/authValidation.js';
 
 const getRequestedCreateRole = () => {
   if (typeof window === 'undefined') return 'Backoffice';
@@ -19,6 +24,8 @@ export const UserManagementPage = () => {
   const [pendingProsumerCount, setPendingProsumerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ username: '', role: getRequestedCreateRole(), email: '' });
+  const [formErrors, setFormErrors] = useState({});
+  const [formSubmitting, setFormSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -59,6 +66,7 @@ export const UserManagementPage = () => {
   const startCreateAccount = (role) => {
     setEditingId(null);
     setForm({ username: '', role, email: '' });
+    setFormErrors({});
     setError('');
     setSuccessMsg('');
     setActiveTab('create');
@@ -110,6 +118,7 @@ export const UserManagementPage = () => {
   const cancelEdit = () => {
     setEditingId(null);
     setForm({ username: '', role: 'Backoffice', email: '' });
+    setFormErrors({});
     setError('');
   };
 
@@ -117,6 +126,11 @@ export const UserManagementPage = () => {
     event.preventDefault();
     setError('');
     setSuccessMsg('');
+    const validationErrors = validateStaffAccount(form);
+    setFormErrors(validationErrors);
+    if (hasValidationErrors(validationErrors)) return;
+
+    setFormSubmitting(true);
 
     if (editingId) {
       try {
@@ -124,9 +138,9 @@ export const UserManagementPage = () => {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
-            username: form.username,
+            username: form.username.trim(),
             role: form.role,
-            email: form.email,
+            email: form.email.trim(),
           }),
         });
         if (response.ok) {
@@ -135,17 +149,24 @@ export const UserManagementPage = () => {
           cancelEdit();
           fetchUsers();
         } else {
-          setError('Failed to update user.');
+          const errorData = await response.json().catch(() => ({}));
+          setError(getApiValidationMessage(errorData, 'Failed to update user.'));
         }
       } catch {
         setError('Error connecting to server.');
+      } finally {
+        setFormSubmitting(false);
       }
     } else {
       try {
         const response = await fetch(`${appConfig.apiBaseUrl}/admin/users`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            username: form.username.trim(),
+            role: form.role,
+            email: form.email.trim(),
+          }),
         });
         if (response.ok) {
           const createdUser = await response.json();
@@ -155,13 +176,16 @@ export const UserManagementPage = () => {
             : ' Account created, but the invitation email was not delivered. Check the API SMTP configuration.';
           setSuccessMsg(`New ${roleTitle} account '${form.username}' created successfully!${emailNotice}`);
           setForm({ username: '', role: form.role, email: '' });
+          setFormErrors({});
           fetchUsers();
         } else {
           const errData = await response.json().catch(() => null);
-          setError(errData?.message || 'Failed to create user. Username might already exist.');
+          setError(getApiValidationMessage(errData, 'Failed to create user. Username or email might already exist.'));
         }
       } catch {
         setError('Error connecting to server.');
+      } finally {
+        setFormSubmitting(false);
       }
     }
   };
@@ -239,6 +263,7 @@ export const UserManagementPage = () => {
       role: isBackofficeRole(user.role) ? 'Backoffice' : 'GridOperator',
       email: user.email || '',
     });
+    setFormErrors({});
     setError('');
     setSuccessMsg('');
     handleTabChange('create');
@@ -701,7 +726,10 @@ export const UserManagementPage = () => {
                   {/* Card 1: Administrator (Full Admin Privileges / Backoffice) */}
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, role: 'Backoffice' })}
+                    onClick={() => {
+                      setForm({ ...form, role: 'Backoffice' });
+                      setFormErrors((current) => ({ ...current, role: undefined }));
+                    }}
                     className={`relative flex flex-col items-start rounded-2xl border p-4 text-left transition ${
                       form.role === 'Backoffice'
                         ? 'border-[#E3511B] bg-[#E3511B]/5 ring-1 ring-[#E3511B]/30 shadow-sm'
@@ -741,7 +769,10 @@ export const UserManagementPage = () => {
                   {/* Card 2: Grid Operator */}
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, role: 'GridOperator' })}
+                    onClick={() => {
+                      setForm({ ...form, role: 'GridOperator' });
+                      setFormErrors((current) => ({ ...current, role: undefined }));
+                    }}
                     className={`relative flex flex-col items-start rounded-2xl border p-4 text-left transition ${
                       form.role === 'GridOperator'
                         ? 'border-[#E3511B] bg-[#E3511B]/5 ring-1 ring-[#E3511B]/30 shadow-sm'
@@ -793,9 +824,22 @@ export const UserManagementPage = () => {
                     placeholder={form.role === 'Backoffice' ? 'e.g. admin_lead, sarah_gov' : 'e.g. operator_colombo, john_ops'}
                     className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B]"
                     value={form.username}
-                    onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, username: e.target.value });
+                      setFormErrors((current) => ({ ...current, username: undefined }));
+                    }}
+                    minLength={3}
+                    maxLength={50}
+                    autoComplete="username"
+                    aria-invalid={Boolean(formErrors.username)}
+                    aria-describedby={formErrors.username ? 'user-username-error' : undefined}
                     required
                   />
+                  {formErrors.username && (
+                    <p id="user-username-error" className="mt-1 text-xs font-semibold text-[#EF4444]">
+                      {formErrors.username}
+                    </p>
+                  )}
                 </div>
 
                 {/* Email Address */}
@@ -809,9 +853,21 @@ export const UserManagementPage = () => {
                     placeholder="e.g. staff@microgrid.lk"
                     className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B]"
                     value={form.email || ''}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, email: e.target.value });
+                      setFormErrors((current) => ({ ...current, email: undefined }));
+                    }}
+                    maxLength={254}
+                    autoComplete="email"
+                    aria-invalid={Boolean(formErrors.email)}
+                    aria-describedby={formErrors.email ? 'user-email-error' : undefined}
                     required
                   />
+                  {formErrors.email && (
+                    <p id="user-email-error" className="mt-1 text-xs font-semibold text-[#EF4444]">
+                      {formErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 {!editingId && (
@@ -837,9 +893,12 @@ export const UserManagementPage = () => {
                 )}
                 <button
                   type="submit"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E3511B] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20]"
+                  disabled={formSubmitting}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E3511B] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {editingId ? (
+                  {formSubmitting ? (
+                    <span>Saving Account...</span>
+                  ) : editingId ? (
                     <span>Save Account Changes</span>
                   ) : form.role === 'Backoffice' ? (
                     <span>Create &amp; Invite Administrator</span>

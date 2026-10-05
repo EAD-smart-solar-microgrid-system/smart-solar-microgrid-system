@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.Services;
 using Microsoft.AspNetCore.Authorization;
+using SmartSolarMicrogrid.Api.Common.Validation;
 
 namespace SmartSolarMicrogrid.Api.Controllers;
 
@@ -34,17 +35,32 @@ public class AdminUsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateWebUserRequest request)
     {
+        AddAccountValidationErrors(request.Username, request.Email);
+        if (!AccountValidation.IsSupportedRole(request.Role))
+        {
+            ModelState.AddModelError(nameof(request.Role), "Select Administrator or Grid Operator.");
+        }
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
         // Register a new web user account with specified administrative or operational role
         var user = await _userService.CreateUserAsync(request);
-        if (user == null) return BadRequest(new { message = "Username or email already exists." });
+        if (user == null) return Conflict(new { message = "Username or email already exists." });
         return Created($"/api/admin/users/{user.Id}", user);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateWebUserRequest request)
     {
+        AddAccountValidationErrors(request.Username, request.Email);
+        if (!AccountValidation.IsSupportedRole(request.Role))
+        {
+            ModelState.AddModelError(nameof(request.Role), "Select Administrator or Grid Operator.");
+        }
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
         // Update user account credentials and role assignments
-        var success = await _userService.UpdateUserAsync(id, request);
+        var (success, conflict) = await _userService.UpdateUserAsync(id, request);
+        if (conflict) return Conflict(new { message = "Username or email already exists." });
         if (!success) return NotFound();
         return NoContent();
     }
@@ -69,5 +85,20 @@ public class AdminUsersController : ControllerBase
 
         var sentCount = await _userService.BroadcastEmailAsync(request.Subject, request.Message, request.TargetRole);
         return Ok(new { message = $"Broadcast notification successfully sent to {sentCount} user(s).", count = sentCount });
+    }
+
+    private void AddAccountValidationErrors(string? username, string? email)
+    {
+        var usernameError = AccountValidation.GetUsernameError(username);
+        if (usernameError is not null)
+        {
+            ModelState.AddModelError("username", usernameError);
+        }
+
+        var emailError = AccountValidation.GetEmailError(email);
+        if (emailError is not null)
+        {
+            ModelState.AddModelError("email", emailError);
+        }
     }
 }

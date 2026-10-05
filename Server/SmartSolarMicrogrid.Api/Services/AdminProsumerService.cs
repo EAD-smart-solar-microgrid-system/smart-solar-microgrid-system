@@ -261,6 +261,10 @@ public sealed class AdminProsumerService : IAdminProsumerService
             return AdminProsumerServiceResult<AdminProsumerResponse>.Success(MapToResponse(existing));
         }
 
+        var shouldSendActivationNotifications =
+            existing.AccountStatus == ProsumerAccountStatus.PendingActivation &&
+            targetAccountStatus == ProsumerAccountStatus.Active;
+
         var updated = await _adminRepository.UpdateStatusAsync(
             normalizedNic,
             targetAccountStatus,
@@ -274,8 +278,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
                 "The requested prosumer profile was not found.");
         }
 
-        if (existing.AccountStatus == ProsumerAccountStatus.PendingActivation &&
-            targetAccountStatus == ProsumerAccountStatus.Active)
+        if (shouldSendActivationNotifications)
         {
             await _notificationService.SendActivationNotificationsAsync(
                 updated,

@@ -13,7 +13,7 @@ public interface IWebUserService
     Task<List<WebUserDto>> GetAllUsersAsync();
     Task<WebUserDto?> GetUserByIdAsync(string id);
     Task<WebUserDto?> CreateUserAsync(CreateWebUserRequest request);
-    Task<bool> UpdateUserAsync(string id, UpdateWebUserRequest request);
+    Task<(bool Success, bool Conflict)> UpdateUserAsync(string id, UpdateWebUserRequest request);
     Task<bool> UpdateUserStatusAsync(string id, UpdateWebUserStatusRequest request);
     Task<bool> ForgotPasswordAsync(string email);
     Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword);

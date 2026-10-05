@@ -3,6 +3,13 @@ import { Link, useSearchParams } from 'react-router-dom';
 import appConfig from '../../../config/appConfig';
 import { ROUTES } from '../../../constants/routes.js';
 import { Logo } from '../../../components/common/Logo.jsx';
+import {
+  firstValidationMessage,
+  getApiValidationMessage,
+  getPasswordRequirements,
+  hasValidationErrors,
+  validateNewPassword,
+} from '../utils/authValidation.js';
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -14,25 +21,19 @@ export const ResetPasswordPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
+  const passwordRequirements = getPasswordRequirements(password);
 
   const handleReset = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (!token) {
-      setError('Invalid or missing password reset token.');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+    const validationErrors = validateNewPassword({ password, confirmPassword, token });
+    setFieldErrors(validationErrors);
+    if (hasValidationErrors(validationErrors)) {
+      setError(firstValidationMessage(validationErrors));
       return;
     }
 
@@ -48,7 +49,7 @@ export const ResetPasswordPage = () => {
       if (response.ok) {
         setSuccess(data.message || 'Password successfully reset!');
       } else {
-        setError(data.message || 'Failed to reset password. The link may have expired.');
+        setError(getApiValidationMessage(data, 'Failed to reset password. The link may have expired.'));
       }
     } catch {
       setError('Unable to reach server. Please try again.');
@@ -97,12 +98,27 @@ export const ResetPasswordPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Minimum 8 characters"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setFieldErrors((current) => ({ ...current, password: undefined }));
+                    setError('');
+                  }}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-amber-500 outline-none transition"
                   required
                   minLength={8}
+                  maxLength={128}
                   autoComplete="new-password"
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby="reset-password-requirements"
                 />
+                {fieldErrors.password && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.password}</p>}
+              </div>
+
+              <div id="reset-password-requirements" className="grid grid-cols-2 gap-1 text-xs text-slate-600">
+                <span className={passwordRequirements.length ? 'text-emerald-700' : ''}>✓ 8–128 characters</span>
+                <span className={passwordRequirements.uppercase ? 'text-emerald-700' : ''}>✓ Uppercase letter</span>
+                <span className={passwordRequirements.lowercase ? 'text-emerald-700' : ''}>✓ Lowercase letter</span>
+                <span className={passwordRequirements.number ? 'text-emerald-700' : ''}>✓ Number</span>
               </div>
 
               <div>
@@ -113,12 +129,24 @@ export const ResetPasswordPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Re-enter password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setFieldErrors((current) => ({ ...current, confirmPassword: undefined }));
+                    setError('');
+                  }}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-amber-500 outline-none transition"
                   required
                   minLength={8}
+                  maxLength={128}
                   autoComplete="new-password"
+                  aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                  aria-describedby={fieldErrors.confirmPassword ? 'reset-confirm-error' : undefined}
                 />
+                {fieldErrors.confirmPassword && (
+                  <p id="reset-confirm-error" className="mt-1 text-xs font-semibold text-rose-600">
+                    {fieldErrors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
