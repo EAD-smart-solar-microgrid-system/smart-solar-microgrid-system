@@ -78,12 +78,6 @@ class DashboardActivity : BaseActivity() {
         btnRetryDashboard.setOnClickListener {
             loadDashboard()
         }
-        findViewById<MaterialButton>(R.id.btnOpenPending).setOnClickListener {
-            openBookingList(BookingListActivity.MODE_PENDING)
-        }
-        findViewById<MaterialButton>(R.id.btnOpenHistory).setOnClickListener {
-            openBookingList(BookingListActivity.MODE_HISTORY)
-        }
         findViewById<MaterialButton>(R.id.btnOpenSearch).setOnClickListener {
             val intent = Intent(this, ReservationSearchActivity::class.java)
             intent.putExtra(EXTRA_PROSUMER_ID, resolveProsumerId())
@@ -97,11 +91,6 @@ class DashboardActivity : BaseActivity() {
         if (!resolveProsumerId().isNullOrBlank()) {
             loadDashboard()
         }
-    }
-
-    private fun openBookingList(mode: String) {
-        val intent = BookingListActivity.createIntent(this, mode, resolveProsumerId())
-        startActivity(intent)
     }
 
     private fun resolveProsumerId(): String? {
