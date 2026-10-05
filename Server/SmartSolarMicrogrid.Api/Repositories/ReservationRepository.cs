@@ -81,6 +81,14 @@ public sealed class ReservationRepository : IReservationRepository
             .Set(reservation => reservation.CancelledAt, cancelledAt)
             .Set(reservation => reservation.UpdatedAt, updatedAt);
 
+        if (status == ReservationStatus.Cancelled)
+        {
+            update = update
+                .Set(reservation => reservation.QrToken, null)
+                .Set(reservation => reservation.QrIssuedAt, null)
+                .Set(reservation => reservation.QrExpiresAt, null);
+        }
+
         return await _reservations.FindOneAndUpdateAsync(
             reservation => reservation.Id == id,
             update,

@@ -28,6 +28,7 @@ public sealed class ReservationService : IReservationService
     private readonly ISlotAvailabilityChecker _slotAvailabilityChecker;
     private readonly ICurrentProsumerAccessor _currentProsumerAccessor;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly Func<DateTime> _clock;
 
     public ReservationService(
         IReservationRepository reservationRepository,
@@ -35,7 +36,8 @@ public sealed class ReservationService : IReservationService
         IProsumerRepository prosumerRepository,
         ISlotAvailabilityChecker slotAvailabilityChecker,
         ICurrentProsumerAccessor currentProsumerAccessor,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        Func<DateTime>? clock = null)
     {
         // Store all repositories, slot verification, and identity dependencies required by reservation rules.
         _reservationRepository = reservationRepository;
@@ -44,6 +46,7 @@ public sealed class ReservationService : IReservationService
         _slotAvailabilityChecker = slotAvailabilityChecker;
         _currentProsumerAccessor = currentProsumerAccessor;
         _httpContextAccessor = httpContextAccessor;
+        _clock = clock ?? (() => DateTime.UtcNow);
     }
 
     public async Task<ReservationServiceResult<ReservationResponse>> CreateAsync(
@@ -119,7 +122,7 @@ public sealed class ReservationService : IReservationService
         }
 
         var internalStationId = station.Id;
-        var now = DateTime.UtcNow;
+        var now = _clock();
         var requestedUtc = request.ReservationDateTime.ToUniversalTime();
 
         if (requestedUtc <= now)
@@ -238,10 +241,8 @@ public sealed class ReservationService : IReservationService
                 "Completed reservations cannot be modified.");
         }
 
-        var now = DateTime.UtcNow;
-        var bookedWithShortNotice = existing.ReservationDateTime - existing.CreatedAt < NoticeThreshold;
-        var withinGracePeriod = existing.CreatedAt >= now.AddHours(-2);
-        if (!bookedWithShortNotice && !withinGracePeriod && existing.ReservationDateTime - now < NoticeThreshold)
+        var now = _clock();
+        if (NormalizeToUtc(existing.ReservationDateTime) - now < NoticeThreshold)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Validation,
@@ -302,6 +303,7 @@ public sealed class ReservationService : IReservationService
 
         existing.SlotId = targetSlot;
         existing.ReservationDateTime = requestedUtc;
+        existing.Status = ReservationStatus.Pending;
         existing.UpdatedAt = now;
 
         // Reset QR token on schedule modification so client must request fresh QR token for new slot/time.
@@ -369,10 +371,8 @@ public sealed class ReservationService : IReservationService
                 "Completed reservations cannot be cancelled.");
         }
 
-        var now = DateTime.UtcNow;
-        var bookedWithShortNotice = existing.ReservationDateTime - existing.CreatedAt < NoticeThreshold;
-        var withinGracePeriod = existing.CreatedAt >= now.AddHours(-2);
-        if (!bookedWithShortNotice && !withinGracePeriod && existing.ReservationDateTime - now < NoticeThreshold)
+        var now = _clock();
+        if (NormalizeToUtc(existing.ReservationDateTime) - now < NoticeThreshold)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
                 ReservationServiceErrorType.Validation,
@@ -449,7 +449,7 @@ public sealed class ReservationService : IReservationService
                 "Only pending reservations can be approved.");
         }
 
-        var now = DateTime.UtcNow;
+        var now = _clock();
         if (NormalizeToUtc(existing.ReservationDateTime) <= now)
         {
             return ReservationServiceResult<ReservationResponse>.Failure(
@@ -592,7 +592,7 @@ public sealed class ReservationService : IReservationService
                 "QR tokens can only be generated for approved reservations.");
         }
 
-        var now = DateTime.UtcNow;
+        var now = _clock();
         var tokenBytes = RandomNumberGenerator.GetBytes(32);
         var opaqueToken = Convert.ToHexString(tokenBytes).ToLowerInvariant();
 
