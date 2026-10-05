@@ -24,6 +24,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
 
     public AdminProsumerService(IAdminProsumerRepository adminRepository)
     {
+        // Store the administrative prosumer repository used for lifecycle operations.
         _adminRepository = adminRepository;
     }
 
@@ -31,6 +32,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
         string? statusFilter = null,
         CancellationToken cancellationToken = default)
     {
+        // Validate optional status filter and return all matching prosumer profiles.
         if (!string.IsNullOrWhiteSpace(statusFilter))
         {
             var filter = statusFilter.Trim().ToLowerInvariant();
@@ -52,6 +54,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
         string nic,
         CancellationToken cancellationToken = default)
     {
+        // Normalize and validate NIC before retrieving a single prosumer profile.
         var normalizedNic = NormalizeNic(nic);
 
         if (string.IsNullOrEmpty(normalizedNic) || !IsValidNic(normalizedNic))
@@ -77,6 +80,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
         CreateProsumerRequest request,
         CancellationToken cancellationToken = default)
     {
+        // Validate admin prosumer input and create a pending-activation profile.
         var normalizedNic = NormalizeNic(request.Nic);
 
         var validationError = ValidateFields(
@@ -129,6 +133,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
         UpdateProsumerRequest request,
         CancellationToken cancellationToken = default)
     {
+        // Validate and persist editable prosumer profile fields for the given NIC.
         var normalizedNic = NormalizeNic(nic);
 
         if (string.IsNullOrEmpty(normalizedNic) || !IsValidNic(normalizedNic))
@@ -187,6 +192,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
         UpdateProsumerStatusRequest request,
         CancellationToken cancellationToken = default)
     {
+        // Apply administrative status transitions including deactivation request handling.
         var normalizedNic = NormalizeNic(nic);
 
         if (string.IsNullOrEmpty(normalizedNic) || !IsValidNic(normalizedNic))
@@ -275,6 +281,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
 
     public static string NormalizeNic(string? nic)
     {
+        // Normalize NIC to uppercase trimmed form for consistent repository lookups.
         return string.IsNullOrWhiteSpace(nic)
             ? string.Empty
             : nic.Trim().ToUpperInvariant();
@@ -282,6 +289,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
 
     public static bool IsValidNic(string? normalizedNic)
     {
+        // Validate normalized NIC against supported Sri Lankan identifier formats.
         if (string.IsNullOrWhiteSpace(normalizedNic))
         {
             return false;
@@ -299,6 +307,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
         string? address,
         bool requireNic)
     {
+        // Apply required-field and format validation for admin prosumer create/update.
         if (requireNic)
         {
             if (string.IsNullOrEmpty(normalizedNic))
@@ -353,6 +362,7 @@ public sealed class AdminProsumerService : IAdminProsumerService
 
     private static string CleanPhone(string? phone)
     {
+        // Strip whitespace and dashes from phone input before validation.
         if (string.IsNullOrWhiteSpace(phone))
         {
             return string.Empty;

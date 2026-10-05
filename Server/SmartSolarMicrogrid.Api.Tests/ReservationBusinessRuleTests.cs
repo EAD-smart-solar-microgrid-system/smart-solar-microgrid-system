@@ -1,7 +1,8 @@
 /*
  * SE4040 - Enterprise Application Development
  * Smart Solar Microgrid Trading System
- * Member 2 Reservation & QR Business Rule Tests
+ * File: ReservationBusinessRuleTests.cs
+ * Purpose: Member 2 reservation and QR business rule unit tests.
  */
 
 using System.Security.Claims;
@@ -32,6 +33,7 @@ public sealed class ReservationBusinessRuleTests
 
     private ReservationService CreateService(DateTime? now = null)
     {
+        // Build a reservation service wired to test doubles and optional clock.
         var clock = now ?? FixedNow;
         return new ReservationService(
             _reservationRepo,
@@ -45,6 +47,7 @@ public sealed class ReservationBusinessRuleTests
 
     private TransactionService CreateTransactionService()
     {
+        // Build a transaction service backed by the test reservation repository.
         return new TransactionService(_reservationRepo);
     }
 
@@ -55,6 +58,7 @@ public sealed class ReservationBusinessRuleTests
         DateTime? createdAt = null,
         string? qrToken = null)
     {
+        // Insert a reservation fixture into the in-memory repository.
         var res = new EnergyReservation
         {
             Id = id,
@@ -80,6 +84,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test01_Pending_GreaterThan12hEdit_Success_RemainsPending()
     {
+        // Update a pending reservation more than 12 hours ahead and expect it to remain pending.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c001";
         SeedReservation(id, ReservationStatus.Pending, FixedNow.AddHours(24));
@@ -105,6 +110,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test02_Approved_GreaterThan12hEdit_Success_BecomesPending()
     {
+        // Update an approved reservation more than 12 hours ahead and expect it to become pending.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c002";
         SeedReservation(id, ReservationStatus.Approved, FixedNow.AddHours(24), qrToken: "sample-qr-token-123");
@@ -130,6 +136,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test03_ApprovedEdit_ClearsApprovalMetadataAndQr()
     {
+        // Update an approved reservation and expect approval metadata and QR fields to be cleared.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c003";
         SeedReservation(id, ReservationStatus.Approved, FixedNow.AddHours(20), qrToken: "old-qr-token-xyz");
@@ -159,6 +166,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test04_ApprovedEdit_InvalidatesOldQr_CannotVerify()
     {
+        // Update an approved reservation and expect the previously issued QR token to fail verification.
         var service = CreateService();
         var txService = CreateTransactionService();
         var id = "60f1b2b3c4d5e6f7a8b9c004";
@@ -190,6 +198,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test05_ModifiedPendingReservation_RequestsQr_Rejected()
     {
+        // Edit an approved reservation and expect QR generation to be rejected while pending re-approval.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c005";
         SeedReservation(id, ReservationStatus.Approved, FixedNow.AddHours(24), qrToken: "old-qr-555");
@@ -215,6 +224,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test06_GridOperator_ReApprovesModifiedReservation_Approved()
     {
+        // Re-approve a modified pending reservation and expect approved status.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c006";
         SeedReservation(id, ReservationStatus.Approved, FixedNow.AddHours(24), qrToken: "old-qr-666");
@@ -241,6 +251,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test07_NewQrAfterReApproval_Allowed()
     {
+        // Re-approve after edit, generate a new QR token, and verify it succeeds while the old token differs.
         var service = CreateService();
         var txService = CreateTransactionService();
         var id = "60f1b2b3c4d5e6f7a8b9c007";
@@ -275,6 +286,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test08_Modify_GreaterThan12h_Allowed()
     {
+        // Update a reservation with more than 12 hours remaining and expect success.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c008";
         SeedReservation(id, ReservationStatus.Pending, FixedNow.AddHours(14));
@@ -295,6 +307,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test09_Modify_Exactly12h_Allowed()
     {
+        // Update a reservation at exactly 12 hours remaining and expect success.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c009";
         SeedReservation(id, ReservationStatus.Pending, FixedNow.AddHours(12));
@@ -315,6 +328,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test10_Modify_JustBelow12h_Rejected()
     {
+        // Update a reservation just under 12 hours remaining and expect validation failure.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c010";
         // 11 hours 59 minutes (just below 12 hours)
@@ -338,6 +352,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test11_CreatedWithShortNotice_ModifiedUnder12h_Rejected_NoException()
     {
+        // Update a short-notice reservation with under 12 hours left and expect rejection without exception.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c011";
         // Created at FixedNow - 2h for a slot at FixedNow + 4h (window 6h < 12h)
@@ -366,6 +381,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test12_RecentlyCreated_Under12hRemaining_Rejected_NoGracePeriodException()
     {
+        // Update a recently created reservation with under 12 hours remaining and expect rejection.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c012";
         // Created 10 minutes ago, slot is 6 hours away
@@ -393,6 +409,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test13_Cancel_GreaterThan12h_Allowed()
     {
+        // Cancel a reservation with more than 12 hours remaining and expect success.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c013";
         SeedReservation(id, ReservationStatus.Pending, FixedNow.AddHours(14));
@@ -409,6 +426,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test14_Cancel_Exactly12h_Allowed()
     {
+        // Cancel a reservation at exactly 12 hours remaining and expect success.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c014";
         SeedReservation(id, ReservationStatus.Pending, FixedNow.AddHours(12));
@@ -425,6 +443,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test15_Cancel_JustBelow12h_Rejected()
     {
+        // Cancel a reservation just under 12 hours remaining and expect validation failure.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c015";
         SeedReservation(id, ReservationStatus.Pending, FixedNow.AddHours(12).AddMinutes(-1));
@@ -442,6 +461,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test16_ApprovedCancellation_GreaterOrEqual12h_CancelledAndOldQrInvalid()
     {
+        // Cancel an approved reservation and expect cancellation plus invalidation of the existing QR token.
         var service = CreateService();
         var txService = CreateTransactionService();
         var id = "60f1b2b3c4d5e6f7a8b9c016";
@@ -468,6 +488,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test17_CancelledModification_Rejected()
     {
+        // Attempt to modify a cancelled reservation and expect validation failure.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c017";
         SeedReservation(id, ReservationStatus.Cancelled, FixedNow.AddHours(24));
@@ -490,6 +511,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test18_CompletedModification_Rejected()
     {
+        // Attempt to modify a completed reservation and expect validation failure.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c018";
         SeedReservation(id, ReservationStatus.Completed, FixedNow.AddHours(24));
@@ -512,6 +534,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test19_CompletedCancellation_Rejected()
     {
+        // Attempt to cancel a completed reservation and expect validation failure.
         var service = CreateService();
         var id = "60f1b2b3c4d5e6f7a8b9c019";
         SeedReservation(id, ReservationStatus.Completed, FixedNow.AddHours(24));
@@ -529,6 +552,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test20_Create_PastDateTime_Rejected()
     {
+        // Attempt to create a reservation in the past and expect validation failure.
         var service = CreateService();
         var req = new CreateReservationRequest
         {
@@ -552,6 +576,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test21_Create_Inside7Days_Allowed()
     {
+        // Create a reservation within the 7-day window and expect success.
         var service = CreateService();
         var req = new CreateReservationRequest
         {
@@ -574,6 +599,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test22_Create_Exact7DayBoundary_Allowed()
     {
+        // Create a reservation on the exact 7-day boundary and expect success.
         var service = CreateService();
         var req = new CreateReservationRequest
         {
@@ -596,6 +622,7 @@ public sealed class ReservationBusinessRuleTests
     [Fact]
     public async Task Test23_Create_Over7Days_Rejected()
     {
+        // Attempt to create a reservation beyond the 7-day window and expect validation failure.
         var service = CreateService();
         var req = new CreateReservationRequest
         {
@@ -618,6 +645,7 @@ public sealed class ReservationBusinessRuleTests
     // ==========================================
     private static IHttpContextAccessor CreateHttpContextAccessor(string nic, string role)
     {
+        // Create an HTTP context accessor with the given NIC and role claims.
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, nic),
@@ -635,24 +663,28 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<EnergyReservation?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
+            // Look up a reservation by identifier.
             var res = Reservations.FirstOrDefault(r => r.Id == id);
             return Task.FromResult(res);
         }
 
         public Task<EnergyReservation?> GetByQrTokenAsync(string qrToken, CancellationToken cancellationToken = default)
         {
+            // Look up a reservation by QR token.
             var res = Reservations.FirstOrDefault(r => r.QrToken != null && r.QrToken == qrToken);
             return Task.FromResult(res);
         }
 
         public Task<EnergyReservation> CreateAsync(EnergyReservation reservation, CancellationToken cancellationToken = default)
         {
+            // Add a reservation to the in-memory collection.
             Reservations.Add(reservation);
             return Task.FromResult(reservation);
         }
 
         public Task<EnergyReservation?> UpdateAsync(EnergyReservation reservation, CancellationToken cancellationToken = default)
         {
+            // Replace a reservation entry when the identifier matches.
             var idx = Reservations.FindIndex(r => r.Id == reservation.Id);
             if (idx == -1) return Task.FromResult<EnergyReservation?>(null);
             Reservations[idx] = reservation;
@@ -667,6 +699,7 @@ public sealed class ReservationBusinessRuleTests
             DateTime updatedAt,
             CancellationToken cancellationToken = default)
         {
+            // Update reservation status and clear QR data when cancelled.
             var res = Reservations.FirstOrDefault(r => r.Id == id);
             if (res is null) return Task.FromResult<EnergyReservation?>(null);
 
@@ -687,6 +720,7 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<EnergyReservation?> ApproveIfPendingAsync(string id, DateTime updatedAt, CancellationToken cancellationToken = default)
         {
+            // Approve the reservation when it is still pending.
             var res = Reservations.FirstOrDefault(r => r.Id == id && r.Status == ReservationStatus.Pending);
             if (res is null) return Task.FromResult<EnergyReservation?>(null);
 
@@ -703,6 +737,7 @@ public sealed class ReservationBusinessRuleTests
             DateTime updatedAt,
             CancellationToken cancellationToken = default)
         {
+            // Persist QR token metadata on the matching reservation.
             var res = Reservations.FirstOrDefault(r => r.Id == id);
             if (res is null) return Task.FromResult<EnergyReservation?>(null);
 
@@ -720,6 +755,7 @@ public sealed class ReservationBusinessRuleTests
             string? excludeReservationId = null,
             CancellationToken cancellationToken = default)
         {
+            // Report whether an active reservation conflicts on station, slot, and time.
             var exists = Reservations.Any(r =>
                 r.StationId == stationId &&
                 r.SlotId == slotId &&
@@ -731,6 +767,7 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<bool> HasActiveReservationsForStationAsync(string stationId, CancellationToken cancellationToken = default)
         {
+            // Report whether the station has pending or approved reservations.
             var exists = Reservations.Any(r =>
                 r.StationId == stationId &&
                 (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Approved));
@@ -739,6 +776,7 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<List<EnergyReservation>> GetByProsumerNicAsync(string prosumerNic, CancellationToken cancellationToken = default)
         {
+            // Return all reservations for the given prosumer NIC.
             var list = Reservations.Where(r => r.ProsumerNic == prosumerNic).ToList();
             return Task.FromResult(list);
         }
@@ -768,6 +806,7 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<SolarStation> CreateAsync(SolarStation station, CancellationToken cancellationToken = default)
         {
+            // Add a station to the in-memory collection.
             Stations.Add(station);
             return Task.FromResult(station);
         }
@@ -777,6 +816,7 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<SolarStation?> UpdateStatusAsync(string id, StationStatus status, DateTime updatedAt, CancellationToken cancellationToken = default)
         {
+            // Update station status when the station exists.
             var st = Stations.FirstOrDefault(s => s.Id == id);
             if (st != null)
             {
@@ -805,6 +845,7 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<Prosumer> CreateAsync(Prosumer prosumer, CancellationToken cancellationToken = default)
         {
+            // Add a prosumer to the in-memory collection.
             Prosumers.Add(prosumer);
             return Task.FromResult(prosumer);
         }
@@ -814,6 +855,7 @@ public sealed class ReservationBusinessRuleTests
 
         public Task<Prosumer?> UpdateStatusAsync(string nic, ProsumerAccountStatus status, DateTime updatedAt, CancellationToken cancellationToken = default)
         {
+            // Update prosumer account status when the NIC matches.
             var p = Prosumers.FirstOrDefault(x => x.Nic.Equals(nic, StringComparison.OrdinalIgnoreCase));
             if (p != null) p.AccountStatus = status;
             return Task.FromResult(p);
@@ -831,6 +873,7 @@ public sealed class ReservationBusinessRuleTests
             DateTime reservationDateTime,
             CancellationToken cancellationToken = default)
         {
+            // Always report the slot as available for test scenarios.
             return Task.FromResult(SlotAvailabilityStatus.Available);
         }
     }

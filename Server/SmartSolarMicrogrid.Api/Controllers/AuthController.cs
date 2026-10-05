@@ -21,6 +21,7 @@ public class AuthController : ControllerBase
 
     public AuthController(IAuthService authService, IWebUserService userService)
     {
+        // Store the authentication and web-user services used by login and account flows.
         _authService = authService;
         _userService = userService;
     }

@@ -20,6 +20,7 @@ public class TransactionsController : ControllerBase
 
     public TransactionsController(ITransactionService transactionService)
     {
+        // Store the service that owns QR verification and transaction completion.
         _transactionService = transactionService;
     }
 

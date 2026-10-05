@@ -21,6 +21,7 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
 
     public AdminProsumerRepository(MongoDbContext databaseContext)
     {
+        // Bind collections to the shared UsersDetail MongoDB collection through the existing context
         _prosumers = databaseContext.Database.GetCollection<Prosumer>(CollectionName);
         _rawCollection = databaseContext.Database.GetCollection<BsonDocument>(CollectionName);
     }
@@ -35,6 +36,7 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
         string? adminStatusFilter = null,
         CancellationToken cancellationToken = default)
     {
+        // Retrieve prosumer documents, optionally filtered by administrative account status
         var filter = ExcludeWebUsersFilter;
 
         if (!string.IsNullOrWhiteSpace(adminStatusFilter))
@@ -81,6 +83,7 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
         string normalizedNic,
         CancellationToken cancellationToken = default)
     {
+        // Find one prosumer document by normalized NIC identifier
         var filter = Builders<BsonDocument>.Filter.And(
             ExcludeWebUsersFilter,
             Builders<BsonDocument>.Filter.Or(
@@ -99,6 +102,7 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
         string normalizedNic,
         CancellationToken cancellationToken = default)
     {
+        // Check whether a prosumer document exists for the given NIC
         var filter = Builders<BsonDocument>.Filter.Or(
             Builders<BsonDocument>.Filter.Eq("_id", normalizedNic),
             Builders<BsonDocument>.Filter.Eq("Nic", normalizedNic)
@@ -130,6 +134,7 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
         DateTime updatedAt,
         CancellationToken cancellationToken = default)
     {
+        // Update prosumer contact and address fields for the given NIC
         var filter = Builders<BsonDocument>.Filter.Or(
             Builders<BsonDocument>.Filter.Eq("_id", normalizedNic),
             Builders<BsonDocument>.Filter.Eq("Nic", normalizedNic));
@@ -160,6 +165,7 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
         DateTime updatedAt,
         CancellationToken cancellationToken = default)
     {
+        // Update prosumer account status and server-controlled timestamp by NIC
         var filter = Builders<BsonDocument>.Filter.Or(
             Builders<BsonDocument>.Filter.Eq("_id", normalizedNic),
             Builders<BsonDocument>.Filter.Eq("Nic", normalizedNic));
@@ -183,6 +189,7 @@ public sealed class AdminProsumerRepository : IAdminProsumerRepository
 
     private static Prosumer? MapFromBson(BsonDocument doc)
     {
+        // Map a raw BSON document into a Prosumer model with legacy field fallbacks
         var nic = doc.Contains("Nic") && !doc["Nic"].IsBsonNull
             ? doc["Nic"].AsString
             : (doc["_id"].BsonType == BsonType.String ? doc["_id"].AsString : null);

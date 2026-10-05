@@ -22,6 +22,7 @@ public sealed class AdminProsumersController : ControllerBase
 
     public AdminProsumersController(IAdminProsumerService adminProsumerService)
     {
+        // Store the service that owns administrative prosumer lifecycle operations.
         _adminProsumerService = adminProsumerService;
     }
 
@@ -32,6 +33,7 @@ public sealed class AdminProsumersController : ControllerBase
         [FromQuery] string? status,
         CancellationToken cancellationToken)
     {
+        // Return all prosumers, optionally filtered by lifecycle status.
         var result = await _adminProsumerService.GetAllAsync(status, cancellationToken);
 
         if (!result.Succeeded)
@@ -50,6 +52,7 @@ public sealed class AdminProsumersController : ControllerBase
         string nic,
         CancellationToken cancellationToken)
     {
+        // Look up one prosumer profile by NIC for backoffice review.
         var result = await _adminProsumerService.GetByNicAsync(nic, cancellationToken);
 
         if (!result.Succeeded)
@@ -68,6 +71,7 @@ public sealed class AdminProsumersController : ControllerBase
         [FromBody] CreateProsumerRequest? request,
         CancellationToken cancellationToken)
     {
+        // Create a new prosumer record from backoffice-supplied registration details.
         if (request is null)
         {
             return BadRequest(new ErrorResponse("Request body is required."));
@@ -92,6 +96,7 @@ public sealed class AdminProsumersController : ControllerBase
         [FromBody] UpdateProsumerRequest? request,
         CancellationToken cancellationToken)
     {
+        // Update editable prosumer profile fields for the NIC supplied in the route.
         if (request is null)
         {
             return BadRequest(new ErrorResponse("Request body is required."));
@@ -116,6 +121,7 @@ public sealed class AdminProsumersController : ControllerBase
         [FromBody] UpdateProsumerStatusRequest? request,
         CancellationToken cancellationToken)
     {
+        // Apply an administrative lifecycle status change to the identified prosumer.
         if (request is null)
         {
             return BadRequest(new ErrorResponse("Request body is required."));
@@ -133,6 +139,7 @@ public sealed class AdminProsumersController : ControllerBase
 
     private ActionResult CreateErrorResult<T>(AdminProsumerServiceResult<T> result)
     {
+        // Map expected prosumer service outcomes into standard HTTP error responses.
         var message = result.ErrorMessage ?? "The prosumer request could not be completed.";
 
         return result.ErrorType switch

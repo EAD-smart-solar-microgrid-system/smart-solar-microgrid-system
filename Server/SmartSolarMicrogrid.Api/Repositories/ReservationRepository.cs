@@ -27,6 +27,7 @@ public sealed class ReservationRepository : IReservationRepository
         string qrToken,
         CancellationToken cancellationToken = default)
     {
+        // Retrieve a reservation document by its secure QR token
         return await _reservations
             .Find(reservation => reservation.QrToken == qrToken)
             .FirstOrDefaultAsync(cancellationToken);
