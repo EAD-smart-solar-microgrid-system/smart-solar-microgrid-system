@@ -15,6 +15,7 @@ import { MaterialIcon } from '../../../components/common/MaterialIcon.jsx';
 import { ReservationMonitoringFilters } from '../components/ReservationMonitoringFilters.jsx';
 import { ReservationMonitoringTable } from '../components/ReservationMonitoringTable.jsx';
 import { ReservationDetailsModal } from '../components/ReservationDetailsModal.jsx';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog.jsx';
 import {
   getReservationMonitoringById,
   getReservationMonitoringList,
@@ -67,20 +68,30 @@ export const ReservationMonitoringPage = () => {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
   const [filterErrors, setFilterErrors] = useState({});
+  const [approveConfirmReservation, setApproveConfirmReservation] = useState(null);
 
-  const handleApprove = async (reservation) => {
+  const requestApprove = (reservation) => {
     const targetReservation = reservation?.id ? reservation : detailsReservation;
     if (!targetReservation?.id) {
       return;
     }
 
-    const bookingIdDisplay = targetReservation.bookingId || formatBookingId(targetReservation.id);
-    const confirmed = window.confirm(
-      `Approve reservation ${bookingIdDisplay}? The prosumer can then request a QR token for this booking.`
-    );
-    if (!confirmed) {
+    setApproveConfirmReservation(targetReservation);
+  };
+
+  const cancelApproveConfirm = () => {
+    if (!actionLoading) {
+      setApproveConfirmReservation(null);
+    }
+  };
+
+  const confirmApprove = async () => {
+    const targetReservation = approveConfirmReservation;
+    if (!targetReservation?.id) {
       return;
     }
+
+    const bookingIdDisplay = targetReservation.bookingId || formatBookingId(targetReservation.id);
 
     setActionLoading(true);
     setActionLoadingId(targetReservation.id);
@@ -93,6 +104,7 @@ export const ReservationMonitoringPage = () => {
     setActionLoadingId(null);
 
     if (res.success) {
+      setApproveConfirmReservation(null);
       const msg = `Reservation ${bookingIdDisplay} approved successfully.`;
       setSuccessMessage(msg);
       await loadReservations();
@@ -479,13 +491,32 @@ export const ReservationMonitoringPage = () => {
         error={detailsError}
         onClose={handleCloseDetails}
         onRetry={handleRetryDetails}
-        onApprove={handleApprove}
+        onApprove={requestApprove}
         onReject={handleReject}
         canApprove={canApprove}
         actionError={actionError}
         actionLoading={actionLoading}
         stationNameById={stationNameById}
         slotById={slotById}
+      />
+
+      <ConfirmDialog
+        show={Boolean(approveConfirmReservation)}
+        title="Approve reservation?"
+        message={
+          approveConfirmReservation
+            ? `Approve reservation ${
+                approveConfirmReservation.bookingId ||
+                formatBookingId(approveConfirmReservation.id)
+              }? The prosumer can then request a QR token for this booking.`
+            : ''
+        }
+        confirmLabel="Approve"
+        cancelLabel="Cancel"
+        confirmVariant="success"
+        loading={actionLoading}
+        onConfirm={confirmApprove}
+        onCancel={cancelApproveConfirm}
       />
     </div>
   );
