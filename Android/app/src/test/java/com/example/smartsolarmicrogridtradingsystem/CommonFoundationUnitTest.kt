@@ -16,7 +16,8 @@ class CommonFoundationUnitTest {
 
     @Test
     fun testAppConfigConstants() {
-        assertEquals("http://127.0.0.1:5278/api/", AppConfig.BASE_URL)
+        assertTrue(AppConfig.BASE_URL.endsWith("/api/"))
+        assertTrue(AppConfig.BASE_URL.contains(":5278"))
         assertEquals(15000, AppConfig.CONNECT_TIMEOUT_MS)
         assertEquals(15000, AppConfig.READ_TIMEOUT_MS)
     }

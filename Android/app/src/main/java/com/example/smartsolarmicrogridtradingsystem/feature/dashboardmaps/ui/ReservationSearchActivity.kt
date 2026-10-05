@@ -3,9 +3,9 @@ package com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.ui
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import android.widget.ProgressBar
-import android.widget.Spinner
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -30,7 +30,8 @@ class ReservationSearchActivity : BaseActivity() {
     private lateinit var etProsumerId: EditText
     private lateinit var etStationId: EditText
     private lateinit var etSearch: EditText
-    private lateinit var spinnerStatus: Spinner
+    private lateinit var actvStatus: AutoCompleteTextView
+    private var selectedStatusIndex = 0
     private lateinit var progress: ProgressBar
     private lateinit var layoutError: View
     private lateinit var tvError: TextView
@@ -57,7 +58,7 @@ class ReservationSearchActivity : BaseActivity() {
         etProsumerId = findViewById(R.id.etFilterProsumerId)
         etStationId = findViewById(R.id.etFilterStationId)
         etSearch = findViewById(R.id.etFilterSearch)
-        spinnerStatus = findViewById(R.id.spinnerStatus)
+        actvStatus = findViewById(R.id.actvFilterStatus)
         progress = findViewById(R.id.progressSearch)
         layoutError = findViewById(R.id.layoutSearchError)
         tvError = findViewById(R.id.tvSearchError)
@@ -68,11 +69,14 @@ class ReservationSearchActivity : BaseActivity() {
             ?: sessionManager.getUserIdentifier()
         etProsumerId.setText(initialProsumer.orEmpty())
 
-        spinnerStatus.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            statusOptions.map { it.second }
+        val statusLabels = statusOptions.map { it.second }
+        actvStatus.setAdapter(
+            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, statusLabels)
         )
+        actvStatus.setText(statusLabels[0], false)
+        actvStatus.setOnItemClickListener { _, _, position, _ ->
+            selectedStatusIndex = position
+        }
 
         adapter = BookingListAdapter { booking ->
             startActivity(ReservationDetailActivity.createIntent(this, booking))
@@ -90,13 +94,14 @@ class ReservationSearchActivity : BaseActivity() {
     private fun resetFilters() {
         etStationId.setText("")
         etSearch.setText("")
-        spinnerStatus.setSelection(0)
+        selectedStatusIndex = 0
+        actvStatus.setText(statusOptions[0].second, false)
         search()
     }
 
     private fun search() {
         showLoading()
-        val selectedStatus = statusOptions.getOrNull(spinnerStatus.selectedItemPosition)?.first.orEmpty()
+        val selectedStatus = statusOptions.getOrNull(selectedStatusIndex)?.first.orEmpty()
         val filters = mutableMapOf(
             "page" to "1",
             "pageSize" to "50"
@@ -118,6 +123,7 @@ class ReservationSearchActivity : BaseActivity() {
         repository.getReservationMonitoring(
             filters = filters,
             bearerToken = sessionManager.getToken(),
+            userRole = sessionManager.getRole(),
             callback = object : ApiCallback<ReservationMonitoringListDto> {
                 override fun onSuccess(result: NetworkResult.Success<ReservationMonitoringListDto>) {
                     val items = result.responseBody.items

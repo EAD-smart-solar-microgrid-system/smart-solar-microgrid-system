@@ -1,11 +1,12 @@
 package com.example.smartsolarmicrogridtradingsystem.core.config
 
 import android.os.Build
+import com.example.smartsolarmicrogridtradingsystem.BuildConfig
 
 /**
  * Global application configuration settings.
  *
- * Automatically resolves emulator loopback (10.0.2.2) vs LAN IP (192.168.1.25)
+ * Automatically resolves emulator loopback (10.0.2.2) vs LAN IP from BuildConfig
  * so networking works seamlessly across both Android Emulator and physical devices.
  */
 object AppConfig {
@@ -41,7 +42,7 @@ object AppConfig {
         get() = if (isEmulator) {
             "http://10.0.2.2:5278/api/"
         } else {
-            "http://192.168.1.25:5278/api/"
+            BuildConfig.API_BASE_URL_LAN
         }
 
     /**

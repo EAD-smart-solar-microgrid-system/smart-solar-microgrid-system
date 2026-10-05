@@ -59,11 +59,11 @@ public sealed class AuthorizationBoundaryTests
     }
 
     [Fact]
-    public void ReservationMonitoringRequiresGridOperatorOrBackoffice()
+    public void ReservationMonitoringRequiresGridOperatorBackofficeOrProsumer()
     {
         var attribute = typeof(ReservationMonitoringController).GetCustomAttribute<AuthorizeAttribute>();
         Assert.NotNull(attribute);
-        Assert.Equal("GridOperator,Backoffice", attribute!.Roles);
+        Assert.Equal("GridOperator,Backoffice,Prosumer", attribute!.Roles);
     }
 
     [Fact]
