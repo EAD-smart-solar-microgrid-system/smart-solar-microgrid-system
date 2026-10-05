@@ -18,14 +18,17 @@ public sealed class ProsumerService : IProsumerService
 {
     private readonly ICurrentProsumerAccessor _currentProsumerAccessor;
     private readonly IProsumerRepository _prosumerRepository;
+    private readonly IProsumerNotificationService _notificationService;
 
     public ProsumerService(
         IProsumerRepository prosumerRepository,
-        ICurrentProsumerAccessor currentProsumerAccessor)
+        ICurrentProsumerAccessor currentProsumerAccessor,
+        IProsumerNotificationService notificationService)
     {
         // Store persistence and current-identity dependencies used by account operations.
         _prosumerRepository = prosumerRepository;
         _currentProsumerAccessor = currentProsumerAccessor;
+        _notificationService = notificationService;
     }
 
     public async Task<ProsumerServiceResult<ProsumerResponse>> RegisterAsync(
@@ -69,6 +72,10 @@ public sealed class ProsumerService : IProsumerService
         {
             var createdProsumer = await _prosumerRepository.CreateAsync(
                 prosumer,
+                cancellationToken);
+
+            await _notificationService.SendRegistrationNotificationsAsync(
+                createdProsumer,
                 cancellationToken);
 
             return ProsumerServiceResult<ProsumerResponse>.Success(

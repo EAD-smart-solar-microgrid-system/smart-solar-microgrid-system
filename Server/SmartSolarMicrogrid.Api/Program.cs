@@ -73,6 +73,7 @@ builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
 builder.Services.AddScoped<IProsumerService, ProsumerService>();
+builder.Services.AddScoped<IProsumerNotificationService, ProsumerNotificationService>();
 builder.Services.AddScoped<IAdminProsumerRepository, AdminProsumerRepository>();
 builder.Services.AddScoped<IAdminProsumerService, AdminProsumerService>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
