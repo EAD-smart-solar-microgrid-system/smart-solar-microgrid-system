@@ -199,27 +199,11 @@
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOpenPending"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/action_open_pending" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOpenHistory"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/action_open_history" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnOpenSearch"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="20dp"
                 android:text="@string/action_open_search" />
 
             <com.google.android.material.button.MaterialButton

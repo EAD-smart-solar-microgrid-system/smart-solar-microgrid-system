@@ -98,6 +98,7 @@ class BookingListActivity : BaseActivity() {
         repository.getReservationMonitoring(
             filters = filters,
             bearerToken = sessionManager.getToken(),
+            userRole = sessionManager.getRole(),
             callback = object : ApiCallback<ReservationMonitoringListDto> {
                 override fun onSuccess(result: NetworkResult.Success<ReservationMonitoringListDto>) {
                     val items = result.responseBody.items

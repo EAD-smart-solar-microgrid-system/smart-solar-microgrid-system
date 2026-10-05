@@ -151,36 +151,38 @@ class EditReservationActivity : BaseActivity() {
         progress.visibility = View.VISIBLE
         btnSubmit.isEnabled = false
 
-        AppExecutors.executeInBackground {
-            val record = localRepository.getById(reservationId)
+        reservationRepository.getReservationById(
+            id = reservationId,
+            bearerToken = sessionManager.getToken(),
+            callback = object : ApiCallback<ReservationDto> {
+                override fun onSuccess(result: NetworkResult.Success<ReservationDto>) {
+                    val fresh = result.responseBody
+                    AppExecutors.executeInBackground {
+                        localRepository.upsert(fresh)
+                    }
+                    processLoadedReservation(fresh)
+                }
 
-            AppExecutors.executeOnMainThread {
-                if (record != null) {
-                    processLoadedReservation(record)
-                } else {
-                    // Fallback to API if SQLite cache is not yet populated
-                    reservationRepository.getReservationById(
-                        id = reservationId,
-                        bearerToken = sessionManager.getToken(),
-                        callback = object : ApiCallback<ReservationDto> {
-                            override fun onSuccess(result: NetworkResult.Success<ReservationDto>) {
-                                val fresh = result.responseBody
-                                AppExecutors.executeInBackground {
-                                    localRepository.upsert(fresh)
-                                }
-                                processLoadedReservation(fresh)
-                            }
-
-                            override fun onError(error: NetworkResult<Nothing>) {
+                override fun onError(error: NetworkResult<Nothing>) {
+                    AppExecutors.executeInBackground {
+                        val cached = localRepository.getById(reservationId)
+                        AppExecutors.executeOnMainThread {
+                            if (cached != null) {
+                                processLoadedReservation(cached)
+                            } else {
                                 progress.visibility = View.GONE
-                                Toast.makeText(this@EditReservationActivity, R.string.error_reservation_not_found, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    this@EditReservationActivity,
+                                    R.string.error_reservation_not_found,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 finish()
                             }
                         }
-                    )
+                    }
                 }
             }
-        }
+        )
     }
 
     private fun processLoadedReservation(record: ReservationDto) {

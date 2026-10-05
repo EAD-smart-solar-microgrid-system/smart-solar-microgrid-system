@@ -36,7 +36,13 @@ data class DashboardBookingDto(
                 id = rawId,
                 stationId = json.optString("stationId", json.optString("StationId", "")),
                 slotId = json.optString("slotId", json.optString("SlotId", "")),
-                prosumerId = json.optString("prosumerId", json.optString("ProsumerId", "")),
+                prosumerId = json.optString(
+                    "prosumerId",
+                    json.optString(
+                        "ProsumerId",
+                        json.optString("prosumerNic", json.optString("ProsumerNic", ""))
+                    )
+                ),
                 reservationDateTime = json.optString(
                     "reservationDateTime",
                     json.optString("ReservationDateTime", "")

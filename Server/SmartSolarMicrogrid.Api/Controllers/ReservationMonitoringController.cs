@@ -5,6 +5,7 @@
  * Purpose: Expose Member 4 read-only reservation monitoring endpoints without altering Member 2 booking workflows.
  */
 
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.Api.DTOs;
@@ -15,7 +16,7 @@ namespace SmartSolarMicrogrid.Api.Controllers;
 
 [ApiController]
 [Route("api/member4/reservation-monitoring")]
-[Authorize(Roles = "GridOperator,Backoffice")]
+[Authorize(Roles = "GridOperator,Backoffice,Prosumer")]
 public sealed class ReservationMonitoringController : ControllerBase
 {
     private readonly IReservationMonitoringService _monitoringService;
@@ -31,6 +32,13 @@ public sealed class ReservationMonitoringController : ControllerBase
         [FromQuery] ReservationMonitoringQuery query,
         CancellationToken cancellationToken)
     {
+        query ??= new ReservationMonitoringQuery();
+        var prosumerScopeError = ApplyProsumerScope(query);
+        if (prosumerScopeError is not null)
+        {
+            return prosumerScopeError;
+        }
+
         // Return a filtered, paginated reservation list for Member 4 monitoring clients.
         var result = await _monitoringService.SearchAsync(query, cancellationToken);
 
@@ -55,7 +63,65 @@ public sealed class ReservationMonitoringController : ControllerBase
             return CreateErrorResult(result);
         }
 
+        var prosumerAccessError = DenyProsumerAccessToOtherReservation(result.Value!.ProsumerId);
+        if (prosumerAccessError is not null)
+        {
+            return prosumerAccessError;
+        }
+
         return Ok(result.Value);
+    }
+
+    private ActionResult? ApplyProsumerScope(ReservationMonitoringQuery query)
+    {
+        if (!User.IsInRole("Prosumer"))
+        {
+            return null;
+        }
+
+        var callerNic = GetCallerNic();
+        if (string.IsNullOrEmpty(callerNic))
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse("Access denied to another prosumer's reservations."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.ProsumerId) &&
+            !string.Equals(query.ProsumerId.Trim(), callerNic, StringComparison.OrdinalIgnoreCase))
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse("Access denied to another prosumer's reservations."));
+        }
+
+        query.ProsumerId = callerNic;
+        return null;
+    }
+
+    private ActionResult? DenyProsumerAccessToOtherReservation(string? prosumerId)
+    {
+        if (!User.IsInRole("Prosumer"))
+        {
+            return null;
+        }
+
+        var callerNic = GetCallerNic();
+        if (string.IsNullOrEmpty(callerNic) ||
+            !string.Equals(callerNic, prosumerId?.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse("Access denied to another prosumer's reservations."));
+        }
+
+        return null;
+    }
+
+    private string? GetCallerNic()
+    {
+        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("nic")?.Value;
     }
 
     private ActionResult CreateErrorResult<T>(ReservationMonitoringServiceResult<T> result)
