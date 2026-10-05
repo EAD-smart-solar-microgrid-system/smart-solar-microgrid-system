@@ -4,33 +4,34 @@ import { ROUTES } from '../constants/routes.js';
 import { AuthContext } from '../features/authentication/context/AuthContextValue.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 import brandLogo from '../assets/brand-logo.png';
+import { LogoutConfirmModal } from '../components/common/LogoutConfirmModal.jsx';
 
 /**
- * Helper to determine current breadcrumb and title
+ * Helper to determine the current sidebar section label for the top header.
  */
-const getPageContext = (pathname) => {
+const getPageSection = (pathname) => {
   if (pathname === ROUTES.HOME) {
-    return { section: 'Overview', title: 'Dashboard' };
+    return 'Overview';
   }
-  if (pathname === ROUTES.STATIONS || pathname === '/stations') {
-    return { section: 'Operations', title: 'Microgrid Nodes' };
+  if (
+    pathname === ROUTES.STATIONS ||
+    pathname === '/stations' ||
+    pathname === ROUTES.ENERGY_SLOT_RESERVATIONS ||
+    pathname === ROUTES.RESERVATION_MONITORING
+  ) {
+    return 'Operations';
   }
-  if (pathname === ROUTES.ENERGY_SLOT_RESERVATIONS) {
-    return { section: 'Operations', title: 'Energy Slot Reservations' };
-  }
-  if (pathname === ROUTES.RESERVATION_MONITORING) {
-    return { section: 'Operations', title: 'Reservation Monitoring' };
-  }
-  if (pathname === ROUTES.PROSUMER_MANAGEMENT) {
-    return { section: 'Management', title: 'Prosumer Management' };
-  }
-  if (pathname === ROUTES.ADMIN_SETTINGS || pathname === ROUTES.USER_MANAGEMENT) {
-    return { section: 'Management', title: 'Admin Settings & Users' };
+  if (
+    pathname === ROUTES.PROSUMER_MANAGEMENT ||
+    pathname === ROUTES.ADMIN_SETTINGS ||
+    pathname === ROUTES.USER_MANAGEMENT
+  ) {
+    return 'Management';
   }
   if (pathname === ROUTES.LOGIN) {
-    return { section: 'Authentication', title: 'Staff Sign In' };
+    return 'Authentication';
   }
-  return { section: 'Pages', title: 'Dashboard' };
+  return 'Pages';
 };
 
 export const AppLayout = () => {
@@ -39,13 +40,15 @@ export const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
     logout();
+    setShowLogoutConfirm(false);
     navigate(ROUTES.LOGIN, { replace: true });
   };
 
-  const { section, title } = getPageContext(location.pathname);
+  const section = getPageSection(location.pathname);
 
   // Active item: background #252526 (dark) / #F2F2F3 (light), accent #E3511B, text #F5F5F5 / #171717
   // Inactive item: text #999999 / #77777A, hover #202021 / #ECECEE
@@ -343,17 +346,12 @@ export const AppLayout = () => {
               </svg>
             </button>
 
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                {section}
-              </p>
-              <h1 className="text-sm sm:text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                {title}
-              </h1>
-            </div>
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              {section}
+            </p>
           </div>
 
-          {/* Right: Theme Toggle, Notifications & User Profile */}
+          {/* Right: Theme Toggle & User Profile */}
           <div className="flex items-center gap-2.5 sm:gap-3">
             {/* THEME TOGGLE (Sun / Moon) */}
             <button
@@ -376,25 +374,6 @@ export const AppLayout = () => {
               )}
             </button>
 
-            {/* Notification Bell */}
-            <div className="relative">
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-muted)] transition hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
-                title="System Notifications"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-              </button>
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#E3511B]" />
-            </div>
-
             {/* Profile Avatar / Login Button */}
             {user ? (
               <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1.5 pl-2.5 pr-2">
@@ -411,7 +390,7 @@ export const AppLayout = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={handleLogout}
+                  onClick={() => setShowLogoutConfirm(true)}
                   className="rounded-lg border border-[var(--border-default)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)] transition hover:bg-[var(--bg-hover)] hover:text-[#EF4444]"
                   title="Sign out"
                 >
@@ -445,6 +424,13 @@ export const AppLayout = () => {
           </div>
         </footer>
       </div>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        username={user?.username}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 };

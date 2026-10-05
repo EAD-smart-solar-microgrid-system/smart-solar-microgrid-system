@@ -41,10 +41,6 @@ export const ReservationMonitoringTable = ({
   detailsLoadingId,
   stationNameById = {},
   slotById = {},
-  isGridOperator = false,
-  onApprove,
-  onReject,
-  actionLoadingId,
 }) => {
   return (
     <div className="table-responsive">
@@ -66,14 +62,8 @@ export const ReservationMonitoringTable = ({
         <tbody>
           {reservations.map((reservation) => {
             const isLoadingDetails = detailsLoadingId === reservation.id;
-            const isActionLoading = actionLoadingId === reservation.id;
             const stationName =
-              reservation.stationName ||
-              stationNameById[reservation.stationId] ||
-              stationNameById[reservation.hubId] ||
-              'Unknown station';
-            const isPending = (reservation.status || '').toLowerCase() === 'pending';
-            const bookingIdDisplay = reservation.bookingId || formatBookingId(reservation.id);
+              stationNameById[reservation.stationId] || 'Unknown station';
 
             return (
               <tr key={reservation.id}>
@@ -93,37 +83,15 @@ export const ReservationMonitoringTable = ({
                   </span>
                 </td>
                 <td className="text-end">
-                  <div className="d-inline-flex gap-1 justify-content-end align-items-center">
-                    {isGridOperator && isPending && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn-outline-success btn-sm"
-                          onClick={() => onApprove?.(reservation)}
-                          disabled={isLoadingDetails || isActionLoading}
-                        >
-                          {isActionLoading ? 'Approving…' : 'Approve'}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={() => onReject?.(reservation)}
-                          disabled={isLoadingDetails || isActionLoading}
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => onViewDetails(reservation)}
-                      disabled={isLoadingDetails || isActionLoading}
-                      aria-busy={isLoadingDetails}
-                    >
-                      {isLoadingDetails ? 'Loading…' : 'View details'}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => onViewDetails(reservation)}
+                    disabled={isLoadingDetails}
+                    aria-busy={isLoadingDetails}
+                  >
+                    {isLoadingDetails ? 'Loading…' : 'View details'}
+                  </button>
                 </td>
               </tr>
             );

@@ -139,8 +139,6 @@ export const HomePage = () => {
           subtitle={`${stations.length} registered microgrid nodes`}
           trend="+1 synchronized"
           trendPositive={true}
-          actionLabel="View all nodes"
-          onAction={() => {}}
           icon={<MaterialIcon name="bolt" size={22} className="text-white" />}
         />
 
@@ -151,8 +149,6 @@ export const HomePage = () => {
           subtitle="Physical battery locker units"
           trend="98.5% readiness"
           trendPositive={true}
-          actionLabel="Check lockers"
-          onAction={() => {}}
           icon={<MaterialIcon name="battery" size={22} className="text-white" />}
         />
 
@@ -163,8 +159,6 @@ export const HomePage = () => {
           subtitle="Live prosumer energy bookings"
           trend="+8 today"
           trendPositive={true}
-          actionLabel="Review bookings"
-          onAction={() => {}}
           icon={<MaterialIcon name="event" size={22} className="text-white" />}
         />
       </div>
