@@ -4,13 +4,22 @@ import appConfig from '../../../config/appConfig';
 import { AuthContext } from '../context/AuthContextValue.js';
 import { ROUTES } from '../../../constants/routes';
 import { Logo } from '../../../components/common/Logo.jsx';
+import {
+  getApiValidationMessage,
+  hasValidationErrors,
+  validateEmail,
+  validateLogin,
+} from '../utils/authValidation.js';
 
 export const LoginPage = () => {
   const { login, user, isLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   // Forgot password modal state
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -22,11 +31,18 @@ export const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    const validationErrors = validateLogin({ identifier: username, password });
+    setFieldErrors(validationErrors);
+    if (hasValidationErrors(validationErrors)) return;
+
+    setSubmitting(true);
     try {
-      await login(username, password);
+      await login(username.trim(), password);
       navigate(ROUTES.HOME);
-    } catch {
-      setError("Invalid username or password");
+    } catch (loginError) {
+      setError(loginError.message || 'Invalid username/email or password');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -34,6 +50,11 @@ export const LoginPage = () => {
     e.preventDefault();
     setForgotError('');
     setForgotMessage('');
+    const emailError = validateEmail(forgotEmail, { requiredMessage: 'Email address is required.' });
+    if (emailError) {
+      setForgotError(emailError);
+      return;
+    }
     setForgotLoading(true);
 
     try {
@@ -47,7 +68,7 @@ export const LoginPage = () => {
       if (response.ok) {
         setForgotMessage(data.message || 'If an account exists, a password reset link has been dispatched to your email.');
       } else {
-        setForgotError(data.message || 'Failed to request password reset.');
+        setForgotError(getApiValidationMessage(data, 'Failed to request password reset.'));
       }
     } catch {
       setForgotError('Could not reach the server.');
@@ -91,17 +112,30 @@ export const LoginPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="login-username" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-                Username
+                Username or Email
               </label>
               <input
                 id="login-username"
                 type="text"
                 className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter staff username"
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setFieldErrors((current) => ({ ...current, identifier: undefined }));
+                  setError(null);
+                }}
+                placeholder="Enter staff username or email"
+                autoComplete="username"
+                maxLength={254}
+                aria-invalid={Boolean(fieldErrors.identifier)}
+                aria-describedby={fieldErrors.identifier ? 'login-username-error' : undefined}
                 required
               />
+              {fieldErrors.identifier && (
+                <p id="login-username-error" className="mt-1 text-xs font-semibold text-[#EF4444]">
+                  {fieldErrors.identifier}
+                </p>
+              )}
             </div>
 
             <div>
@@ -121,22 +155,47 @@ export const LoginPage = () => {
                   Forgot password?
                 </button>
               </div>
-              <input
-                id="login-password"
-                type="password"
-                className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 pr-16 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setFieldErrors((current) => ({ ...current, password: undefined }));
+                    setError(null);
+                  }}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  maxLength={128}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-3 text-[11px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p id="login-password-error" className="mt-1 text-xs font-semibold text-[#EF4444]">
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             <button
               type="submit"
-              className="mt-2 w-full rounded-xl bg-[#E3511B] py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20]"
+              disabled={submitting}
+              className="mt-2 w-full rounded-xl bg-[#E3511B] py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#F05A20] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Sign In to Dashboard
+              {submitting ? 'Signing In...' : 'Sign In to Dashboard'}
             </button>
           </form>
         </div>
@@ -191,8 +250,13 @@ export const LoginPage = () => {
                     type="email"
                     placeholder="e.g. user@example.com"
                     value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
+                    onChange={(e) => {
+                      setForgotEmail(e.target.value);
+                      setForgotError('');
+                    }}
                     required
+                    maxLength={254}
+                    aria-invalid={Boolean(forgotError)}
                     className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[#E3511B]"
                   />
                 </div>

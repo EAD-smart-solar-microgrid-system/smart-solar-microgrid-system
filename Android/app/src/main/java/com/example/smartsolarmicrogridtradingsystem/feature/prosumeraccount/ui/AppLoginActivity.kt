@@ -7,6 +7,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import com.example.smartsolarmicrogridtradingsystem.MainActivity
 import com.example.smartsolarmicrogridtradingsystem.R
 import com.example.smartsolarmicrogridtradingsystem.core.network.ApiCallback
@@ -14,6 +15,7 @@ import com.example.smartsolarmicrogridtradingsystem.core.network.ApiClient
 import com.example.smartsolarmicrogridtradingsystem.core.network.HttpMethod
 import com.example.smartsolarmicrogridtradingsystem.core.network.NetworkResult
 import com.example.smartsolarmicrogridtradingsystem.core.session.SessionManager
+import com.example.smartsolarmicrogridtradingsystem.core.validation.AccountInputValidator
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.ProsumerAuthResponseDto
 import com.example.smartsolarmicrogridtradingsystem.feature.operatormode.ui.OperatorDashboardActivity
 import com.example.smartsolarmicrogridtradingsystem.feature.prosumeraccount.data.ProsumerAccountRepository
@@ -104,6 +106,10 @@ class AppLoginActivity : AppCompatActivity() {
         tvLoginError = findViewById(R.id.tvLoginError)
         pbLoginLoading = findViewById(R.id.pbLoginLoading)
         tvToRegister = findViewById(R.id.tvToRegister)
+
+        etProsumerNic.doAfterTextChanged { tilProsumerNic.error = null }
+        etOpUsername.doAfterTextChanged { tilOpUsername.error = null }
+        etOpPassword.doAfterTextChanged { tilOpPassword.error = null }
     }
 
     private fun setupTabSwitching() {
@@ -126,12 +132,14 @@ class AppLoginActivity : AppCompatActivity() {
 
     private fun setupProsumerLogin() {
         btnProsumerLogin.setOnClickListener {
-            val nic = etProsumerNic.text?.toString()?.trim().orEmpty()
+            val nic = AccountInputValidator.normalizeNic(etProsumerNic.text?.toString())
             tilProsumerNic.error = null
             tvLoginError.visibility = View.GONE
 
-            if (nic.isEmpty()) {
-                tilProsumerNic.error = "NIC is required"
+            val nicError = AccountInputValidator.nicError(nic)
+            if (nicError != null) {
+                tilProsumerNic.error = nicError
+                etProsumerNic.requestFocus()
                 return@setOnClickListener
             }
 
@@ -169,18 +177,18 @@ class AppLoginActivity : AppCompatActivity() {
     private fun setupOperatorLogin() {
         btnOpLogin.setOnClickListener {
             val username = etOpUsername.text?.toString()?.trim().orEmpty()
-            val password = etOpPassword.text?.toString()?.trim().orEmpty()
+            val password = etOpPassword.text?.toString().orEmpty()
 
             tilOpUsername.error = null
             tilOpPassword.error = null
             tvLoginError.visibility = View.GONE
 
-            if (username.isEmpty()) {
-                tilOpUsername.error = "Username is required"
-                return@setOnClickListener
-            }
-            if (password.isEmpty()) {
-                tilOpPassword.error = "Password is required"
+            val usernameError = AccountInputValidator.loginIdentifierError(username)
+            val passwordError = AccountInputValidator.loginPasswordError(password)
+            tilOpUsername.error = usernameError
+            tilOpPassword.error = passwordError
+            if (usernameError != null || passwordError != null) {
+                if (usernameError != null) etOpUsername.requestFocus() else etOpPassword.requestFocus()
                 return@setOnClickListener
             }
 

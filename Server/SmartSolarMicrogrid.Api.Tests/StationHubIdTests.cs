@@ -229,13 +229,13 @@ public sealed class StationHubIdTests
     }
 
     [Fact]
-    public void StationResponse_ExposesHubId_AndNotObjectId()
+    public void StationResponse_ExposesCanonicalHubIdAndCompatibilityId()
     {
         // Assert the public station response exposes HubId and hides the internal ObjectId.
         var properties = typeof(StationResponse).GetProperties();
 
         Assert.Contains(properties, p => p.Name == "HubId");
-        Assert.DoesNotContain(properties, p => p.Name == "Id");
+        Assert.Contains(properties, p => p.Name == "Id");
     }
 
     private static CreateStationRequest CreateSampleRequest(string name) => new()

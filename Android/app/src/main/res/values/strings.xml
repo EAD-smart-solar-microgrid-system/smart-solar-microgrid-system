@@ -232,4 +232,15 @@
     <string name="action_new_registration">New Registration</string>
     <string name="action_save_profile">Save Changes</string>
     <string name="action_view_profile">View Profile</string>
+
+    <!-- Prosumer Form Validation Strings -->
+    <string name="error_nic_required">NIC is required.</string>
+    <string name="error_nic_invalid">Enter a valid NIC number.</string>
+    <string name="error_name_required">Full name is required.</string>
+    <string name="error_name_too_short">Full name must be at least 2 characters.</string>
+    <string name="error_name_invalid">Enter a valid full name.</string>
+    <string name="error_email_required">Email is required.</string>
+    <string name="error_email_invalid">Enter a valid email address.</string>
+    <string name="error_phone_invalid">Enter a valid phone number.</string>
+    <string name="error_address_too_long">Address cannot exceed 250 characters.</string>
 </resources>

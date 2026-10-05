@@ -21,11 +21,15 @@ public sealed class AdminProsumerService : IAdminProsumerService
     private static readonly Regex PhoneRegex = new(@"^(0\d{9}|\+94\d{9})$", RegexOptions.Compiled);
 
     private readonly IAdminProsumerRepository _adminRepository;
+    private readonly IProsumerNotificationService _notificationService;
 
-    public AdminProsumerService(IAdminProsumerRepository adminRepository)
+    public AdminProsumerService(
+        IAdminProsumerRepository adminRepository,
+        IProsumerNotificationService notificationService)
     {
         // Store the administrative prosumer repository used for lifecycle operations.
         _adminRepository = adminRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<AdminProsumerServiceResult<IReadOnlyList<AdminProsumerResponse>>> GetAllAsync(
@@ -263,6 +267,10 @@ public sealed class AdminProsumerService : IAdminProsumerService
             return AdminProsumerServiceResult<AdminProsumerResponse>.Success(MapToResponse(existing));
         }
 
+        var shouldSendActivationNotifications =
+            existing.AccountStatus == ProsumerAccountStatus.PendingActivation &&
+            targetAccountStatus == ProsumerAccountStatus.Active;
+
         var updated = await _adminRepository.UpdateStatusAsync(
             normalizedNic,
             targetAccountStatus,
@@ -274,6 +282,13 @@ public sealed class AdminProsumerService : IAdminProsumerService
             return AdminProsumerServiceResult<AdminProsumerResponse>.Failure(
                 AdminProsumerErrorType.NotFound,
                 "The requested prosumer profile was not found.");
+        }
+
+        if (shouldSendActivationNotifications)
+        {
+            await _notificationService.SendActivationNotificationsAsync(
+                updated,
+                cancellationToken);
         }
 
         return AdminProsumerServiceResult<AdminProsumerResponse>.Success(MapToResponse(updated));

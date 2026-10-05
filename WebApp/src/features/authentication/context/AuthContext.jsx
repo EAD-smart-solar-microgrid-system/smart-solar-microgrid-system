@@ -41,8 +41,8 @@ export const AuthProvider = ({ children }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    if (!res.ok) throw new Error("Login failed");
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Login failed');
     const userData = { username: data.username, role: data.role };
     setToken(data.token);
     setUser(userData);

@@ -20,8 +20,15 @@ using SmartSolarMicrogrid.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Local credentials are intentionally kept out of tracked appsettings files.
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// Local credentials are intentionally kept out of tracked appsettings files and
+// must never override deployed configuration.
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddJsonFile(
+        "appsettings.Local.json",
+        optional: true,
+        reloadOnChange: false);
+}
 
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection(MongoDbSettings.SectionName));
@@ -66,6 +73,7 @@ builder.Services.AddScoped<IStationRepository, StationRepository>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IProsumerRepository, ProsumerRepository>();
 builder.Services.AddScoped<IProsumerService, ProsumerService>();
+builder.Services.AddScoped<IProsumerNotificationService, ProsumerNotificationService>();
 builder.Services.AddScoped<IAdminProsumerRepository, AdminProsumerRepository>();
 builder.Services.AddScoped<IAdminProsumerService, AdminProsumerService>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
@@ -246,6 +254,7 @@ try
             PasswordHash = SmartSolarMicrogrid.Api.Services.PasswordHasher.Hash("admin123"),
             Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.Backoffice,
             Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
+            IsEmailVerified = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -262,6 +271,7 @@ try
             PasswordHash = SmartSolarMicrogrid.Api.Services.PasswordHasher.Hash("operator123"),
             Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.GridOperator,
             Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
+            IsEmailVerified = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

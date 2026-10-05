@@ -6,12 +6,13 @@
  */
 using System.ComponentModel.DataAnnotations;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Validation;
 
 namespace SmartSolarMicrogrid.Api.DTOs;
 
 public record LoginRequest(
-    [Required] string Username,
-    [Required] string Password
+    [Required, StringLength(AccountValidation.LoginIdentifierMaxLength, MinimumLength = 1)] string Username,
+    [Required, StringLength(AccountValidation.PasswordMaxLength, MinimumLength = 1)] string Password
 );
 
 public record LoginResponse(

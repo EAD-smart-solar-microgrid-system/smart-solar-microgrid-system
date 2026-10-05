@@ -12,6 +12,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Validation;
 
 namespace SmartSolarMicrogrid.Api.Services;
 
@@ -34,9 +35,21 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        // Authenticate credentials against active user database and generate signed JWT token
-        var user = await _repo.GetByUsernameAsync(request.Username);
+        if (AccountValidation.GetLoginIdentifierError(request.Username) is not null ||
+            AccountValidation.GetLoginPasswordError(request.Password) is not null)
+        {
+            return null;
+        }
+
+        // Accept either username or registered email, ignoring case and surrounding whitespace.
+        var identifier = request.Username?.Trim() ?? string.Empty;
+        var user = await _repo.GetByUsernameAsync(identifier)
+            ?? await _repo.GetByEmailAsync(identifier);
         if (user == null || user.Status != WebUserStatus.Active) return null;
+
+        // New invitations use an expiring setup marker. Legacy accounts without that
+        // marker remain usable so this deployment does not lock out existing team users.
+        if (!user.IsEmailVerified && user.EmailVerificationExpiry.HasValue) return null;
 
         if (!PasswordHasher.Verify(request.Password, user.PasswordHash))
         {
@@ -74,11 +87,13 @@ public class AuthService : IAuthService
         CancellationToken cancellationToken = default)
     {
         // Authenticate prosumer identity by normalized NIC and verify account status rules
-        var normalizedNic = nic?.Trim().ToUpperInvariant();
-        if (string.IsNullOrWhiteSpace(normalizedNic))
+        var nicError = AccountValidation.GetNicError(nic);
+        if (nicError is not null)
         {
-            return (false, null, "NIC is required.");
+            return (false, null, nicError);
         }
+
+        var normalizedNic = AccountValidation.NormalizeNic(nic);
 
         var prosumer = await _prosumerRepo.GetByNicAsync(normalizedNic, cancellationToken);
         if (prosumer == null)

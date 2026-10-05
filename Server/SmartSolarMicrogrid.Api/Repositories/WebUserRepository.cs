@@ -55,9 +55,15 @@ public class WebUserRepository : IWebUserRepository
 
     public async Task<WebUser?> GetByUsernameAsync(string username)
     {
-        // Fetch a web user matching the given username
+        if (string.IsNullOrWhiteSpace(username)) return null;
+
+        // Usernames are treated case-insensitively at account creation and login.
         var filter = Builders<WebUser>.Filter.And(
-            Builders<WebUser>.Filter.Eq(x => x.Username, username),
+            Builders<WebUser>.Filter.Regex(
+                x => x.Username,
+                new BsonRegularExpression(
+                    $"^{System.Text.RegularExpressions.Regex.Escape(username.Trim())}$",
+                    "i")),
             WebUserFilter
         );
         return await _collection.Find(filter).FirstOrDefaultAsync();
