@@ -47,13 +47,30 @@ class OperatorDashboardActivity : AppCompatActivity() {
     private lateinit var btnFinalize: MaterialButton
     private lateinit var btnClear: MaterialButton
 
+    private fun extractTokenFromScannedContent(content: String): String {
+        val trimmed = content.trim()
+        val hexRegex = Regex("""\b([0-9a-fA-F]{64})\b""")
+        val match = hexRegex.find(trimmed)
+        if (match != null) {
+            return match.groupValues[1]
+        }
+        try {
+            val json = JSONObject(trimmed)
+            if (json.has("token")) return json.getString("token")
+            if (json.has("qrToken")) return json.getString("qrToken")
+        } catch (_: Exception) {}
+
+        return trimmed
+    }
+
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents == null) {
             tvScanStatus.text = "Scan cancelled"
             tvScanStatus.visibility = View.VISIBLE
             tvScanStatus.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray))
         } else {
-            verifyQrToken(result.contents.trim())
+            val token = extractTokenFromScannedContent(result.contents)
+            verifyQrToken(token)
         }
     }
 
@@ -160,6 +177,10 @@ class OperatorDashboardActivity : AppCompatActivity() {
                     val res = conn.inputStream.bufferedReader().use { it.readText() }
                     val json = JSONObject(res)
                     val reservationId = json.optString("reservationId", "")
+                    val bookingId = json.optString(
+                        "bookingId",
+                        com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.ui.DashboardUiFormatter.formatBookingId(reservationId)
+                    )
                     val prosumerNic = json.optString("prosumerNic", "-")
                     val stationId = json.optString("stationId", "-")
                     val slotId = json.optString("slotId", "-")
@@ -172,7 +193,7 @@ class OperatorDashboardActivity : AppCompatActivity() {
                         btnScanQr.isEnabled = true
                         activeReservationId = reservationId
 
-                        tvVerifiedReservationId.text = "Reservation ID: $reservationId"
+                        tvVerifiedReservationId.text = "Booking ID: $bookingId"
                         tvVerifiedProsumer.text = "Prosumer NIC: $prosumerNic"
                         tvVerifiedStation.text = "Station ID: $stationId"
                         tvVerifiedSlot.text = "Slot ID: $slotId"
@@ -228,9 +249,10 @@ class OperatorDashboardActivity : AppCompatActivity() {
     }
 
     private fun showFinalizeConfirmation(reservationId: String) {
+        val bookingId = com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.ui.DashboardUiFormatter.formatBookingId(reservationId)
         MaterialAlertDialogBuilder(this)
             .setTitle("Finalize Energy Transfer")
-            .setMessage("Are you sure you want to finalize and complete the energy transfer for Reservation #$reservationId?")
+            .setMessage("Are you sure you want to finalize and complete the energy transfer for Booking #$bookingId?")
             .setPositiveButton("Complete Transfer") { _, _ ->
                 finalizeTransaction(reservationId)
             }

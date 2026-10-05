@@ -16,6 +16,7 @@ public record TransactionResult(
     bool Success,
     string Message,
     string? ReservationId = null,
+    string? BookingId = null,
     string? ProsumerNic = null,
     string? StationId = null,
     string? SlotId = null,
