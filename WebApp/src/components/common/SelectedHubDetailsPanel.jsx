@@ -25,6 +25,7 @@ export const SelectedHubDetailsPanel = ({
   station,
   onEdit,
   onStatusToggle,
+  className = '',
 }) => {
   if (!station) {
     return (
@@ -48,16 +49,16 @@ export const SelectedHubDetailsPanel = ({
     : '6.7682, 80.9602';
 
   return (
-    <div className="flex flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-[var(--shadow-card)]">
-      {/* Header with Title and Status */}
+    <div className={`flex h-full flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-[var(--shadow-card)] ${className}`}>
+      {/* Header — matches Microgrid Fleet card layout */}
       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-            Telemetry &amp; Control
-          </span>
           <h3 className="text-base font-bold text-[var(--text-primary)]">
             Solar Hub Stats
           </h3>
+          <p className="text-xs text-[var(--text-muted)]">
+            {station.stationName}
+          </p>
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${
@@ -75,8 +76,9 @@ export const SelectedHubDetailsPanel = ({
         </span>
       </div>
 
+      <div className="mt-4 flex flex-1 flex-col">
       {/* RENEWABLE VISUAL / SOLAR HUB HERO */}
-      <div className="relative mt-4 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-b from-[var(--bg-elevated)] to-[var(--bg-secondary)] p-4 text-center">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-b from-[var(--bg-elevated)] to-[var(--bg-secondary)] p-4 text-center">
         <div className="flex items-center justify-center py-3">
           <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-[#E3511B]/30 bg-[var(--bg-surface)] shadow-md shadow-[#E3511B]/10">
             <img
@@ -157,49 +159,10 @@ export const SelectedHubDetailsPanel = ({
         </div>
       </div>
 
-      {/* MINI SPARKLINE CHART: AVG SOLAR GENERATION IN ORANGE */}
-      <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-            Avg Solar Power Flow
-          </span>
-          <span className="text-xs font-extrabold text-[#E3511B]">
-            {Math.round((Number(station.capacityKwPerHour) || 120) * 0.72)} kW
-          </span>
-        </div>
-
-        {/* SVG Glowing Curve Sparkline in Orange */}
-        <div className="mt-2 h-10 w-full overflow-hidden">
-          <svg
-            viewBox="0 0 200 40"
-            className="h-full w-full"
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="flow-orange-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#E3511B" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#E3511B" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            {/* Shaded area */}
-            <path
-              d="M 0 35 Q 30 20, 60 25 T 120 15 T 170 28 T 200 12 L 200 40 L 0 40 Z"
-              fill="url(#flow-orange-grad)"
-            />
-            {/* Glowing orange line */}
-            <path
-              d="M 0 35 Q 30 20, 60 25 T 120 15 T 170 28 T 200 12"
-              fill="none"
-              stroke="#E3511B"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="mt-4 flex items-center gap-2 border-t border-[var(--border-subtle)] pt-4">
+      <div className="mt-auto flex items-center gap-2 border-t border-[var(--border-subtle)] pt-4">
         {onEdit && (
           <button
             type="button"

@@ -1,45 +1,30 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../../context/ThemeContext.jsx';
+import appConfig from '../../config/appConfig.js';
+import { useGoogleMaps } from '../../hooks/useGoogleMaps.js';
+import { darkMapStyles } from '../../utils/googleMapStyles.js';
 
-/**
- * Geographic projection bounds for Sri Lanka
- */
-const SRI_LANKA_BOUNDS = {
-  minLat: 5.75,
-  maxLat: 9.95,
-  minLng: 79.4,
-  maxLng: 82.1,
-};
+const SRI_LANKA_CENTER = { lat: 7.8731, lng: 80.7718 };
+const DEFAULT_ZOOM = 7;
 
-/**
- * Projects latitude / longitude to SVG viewBox coordinates [0, 0, 800, 520]
- */
-const projectCoordinate = (lat, lng, width = 800, height = 520) => {
-  const paddingX = 140;
-  const paddingY = 40;
-  const drawWidth = width - paddingX * 2;
-  const drawHeight = height - paddingY * 2;
-
-  const validLat = Number.isFinite(Number(lat)) ? Number(lat) : 7.0;
-  const validLng = Number.isFinite(Number(lng)) ? Number(lng) : 80.5;
-
-  const clampedLat = Math.max(SRI_LANKA_BOUNDS.minLat, Math.min(SRI_LANKA_BOUNDS.maxLat, validLat));
-  const clampedLng = Math.max(SRI_LANKA_BOUNDS.minLng, Math.min(SRI_LANKA_BOUNDS.maxLng, validLng));
-
-  const xFrac = (clampedLng - SRI_LANKA_BOUNDS.minLng) / (SRI_LANKA_BOUNDS.maxLng - SRI_LANKA_BOUNDS.minLng);
-  const yFrac = (SRI_LANKA_BOUNDS.maxLat - clampedLat) / (SRI_LANKA_BOUNDS.maxLat - SRI_LANKA_BOUNDS.minLat);
+const buildPinIcon = (google, color, scale = 1) => {
+  const width = 32 * scale;
+  const height = 42 * scale;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+    <path fill="${color}" stroke="#ffffff" stroke-width="1.5" d="M16 0C7.2 0 0 7.2 0 16c0 12 16 26 16 26s16-14 16-26C32 7.2 24.8 0 16 0z"/>
+    <circle cx="16" cy="15" r="5.5" fill="#ffffff"/>
+    <text x="16" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="${color}">⚡</text>
+  </svg>`;
 
   return {
-    x: paddingX + xFrac * drawWidth,
-    y: paddingY + yFrac * drawHeight,
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(width, height),
+    anchor: new google.maps.Point(width / 2, height),
   };
 };
 
 /**
- * SolarHubMap Component
- *
- * Integrated map for Sri Lanka solar microgrid hubs with orange transmission grid lines,
- * orange selected pin, semantic green active status, and interactive node telemetry inspection.
+ * SolarHubMap — Google Maps view of microgrid stations (same API as Android).
  */
 export const SolarHubMap = ({
   stations = [],
@@ -48,10 +33,13 @@ export const SolarHubMap = ({
   className = '',
 }) => {
   const { isDark } = useTheme();
+  const { isLoaded, loadError } = useGoogleMaps(appConfig.googleMapsApiKey);
   const [searchQuery, setSearchQuery] = useState('');
-  const [hoveredStation, setHoveredStation] = useState(null);
 
-  // Filter stations based on search query
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef([]);
+
   const filteredStations = useMemo(() => {
     if (!searchQuery.trim()) return stations;
     const q = searchQuery.toLowerCase().trim();
@@ -62,39 +50,97 @@ export const SolarHubMap = ({
     });
   }, [stations, searchQuery]);
 
-  // Project coordinates for all filtered stations
   const stationsWithCoords = useMemo(() => {
-    return filteredStations.map((station) => {
-      const { x, y } = projectCoordinate(station.latitude, station.longitude);
-      return {
-        ...station,
-        projX: x,
-        projY: y,
-        isActive: (station.status || '').toLowerCase() === 'active',
-      };
-    });
+    return filteredStations
+      .map((station) => {
+        const lat = Number(station.latitude);
+        const lng = Number(station.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return {
+          ...station,
+          lat,
+          lng,
+          isActive: (station.status || '').toLowerCase() === 'active',
+        };
+      })
+      .filter(Boolean);
   }, [filteredStations]);
 
-  // Build grid transmission lines between active hubs (ordered by latitude)
-  const activeStations = useMemo(() => {
-    return stationsWithCoords
-      .filter((s) => s.isActive)
-      .sort((a, b) => (Number(a.latitude) || 0) - (Number(b.latitude) || 0));
-  }, [stationsWithCoords]);
+  // Initialize map
+  useEffect(() => {
+    if (!isLoaded || !mapContainerRef.current || mapRef.current) return;
 
-  const gridLinePath = useMemo(() => {
-    if (activeStations.length < 2) return '';
-    return activeStations.reduce((path, s, idx) => {
-      if (idx === 0) return `M ${s.projX} ${s.projY}`;
-      return `${path} L ${s.projX} ${s.projY}`;
-    }, '');
-  }, [activeStations]);
+    mapRef.current = new window.google.maps.Map(mapContainerRef.current, {
+      center: SRI_LANKA_CENTER,
+      zoom: DEFAULT_ZOOM,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      zoomControl: true,
+      styles: isDark ? darkMapStyles : [],
+    });
+  }, [isLoaded, isDark]);
+
+  // Update map theme when dark mode toggles
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setOptions({ styles: isDark ? darkMapStyles : [] });
+  }, [isDark]);
+
+  // Markers and bounds
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasBounds = false;
+
+    const google = window.google;
+
+    stationsWithCoords.forEach((st) => {
+      const isSelected = selectedStation?.hubId === st.hubId;
+      const color = isSelected ? '#E3511B' : st.isActive ? '#22C55E' : '#77777A';
+      const position = { lat: st.lat, lng: st.lng };
+
+      const marker = new google.maps.Marker({
+        map: mapRef.current,
+        position,
+        title: st.stationName || st.hubId,
+        icon: buildPinIcon(google, color, isSelected ? 1.15 : 1),
+        zIndex: isSelected ? 1000 : st.isActive ? 100 : 1,
+      });
+
+      marker.addListener('click', () => onSelectStation(st));
+      markersRef.current.push(marker);
+      bounds.extend(position);
+      hasBounds = true;
+    });
+
+    if (hasBounds) {
+      mapRef.current.fitBounds(bounds, { top: 48, right: 48, bottom: 48, left: 48 });
+      const listener = window.google.maps.event.addListenerOnce(mapRef.current, 'bounds_changed', () => {
+        const zoom = mapRef.current.getZoom();
+        if (zoom > 9) mapRef.current.setZoom(9);
+      });
+      return () => window.google.maps.event.removeListener(listener);
+    }
+  }, [isLoaded, stationsWithCoords, selectedStation, onSelectStation]);
+
+  // Pan to selected station
+  useEffect(() => {
+    if (!mapRef.current || !selectedStation) return;
+    const lat = Number(selectedStation.latitude);
+    const lng = Number(selectedStation.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    mapRef.current.panTo({ lat, lng });
+  }, [selectedStation]);
 
   return (
     <div
       className={`relative flex flex-col overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-card)] ${className}`}
     >
-      {/* MAP HEADER / CONTROLS */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 sm:px-5">
         <div className="flex items-center gap-2.5">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E3511B]/15 text-[#E3511B]">
@@ -110,7 +156,6 @@ export const SolarHubMap = ({
           </div>
         </div>
 
-        {/* Search station input */}
         <div className="relative">
           <input
             type="text"
@@ -144,227 +189,52 @@ export const SolarHubMap = ({
         </div>
       </div>
 
-      {/* SVG INTERACTIVE MAP VIEWPORT */}
-      <div className={`relative h-[360px] sm:h-[440px] w-full overflow-hidden ${isDark ? 'bg-[#141415]' : 'bg-[#F2F2F3]'}`}>
-        {/* Subtle grid pattern background */}
+      <div className={`relative h-[360px] sm:h-[440px] w-full ${isDark ? 'bg-[#141415]' : 'bg-[#F2F2F3]'}`}>
+        {!appConfig.googleMapsApiKey && (
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Google Maps API key required</p>
+            <p className="text-xs text-[var(--text-muted)] max-w-md">
+              Add <code className="text-[#E3511B]">VITE_GOOGLE_MAPS_API_KEY</code> to your WebApp <code>.env</code> file
+              using the same key as Android <code>MAPS_API_KEY</code>. Enable <strong>Maps JavaScript API</strong> in Google Cloud.
+            </p>
+          </div>
+        )}
+
+        {appConfig.googleMapsApiKey && loadError && (
+          <div className="flex h-full items-center justify-center px-6 text-center text-xs text-[#EF4444]">
+            {loadError}
+          </div>
+        )}
+
+        {appConfig.googleMapsApiKey && !loadError && !isLoaded && (
+          <div className="flex h-full items-center justify-center text-xs text-[var(--text-muted)]">
+            Loading map…
+          </div>
+        )}
+
         <div
-          className="absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage: `radial-gradient(${isDark ? '#E3511B' : '#77777A'} 1px, transparent 1px)`,
-            backgroundSize: '24px 24px',
-          }}
+          ref={mapContainerRef}
+          className={`h-full w-full ${!isLoaded || loadError || !appConfig.googleMapsApiKey ? 'hidden' : ''}`}
+          aria-label="Google Maps microgrid hub network"
         />
 
-        <svg
-          viewBox="0 0 800 520"
-          className="h-full w-full select-none"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            {/* Glow filter for transmission lines */}
-            <filter id="solar-glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            <linearGradient id="grid-line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#E3511B" stopOpacity="0.8" />
-              <stop offset="50%" stopColor="#F05A20" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#B64319" stopOpacity="0.75" />
-            </linearGradient>
-
-            {/* Sri Lanka simplified topographic gradient */}
-            <radialGradient id="island-fill" cx="50%" cy="55%" r="48%">
-              <stop offset="0%" stopColor={isDark ? '#222224' : '#E6E6E8'} />
-              <stop offset="70%" stopColor={isDark ? '#1B1B1C' : '#DFDFE1'} />
-              <stop offset="100%" stopColor={isDark ? '#171718' : '#D6D6D8'} />
-            </radialGradient>
-          </defs>
-
-          {/* SRI LANKA GEOGRAPHIC SILHOUETTE */}
-          <g className="island-landmass">
-            <path
-              d="M 400 65 
-                 C 440 95, 475 140, 480 200 
-                 C 485 260, 520 310, 505 380 
-                 C 495 425, 455 460, 410 470 
-                 C 365 480, 320 445, 305 395 
-                 C 290 345, 300 290, 310 240 
-                 C 320 190, 345 130, 370 85 
-                 Z"
-              fill="url(#island-fill)"
-              stroke={isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(0, 0, 0, 0.12)'}
-              strokeWidth="1.5"
-            />
-
-            {/* Internal topography contour rings */}
-            <path
-              d="M 395 180 C 435 220, 450 300, 430 360 C 410 410, 360 410, 345 365 C 330 320, 345 230, 395 180 Z"
-              fill="none"
-              stroke={isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}
-              strokeWidth="1"
-              strokeDasharray="4 6"
-            />
-            <path
-              d="M 405 240 C 430 270, 435 320, 415 350 C 395 380, 365 370, 360 340 C 355 310, 375 260, 405 240 Z"
-              fill="none"
-              stroke={isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)'}
-              strokeWidth="1"
-            />
-          </g>
-
-          {/* GLOWING TRANSMISSION GRID LINES */}
-          {gridLinePath && (
-            <g className="grid-lines" filter="url(#solar-glow)">
-              <path
-                d={gridLinePath}
-                fill="none"
-                stroke="#E3511B"
-                strokeWidth="4"
-                strokeOpacity="0.22"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d={gridLinePath}
-                fill="none"
-                stroke="url(#grid-line-grad)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray="8 6"
-                className="animate-pulse"
-              />
-            </g>
-          )}
-
-          {/* STATION NODES / MARKER PINS */}
-          {stationsWithCoords.map((st) => {
-            const isSelected = selectedStation?.hubId === st.hubId;
-            const isHovered = hoveredStation?.hubId === st.hubId;
-            const isActive = st.isActive;
-
-            // Selected pin uses orange accent #E3511B
-            // Active status uses green #22C55E
-            // Inactive uses muted gray
-            const markerColor = isSelected
-              ? '#E3511B'
-              : isActive
-              ? '#22C55E'
-              : '#77777A';
-
-            const badgeRadius = isSelected ? 18 : isHovered ? 16 : 14;
-
-            return (
-              <g
-                key={st.hubId || `${st.latitude}-${st.longitude}`}
-                className="cursor-pointer transition-transform duration-200"
-                onClick={() => onSelectStation(st)}
-                onMouseEnter={() => setHoveredStation(st)}
-                onMouseLeave={() => setHoveredStation(null)}
-                tabIndex={0}
-                role="button"
-                aria-label={`Select ${st.stationName}, Hub ID ${st.hubId}`}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onSelectStation(st);
-                  }
-                }}
-              >
-                {/* Active or selected beacon ring */}
-                {(isActive || isSelected) && (
-                  <circle
-                    cx={st.projX}
-                    cy={st.projY}
-                    r={isSelected ? 30 : 22}
-                    fill={markerColor}
-                    fillOpacity={isSelected ? 0.25 : 0.12}
-                    filter="url(#solar-glow)"
-                    className={isSelected ? 'animate-ping' : ''}
-                  />
-                )}
-
-                {/* Selected highlight ring */}
-                {isSelected && (
-                  <circle
-                    cx={st.projX}
-                    cy={st.projY}
-                    r={badgeRadius + 6}
-                    fill="none"
-                    stroke="#E3511B"
-                    strokeWidth="2"
-                    strokeDasharray="4 2"
-                  />
-                )}
-
-                {/* Pin body */}
-                <circle
-                  cx={st.projX}
-                  cy={st.projY}
-                  r={badgeRadius}
-                  fill={isDark ? (isSelected ? '#202021' : '#1B1B1C') : '#FFFFFF'}
-                  stroke={markerColor}
-                  strokeWidth={isSelected ? 2.5 : 2}
-                  filter={isSelected ? 'url(#solar-glow)' : undefined}
-                />
-
-                {/* Inner Bolt Icon (⚡) */}
-                <text
-                  x={st.projX}
-                  y={st.projY + 4}
-                  textAnchor="middle"
-                  fontSize={isSelected ? '14' : '11'}
-                  fontWeight="bold"
-                  fill={markerColor}
-                >
-                  ⚡
-                </text>
-
-                {/* Hub label pin header */}
-                <g transform={`translate(${st.projX}, ${st.projY - badgeRadius - 8})`}>
-                  <rect
-                    x={-55}
-                    y={-18}
-                    width={110}
-                    height={20}
-                    rx={6}
-                    fill={isDark ? '#171718' : '#FFFFFF'}
-                    fillOpacity={0.95}
-                    stroke={isSelected ? '#E3511B' : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}
-                    strokeWidth="1"
-                  />
-                  <text
-                    x={0}
-                    y={-4}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fontWeight="bold"
-                    fill={isSelected ? '#E3511B' : isDark ? '#F5F5F5' : '#171717'}
-                  >
-                    {(st.stationName || '').split(' ')[0]}
-                  </text>
-                </g>
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Floating Legend */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/90 px-3 py-1.5 text-[10px] font-semibold text-[var(--text-muted)] backdrop-blur-md">
+        <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/90 px-3 py-1.5 text-[10px] font-semibold text-[var(--text-muted)] backdrop-blur-md">
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#E3511B]" />
+            <svg className="h-3.5 w-2.5 shrink-0" viewBox="0 0 32 42" aria-hidden="true">
+              <path fill="#E3511B" stroke="#fff" strokeWidth="1.5" d="M16 0C7.2 0 0 7.2 0 16c0 12 16 26 16 26s16-14 16-26C32 7.2 24.8 0 16 0z" />
+            </svg>
             <span className="text-[var(--text-primary)]">Selected</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#22C55E]" />
+            <svg className="h-3.5 w-2.5 shrink-0" viewBox="0 0 32 42" aria-hidden="true">
+              <path fill="#22C55E" stroke="#fff" strokeWidth="1.5" d="M16 0C7.2 0 0 7.2 0 16c0 12 16 26 16 26s16-14 16-26C32 7.2 24.8 0 16 0z" />
+            </svg>
             <span>Active Node</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#77777A]" />
+            <svg className="h-3.5 w-2.5 shrink-0" viewBox="0 0 32 42" aria-hidden="true">
+              <path fill="#77777A" stroke="#fff" strokeWidth="1.5" d="M16 0C7.2 0 0 7.2 0 16c0 12 16 26 16 26s16-14 16-26C32 7.2 24.8 0 16 0z" />
+            </svg>
             <span>Inactive</span>
           </div>
         </div>
