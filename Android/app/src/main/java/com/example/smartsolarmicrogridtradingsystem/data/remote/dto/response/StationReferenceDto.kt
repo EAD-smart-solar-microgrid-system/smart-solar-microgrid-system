@@ -13,13 +13,19 @@ data class StationReferenceDto(
     val longitude: Double,
     val status: String,
     val capacityKwPerHour: Double,
-    val batteryStorageSlotCapacity: Int
+    val batteryStorageSlotCapacity: Int,
+    val hubId: String = ""
 ) {
     companion object {
         fun fromJson(json: JSONObject): StationReferenceDto {
+            val mongoId = json.optString("id", json.optString("Id", "")).trim()
+            val hubIdVal = json.optString("hubId", json.optString("HubId", "")).trim()
+            val primaryId = if (mongoId.isNotEmpty()) mongoId else hubIdVal
+
             return StationReferenceDto(
-                id = json.optString("hubId", json.optString("HubId", json.optString("id", json.optString("Id", "")))),
-                name = json.optString("stationName", json.optString("StationName", "")),
+                id = primaryId,
+                hubId = hubIdVal,
+                name = json.optString("stationName", json.optString("StationName", json.optString("name", ""))),
                 latitude = json.optDouble("latitude", json.optDouble("Latitude", 0.0)),
                 longitude = json.optDouble("longitude", json.optDouble("Longitude", 0.0)),
                 status = json.optString("status", json.optString("Status", "")),

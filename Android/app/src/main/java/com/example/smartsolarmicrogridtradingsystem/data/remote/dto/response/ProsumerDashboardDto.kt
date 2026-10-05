@@ -7,6 +7,7 @@ import org.json.JSONObject
  */
 data class ProsumerDashboardDto(
     val prosumerId: String,
+    val prosumerName: String = "",
     val pendingReservationCount: Int,
     val approvedFutureReservationCount: Int,
     val recentBookings: List<DashboardBookingDto>
@@ -18,6 +19,7 @@ data class ProsumerDashboardDto(
 
             return ProsumerDashboardDto(
                 prosumerId = json.optString("prosumerId", json.optString("ProsumerId", "")),
+                prosumerName = json.optString("prosumerName", json.optString("ProsumerName", "")),
                 pendingReservationCount = json.optInt(
                     "pendingReservationCount",
                     json.optInt("PendingReservationCount", 0)

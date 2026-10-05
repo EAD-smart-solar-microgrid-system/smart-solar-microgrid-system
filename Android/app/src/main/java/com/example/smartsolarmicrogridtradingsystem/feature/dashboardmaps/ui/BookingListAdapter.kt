@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smartsolarmicrogridtradingsystem.R
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.DashboardBookingDto
+import com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.data.StationCacheRepository
 
 /**
  * RecyclerView adapter for Member 4 booking list rows.
@@ -49,13 +50,27 @@ class BookingListAdapter(
                 R.string.booking_type_label,
                 item.reservationType.ifBlank { "—" }
             )
+            val displayHub = when {
+                item.hubId.isNotBlank() -> item.hubId
+                StationCacheRepository.resolveHubIdSync(item.stationId)?.isNotBlank() == true ->
+                    StationCacheRepository.resolveHubIdSync(item.stationId)!!
+                else -> DashboardUiFormatter.shortenId(item.stationId)
+            }
             tvStation.text = itemView.context.getString(
                 R.string.booking_station_label,
-                DashboardUiFormatter.shortenId(item.stationId)
+                displayHub
             )
+            if (item.hubId.isBlank() && displayHub == DashboardUiFormatter.shortenId(item.stationId) && item.stationId.isNotBlank()) {
+                StationCacheRepository(itemView.context).getHubId(item.stationId) { hub ->
+                    if (!hub.isNullOrBlank()) {
+                        tvStation.text = itemView.context.getString(R.string.booking_station_label, hub)
+                    }
+                }
+            }
+            val displayBookingId = if (item.bookingId.isNotBlank()) item.bookingId else DashboardUiFormatter.formatBookingId(item.id)
             tvId.text = itemView.context.getString(
                 R.string.booking_id_label,
-                DashboardUiFormatter.shortenId(item.id)
+                displayBookingId
             )
             itemView.setOnClickListener { onItemClick(item) }
         }

@@ -54,4 +54,21 @@ object DashboardUiFormatter {
         }
         return if (id.length <= 10) id else "${id.take(6)}…${id.takeLast(4)}"
     }
+
+    /**
+     * Formats a raw reservation/booking id into human-readable reference: "BK-XXXXXX".
+     * Example: "6ac2be86292adfd86f016d09" -> "BK-016D09"
+     */
+    fun formatBookingId(id: String?): String {
+        val raw = id?.trim().orEmpty()
+        if (raw.isEmpty()) {
+            return "BK-UNKNOWN"
+        }
+        if (raw.startsWith("BK-", ignoreCase = true)) {
+            return raw.uppercase()
+        }
+        val suffix = if (raw.length >= 6) raw.takeLast(6).uppercase() else raw.uppercase()
+        return "BK-$suffix"
+    }
 }
+
