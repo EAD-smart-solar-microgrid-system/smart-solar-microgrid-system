@@ -17,13 +17,15 @@ public sealed class EmailSettings
 
     public string SenderName { get; set; } = "SolarGrid Microgrid System";
 
-    public string SenderEmail { get; set; } = "ravindusdc@gmail.com";
+    public string SenderEmail { get; set; } = string.Empty;
 
-    public string SmtpUsername { get; set; } = "ravindusdc@gmail.com";
+    public string SmtpUsername { get; set; } = string.Empty;
 
     public string SmtpPassword { get; set; } = string.Empty;
 
     public string AppBaseUrl { get; set; } = "http://localhost:5173";
 
     public bool EnableSsl { get; set; } = true;
+
+    public bool CheckCertificateRevocation { get; set; } = true;
 }

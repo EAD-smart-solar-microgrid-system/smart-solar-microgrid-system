@@ -8,6 +8,7 @@
 using System.Security.Cryptography;
 using MongoDB.Bson;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Validation;
 using SmartSolarMicrogrid.Api.DTOs;
 using SmartSolarMicrogrid.Api.Models;
 using SmartSolarMicrogrid.Api.Repositories;
@@ -62,50 +63,43 @@ public class WebUserService : IWebUserService
 
     public async Task<WebUserDto?> CreateUserAsync(CreateWebUserRequest request)
     {
-        var existing = await _repo.GetByUsernameAsync(request.Username);
-        if (existing != null) return null; // Username already exists
+        if (AccountValidation.GetUsernameError(request.Username) is not null ||
+            AccountValidation.GetEmailError(request.Email) is not null ||
+            !AccountValidation.IsSupportedRole(request.Role))
+        {
+            return null;
+        }
 
-        var email = request.Email?.Trim() ?? string.Empty;
-        var verificationToken = !string.IsNullOrWhiteSpace(email)
-            ? Convert.ToHexString(RandomNumberGenerator.GetBytes(24))
-            : null;
+        var username = request.Username.Trim();
+        var existing = await _repo.GetByUsernameAsync(username);
+        if (existing != null) return null;
+
+        var email = request.Email.Trim();
+        if (string.IsNullOrWhiteSpace(email) || await _repo.GetByEmailAsync(email) != null) return null;
+
+        var verificationToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        var unusableRandomPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
         var user = new WebUser
         {
             Id = ObjectId.GenerateNewId().ToString(),
-            Username = request.Username.Trim(),
-            PasswordHash = PasswordHasher.Hash(request.Password),
+            Username = username,
+            PasswordHash = PasswordHasher.Hash(unusableRandomPassword),
             Role = request.Role,
             Status = WebUserStatus.Active,
             Email = email,
             IsEmailVerified = false,
             EmailVerificationToken = verificationToken,
+            EmailVerificationExpiry = DateTime.UtcNow.AddHours(24),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.CreateAsync(user);
 
-        // If an email address was provided, automatically send the credential notification
-        if (!string.IsNullOrWhiteSpace(user.Email))
-        {
-            var roleTitle = user.Role == WebUserRole.Backoffice ? "Administrator" : "Grid Operator";
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _emailService.SendCredentialsEmailAsync(user.Email, user.Username, request.Password, roleTitle);
-                    if (!string.IsNullOrWhiteSpace(verificationToken))
-                    {
-                        await _emailService.SendVerificationEmailAsync(user.Email, user.Username, verificationToken);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to send credential delivery email for new user {Username}", user.Username);
-                }
-            });
-        }
+        var roleTitle = user.Role == WebUserRole.Backoffice ? "Administrator" : "Grid Operator";
+        var invitationEmailSent = await _emailService.SendAccountInvitationEmailAsync(
+            user.Email, user.Username, roleTitle, verificationToken);
 
         return new WebUserDto(
             user.Id,
@@ -113,25 +107,36 @@ public class WebUserService : IWebUserService
             user.Role,
             user.Status,
             user.Email,
-            user.IsEmailVerified
+            user.IsEmailVerified,
+            invitationEmailSent
         );
     }
 
-    public async Task<bool> UpdateUserAsync(string id, UpdateWebUserRequest request)
+    public async Task<(bool Success, bool Conflict)> UpdateUserAsync(string id, UpdateWebUserRequest request)
     {
         var user = await _repo.GetByIdAsync(id);
-        if (user == null) return false;
+        if (user == null) return (false, false);
+
+        if (AccountValidation.GetUsernameError(request.Username) is not null ||
+            !AccountValidation.IsSupportedRole(request.Role) ||
+            AccountValidation.GetEmailError(request.Email) is not null)
+        {
+            return (false, false);
+        }
+
+        var matchingUsername = await _repo.GetByUsernameAsync(request.Username);
+        if (matchingUsername is not null && matchingUsername.Id != id) return (false, true);
+
+        var matchingEmail = await _repo.GetByEmailAsync(request.Email);
+        if (matchingEmail is not null && matchingEmail.Id != id) return (false, true);
 
         user.Username = request.Username.Trim();
         user.Role = request.Role;
-        if (request.Email != null)
-        {
-            user.Email = request.Email.Trim();
-        }
+        user.Email = request.Email.Trim();
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(id, user);
-        return true;
+        return (true, false);
     }
 
     public async Task<bool> UpdateUserStatusAsync(string id, UpdateWebUserStatusRequest request)
@@ -148,24 +153,13 @@ public class WebUserService : IWebUserService
 
     public async Task<bool> ForgotPasswordAsync(string email)
     {
-        if (string.IsNullOrWhiteSpace(email)) return false;
+        if (AccountValidation.GetEmailError(email) is not null) return false;
 
         var user = await _repo.GetByEmailAsync(email);
         if (user == null)
         {
-            // Also check prosumers to see if an email matches
-            var prosumers = await _prosumerRepo.GetAllAsync();
-            var prosumer = prosumers.FirstOrDefault(p => string.Equals(p.Email, email.Trim(), StringComparison.OrdinalIgnoreCase));
-            if (prosumer == null)
-            {
-                _logger.LogInformation("Password reset requested for non-existent email {Email}", email);
-                return false;
-            }
-
-            // For prosumer account with email
-            var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-            await _emailService.SendPasswordResetEmailAsync(prosumer.Email, prosumer.FullName, token);
-            return true;
+            _logger.LogInformation("Password reset requested for non-existent web-user email {Email}", email);
+            return false;
         }
 
         var resetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
@@ -180,17 +174,19 @@ public class WebUserService : IWebUserService
 
     public async Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        var tokenError = AccountValidation.GetTokenError(token);
+        if (tokenError is not null)
         {
-            return (false, "Reset token is required.");
+            return (false, tokenError);
         }
 
-        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+        var passwordError = AccountValidation.GetNewPasswordError(newPassword);
+        if (passwordError is not null)
         {
-            return (false, "Password must be at least 6 characters long.");
+            return (false, passwordError);
         }
 
-        var user = await _repo.GetByResetTokenAsync(token);
+        var user = await _repo.GetByResetTokenAsync(token.Trim());
         if (user == null)
         {
             return (false, "Invalid or expired password reset token.");
@@ -202,6 +198,10 @@ public class WebUserService : IWebUserService
         }
 
         user.PasswordHash = PasswordHasher.Hash(newPassword);
+        // Successfully using the reset link proves control of the registered mailbox.
+        user.IsEmailVerified = true;
+        user.EmailVerificationToken = null;
+        user.EmailVerificationExpiry = null;
         user.PasswordResetToken = null;
         user.PasswordResetExpiry = null;
         user.UpdatedAt = DateTime.UtcNow;
@@ -210,25 +210,40 @@ public class WebUserService : IWebUserService
         return (true, "Password has been successfully updated. You may now log in with your new credentials.");
     }
 
-    public async Task<(bool Success, string Message)> VerifyEmailAsync(string token)
+    public async Task<(bool Success, string Message)> CompleteRegistrationAsync(string token, string newPassword)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        var tokenError = AccountValidation.GetTokenError(token);
+        if (tokenError is not null)
         {
-            return (false, "Verification token is required.");
+            return (false, tokenError);
         }
 
-        var user = await _repo.GetByVerificationTokenAsync(token);
+        var passwordError = AccountValidation.GetNewPasswordError(newPassword);
+        if (passwordError is not null)
+        {
+            return (false, passwordError);
+        }
+
+        var user = await _repo.GetByVerificationTokenAsync(token.Trim());
         if (user == null)
         {
-            return (false, "Invalid or expired email verification token.");
+            return (false, "Invalid or already-used account setup link.");
         }
 
+        var expiry = user.EmailVerificationExpiry ?? user.CreatedAt.AddHours(24);
+        if (expiry < DateTime.UtcNow)
+        {
+            return (false, "This account setup link has expired. Please ask an administrator for a new invitation.");
+        }
+
+        user.PasswordHash = PasswordHasher.Hash(newPassword);
         user.IsEmailVerified = true;
         user.EmailVerificationToken = null;
+        user.EmailVerificationExpiry = null;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(user.Id, user);
-        return (true, "Email has been successfully verified!");
+        return (true, "Your email is verified and your password has been created. You can now sign in.");
     }
 
     public async Task<int> BroadcastEmailAsync(string subject, string message, string? targetRole)

@@ -5,9 +5,9 @@
  * Purpose: Apply Prosumer validation, account-state rules, and DTO/model mapping.
  */
 
-using System.ComponentModel.DataAnnotations;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Validation;
 using SmartSolarMicrogrid.Api.DTOs.Prosumers;
 using SmartSolarMicrogrid.Api.Models;
 using SmartSolarMicrogrid.Api.Repositories;
@@ -18,14 +18,17 @@ public sealed class ProsumerService : IProsumerService
 {
     private readonly ICurrentProsumerAccessor _currentProsumerAccessor;
     private readonly IProsumerRepository _prosumerRepository;
+    private readonly IProsumerNotificationService _notificationService;
 
     public ProsumerService(
         IProsumerRepository prosumerRepository,
-        ICurrentProsumerAccessor currentProsumerAccessor)
+        ICurrentProsumerAccessor currentProsumerAccessor,
+        IProsumerNotificationService notificationService)
     {
         // Store persistence and current-identity dependencies used by account operations.
         _prosumerRepository = prosumerRepository;
         _currentProsumerAccessor = currentProsumerAccessor;
+        _notificationService = notificationService;
     }
 
     public async Task<ProsumerServiceResult<ProsumerResponse>> RegisterAsync(
@@ -34,7 +37,12 @@ public sealed class ProsumerService : IProsumerService
     {
         // Validate and normalize public registration data before creating server fields.
         var nic = NormalizeNic(request.Nic);
-        var validationMessage = ValidateRegistration(nic, request.FullName, request.Email);
+        var validationMessage = ValidateRegistration(
+            nic,
+            request.FullName,
+            request.Email,
+            request.PhoneNumber,
+            request.Address);
 
         if (validationMessage is not null)
         {
@@ -58,7 +66,7 @@ public sealed class ProsumerService : IProsumerService
             Nic = nic!,
             FullName = request.FullName!.Trim(),
             Email = request.Email!.Trim(),
-            PhoneNumber = NormalizeOptionalText(request.PhoneNumber),
+            PhoneNumber = NormalizeOptionalPhone(request.PhoneNumber),
             Address = NormalizeOptionalText(request.Address),
             AccountStatus = ProsumerAccountStatus.PendingActivation,
             CreatedAt = now,
@@ -69,6 +77,10 @@ public sealed class ProsumerService : IProsumerService
         {
             var createdProsumer = await _prosumerRepository.CreateAsync(
                 prosumer,
+                cancellationToken);
+
+            await _notificationService.SendRegistrationNotificationsAsync(
+                createdProsumer,
                 cancellationToken);
 
             return ProsumerServiceResult<ProsumerResponse>.Success(
@@ -118,7 +130,11 @@ public sealed class ProsumerService : IProsumerService
             return UnauthorizedResult();
         }
 
-        var validationMessage = ValidateProfile(request.FullName, request.Email);
+        var validationMessage = ValidateProfile(
+            request.FullName,
+            request.Email,
+            request.PhoneNumber,
+            request.Address);
 
         if (validationMessage is not null)
         {
@@ -145,7 +161,7 @@ public sealed class ProsumerService : IProsumerService
 
         prosumer.FullName = request.FullName!.Trim();
         prosumer.Email = request.Email!.Trim();
-        prosumer.PhoneNumber = NormalizeOptionalText(request.PhoneNumber);
+        prosumer.PhoneNumber = NormalizeOptionalPhone(request.PhoneNumber);
         prosumer.Address = NormalizeOptionalText(request.Address);
         prosumer.UpdatedAt = DateTime.UtcNow;
 
@@ -229,27 +245,12 @@ public sealed class ProsumerService : IProsumerService
 
     public static string NormalizeNic(string? nic)
     {
-        // Normalize the primary business identifier consistently before repository calls.
-        return string.IsNullOrWhiteSpace(nic)
-            ? string.Empty
-            : nic.Trim().ToUpperInvariant();
+        return AccountValidation.NormalizeNic(nic);
     }
 
     public static bool IsValidNic(string? nic)
     {
-        // Accept the common Sri Lankan NIC formats used by reservation validation.
-        var normalized = NormalizeNic(nic);
-        if (string.IsNullOrEmpty(normalized))
-        {
-            return false;
-        }
-
-        return System.Text.RegularExpressions.Regex.IsMatch(
-                   normalized,
-                   @"^\d{9}[VX]$")
-               || System.Text.RegularExpressions.Regex.IsMatch(
-                   normalized,
-                   @"^\d{12}$");
+        return AccountValidation.IsValidNic(nic);
     }
 
     private static string? NormalizeOptionalText(string? value)
@@ -258,39 +259,32 @@ public sealed class ProsumerService : IProsumerService
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
+    private static string? NormalizeOptionalPhone(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : AccountValidation.NormalizePhone(value);
+    }
+
     private static string? ValidateRegistration(
         string? nic,
         string? fullName,
-        string? email)
+        string? email,
+        string? phoneNumber,
+        string? address)
     {
-        // Apply registration validation without inventing a strict national NIC format.
-        if (string.IsNullOrWhiteSpace(nic))
-        {
-            return "Nic is required.";
-        }
-
-        return ValidateProfile(fullName, email);
+        return AccountValidation.GetNicError(nic)
+            ?? ValidateProfile(fullName, email, phoneNumber, address);
     }
 
-    private static string? ValidateProfile(string? fullName, string? email)
+    private static string? ValidateProfile(
+        string? fullName,
+        string? email,
+        string? phoneNumber,
+        string? address)
     {
-        // Validate required profile fields and use a standard reasonable email check.
-        if (string.IsNullOrWhiteSpace(fullName))
-        {
-            return "FullName is required.";
-        }
-
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            return "Email is required.";
-        }
-
-        if (!new EmailAddressAttribute().IsValid(email.Trim()))
-        {
-            return "Email must be a valid email address.";
-        }
-
-        return null;
+        return AccountValidation.GetFullNameError(fullName)
+            ?? AccountValidation.GetEmailError(email)
+            ?? AccountValidation.GetOptionalPhoneError(phoneNumber)
+            ?? AccountValidation.GetOptionalAddressError(address);
     }
 
     private static ProsumerServiceResult<ProsumerResponse> UnauthorizedResult()

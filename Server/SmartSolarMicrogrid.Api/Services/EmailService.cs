@@ -32,16 +32,13 @@ public sealed class EmailService : IEmailService
             return false;
         }
 
-        // If SMTP password is not configured yet (local dev without live credentials),
-        // log the email content clearly to console so workflows proceed without 500 errors.
-        if (string.IsNullOrWhiteSpace(_settings.SmtpPassword))
+        // Never claim delivery or log sensitive account links when SMTP is unavailable.
+        if (string.IsNullOrWhiteSpace(_settings.SmtpPassword) ||
+            string.IsNullOrWhiteSpace(_settings.SenderEmail) ||
+            string.IsNullOrWhiteSpace(_settings.SmtpUsername))
         {
-            _logger.LogInformation("================== [DEV EMAIL SIMULATION] ==================");
-            _logger.LogInformation("TO: {To}", toEmail);
-            _logger.LogInformation("SUBJECT: {Subject}", subject);
-            _logger.LogInformation("HTML BODY: {Body}", htmlContent);
-            _logger.LogInformation("============================================================");
-            return true;
+            _logger.LogWarning("Email not sent: SMTP credentials are not fully configured.");
+            return false;
         }
 
         try
@@ -59,6 +56,7 @@ public sealed class EmailService : IEmailService
 
             using var client = new SmtpClient();
             client.Timeout = 10000;
+            client.CheckCertificateRevocation = _settings.CheckCertificateRevocation;
 
             var secureSocketOption = _settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
             await client.ConnectAsync(_settings.SmtpHost, _settings.SmtpPort, secureSocketOption);
@@ -81,9 +79,12 @@ public sealed class EmailService : IEmailService
         }
     }
 
-    public async Task<bool> SendCredentialsEmailAsync(string toEmail, string username, string tempPassword, string role)
+    public async Task<bool> SendAccountInvitationEmailAsync(string toEmail, string username, string role, string token)
     {
-        var loginUrl = $"{_settings.AppBaseUrl}/login";
+        var safeEmail = System.Net.WebUtility.HtmlEncode(toEmail);
+        var safeUsername = System.Net.WebUtility.HtmlEncode(username);
+        var safeRole = System.Net.WebUtility.HtmlEncode(role);
+        var setupUrl = $"{_settings.AppBaseUrl}/verify-email?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
         var html = $@"
 <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
     <div style=""background: #0f172a; padding: 24px 32px; text-align: center;"">
@@ -91,76 +92,53 @@ public sealed class EmailService : IEmailService
         <p style=""color: #94a3b8; margin: 6px 0 0 0; font-size: 13px;"">Enterprise Energy Governance Portal</p>
     </div>
     <div style=""padding: 32px; color: #1e293b;"">
-        <h2 style=""font-size: 18px; margin-top: 0; color: #0f172a;"">Welcome to the Platform, {username}!</h2>
+        <h2 style=""font-size: 18px; margin-top: 0; color: #0f172a;"">Complete Your Account Setup</h2>
         <p style=""font-size: 14px; line-height: 1.6; color: #475569;"">
-            A staff account has been provisioned for you with administrative authority on the Smart Solar Microgrid Trading System.
+            Hi {safeUsername}, an account has been created for you on the Smart Solar Microgrid Trading System.
         </p>
 
         <div style=""background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0;"">
             <table style=""width: 100%; border-collapse: collapse; font-size: 14px;"">
                 <tr>
                     <td style=""padding: 8px 0; color: #64748b; font-weight: bold; width: 140px;"">Assigned Role:</td>
-                    <td style=""padding: 8px 0; color: #0f172a; font-weight: 700;"">{role}</td>
+                    <td style=""padding: 8px 0; color: #0f172a; font-weight: 700;"">{safeRole}</td>
                 </tr>
                 <tr>
                     <td style=""padding: 8px 0; color: #64748b; font-weight: bold;"">Username:</td>
-                    <td style=""padding: 8px 0; color: #0f172a; font-family: monospace; font-size: 15px;""><strong>{username}</strong></td>
+                    <td style=""padding: 8px 0; color: #0f172a; font-family: monospace; font-size: 15px;""><strong>{safeUsername}</strong></td>
                 </tr>
                 <tr>
-                    <td style=""padding: 8px 0; color: #64748b; font-weight: bold;"">Temporary Password:</td>
-                    <td style=""padding: 8px 0; color: #d97706; font-family: monospace; font-size: 15px; font-weight: bold;"">{tempPassword}</td>
+                    <td style=""padding: 8px 0; color: #64748b; font-weight: bold;"">Account Email:</td>
+                    <td style=""padding: 8px 0; color: #0f172a; font-size: 14px;"">{safeEmail}</td>
                 </tr>
             </table>
         </div>
 
         <p style=""font-size: 14px; color: #475569; margin-bottom: 24px;"">
-            Please log in and update your credentials upon initial access.
+            Use the secure one-time link below to verify your email and create your own password. This link expires in 24 hours.
         </p>
 
         <div style=""text-align: center; margin: 30px 0;"">
-            <a href=""{loginUrl}"" style=""background: #f59e0b; color: #020617; font-weight: bold; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-size: 14px;"">
-                Log In to SolarGrid Portal →
+            <a href=""{setupUrl}"" style=""background: #f59e0b; color: #020617; font-weight: bold; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-size: 14px;"">
+                Verify Email &amp; Create Password →
             </a>
         </div>
+        <p style=""font-size: 12px; color: #94a3b8; word-break: break-all;"">
+            If the button does not work, copy and paste this link into your browser:<br/>
+            <a href=""{setupUrl}"" style=""color: #d97706;"">{setupUrl}</a>
+        </p>
     </div>
     <div style=""background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 32px; font-size: 12px; color: #94a3b8; text-align: center;"">
-        Automated credential delivery from Smart Solar Microgrid System. Do not reply to this email.
+        If you were not expecting this invitation, you can safely ignore this email.
     </div>
 </div>";
 
-        return await SendEmailAsync(toEmail, $"Your SolarGrid Credentials ({username})", html);
-    }
-
-    public async Task<bool> SendVerificationEmailAsync(string toEmail, string username, string token)
-    {
-        var verifyUrl = $"{_settings.AppBaseUrl}/verify-email?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
-        var html = $@"
-<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
-    <div style=""background: #0f172a; padding: 24px 32px; text-align: center;"">
-        <h1 style=""color: #f59e0b; margin: 0; font-size: 24px; font-weight: 800;"">⚡ SolarGrid Microgrid System</h1>
-    </div>
-    <div style=""padding: 32px; color: #1e293b;"">
-        <h2 style=""font-size: 18px; margin-top: 0; color: #0f172a;"">Verify Your Email Address</h2>
-        <p style=""font-size: 14px; line-height: 1.6; color: #475569;"">
-            Hi {username}, please verify your email address to complete your account setup and receive notifications.
-        </p>
-        <div style=""text-align: center; margin: 30px 0;"">
-            <a href=""{verifyUrl}"" style=""background: #0f172a; color: #ffffff; font-weight: bold; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-size: 14px;"">
-                Verify Email Address →
-            </a>
-        </div>
-        <p style=""font-size: 12px; color: #94a3b8;"">
-            If the button doesn't work, copy and paste this link into your browser:<br/>
-            <a href=""{verifyUrl}"" style=""color: #d97706;"">{verifyUrl}</a>
-        </p>
-    </div>
-</div>";
-
-        return await SendEmailAsync(toEmail, "Verify Your SolarGrid Account Email", html);
+        return await SendEmailAsync(toEmail, $"Set Up Your SolarGrid Account ({username})", html);
     }
 
     public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string username, string token)
     {
+        var safeUsername = System.Net.WebUtility.HtmlEncode(username);
         var resetUrl = $"{_settings.AppBaseUrl}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
         var html = $@"
 <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
@@ -170,7 +148,7 @@ public sealed class EmailService : IEmailService
     <div style=""padding: 32px; color: #1e293b;"">
         <h2 style=""font-size: 18px; margin-top: 0; color: #0f172a;"">Password Reset Request</h2>
         <p style=""font-size: 14px; line-height: 1.6; color: #475569;"">
-            Hi {username}, we received a request to reset your password for the SolarGrid Microgrid Trading Platform.
+            Hi {safeUsername}, we received a request to reset your password for the SolarGrid Microgrid Trading Platform.
         </p>
         <div style=""text-align: center; margin: 30px 0;"">
             <a href=""{resetUrl}"" style=""background: #d97706; color: #ffffff; font-weight: bold; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-size: 14px;"">
@@ -184,6 +162,78 @@ public sealed class EmailService : IEmailService
 </div>";
 
         return await SendEmailAsync(toEmail, "SolarGrid Password Reset Request", html);
+    }
+
+    public Task<bool> SendProsumerRegistrationPendingEmailAsync(
+        string toEmail,
+        string fullName,
+        string nic)
+    {
+        var html = BuildProsumerLifecycleEmail(
+            "Registration Received",
+            fullName,
+            nic,
+            "Your SolarGrid Prosumer registration was received successfully.",
+            "Your account is currently pending Backoffice approval. You will receive another email when your account is activated.",
+            "Pending Approval",
+            "#d97706");
+
+        return SendEmailAsync(toEmail, "SolarGrid Registration Received - Pending Approval", html);
+    }
+
+    public Task<bool> SendBackofficeProsumerRegistrationEmailAsync(
+        string toEmail,
+        string fullName,
+        string nic,
+        string prosumerEmail)
+    {
+        var safeProsumerEmail = System.Net.WebUtility.HtmlEncode(prosumerEmail);
+        var html = BuildProsumerLifecycleEmail(
+            "New Prosumer Registration",
+            fullName,
+            nic,
+            $"A new Solar Prosumer registered with the email address <strong>{safeProsumerEmail}</strong>.",
+            "Review the Prosumer in Backoffice Prosumer Management and activate the account after completing the required checks.",
+            "Action Required",
+            "#2563eb");
+
+        return SendEmailAsync(toEmail, $"New Solar Prosumer Registration - {nic}", html);
+    }
+
+    public Task<bool> SendProsumerActivationWelcomeEmailAsync(
+        string toEmail,
+        string fullName,
+        string nic)
+    {
+        var html = BuildProsumerLifecycleEmail(
+            "Welcome to SolarGrid",
+            fullName,
+            nic,
+            "Your SolarGrid Prosumer account has been approved and activated by Backoffice.",
+            "You can now sign in to the Android application using your registered NIC and access Prosumer services.",
+            "Account Active",
+            "#059669");
+
+        return SendEmailAsync(toEmail, "Welcome to SolarGrid - Your Prosumer Account Is Active", html);
+    }
+
+    public Task<bool> SendBackofficeProsumerActivationEmailAsync(
+        string toEmail,
+        string fullName,
+        string nic,
+        string prosumerEmail)
+    {
+        var safeProsumerEmail = System.Net.WebUtility.HtmlEncode(prosumerEmail);
+        var html = BuildProsumerLifecycleEmail(
+            "Prosumer Account Activated",
+            fullName,
+            nic,
+            $"The Prosumer account for <strong>{safeProsumerEmail}</strong> has been activated successfully.",
+            "The Prosumer has been sent a welcome email and can now sign in to the Android application.",
+            "Activation Complete",
+            "#059669");
+
+        return SendEmailAsync(toEmail, $"Solar Prosumer Activated - {nic}", html);
     }
 
     public async Task<int> SendBroadcastEmailAsync(IEnumerable<string> recipientEmails, string subject, string message)
@@ -215,5 +265,40 @@ public sealed class EmailService : IEmailService
         }
 
         return successCount;
+    }
+
+    private static string BuildProsumerLifecycleEmail(
+        string heading,
+        string fullName,
+        string nic,
+        string primaryMessage,
+        string secondaryMessage,
+        string statusLabel,
+        string statusColor)
+    {
+        var safeHeading = System.Net.WebUtility.HtmlEncode(heading);
+        var safeFullName = System.Net.WebUtility.HtmlEncode(fullName);
+        var safeNic = System.Net.WebUtility.HtmlEncode(nic);
+        var safeStatus = System.Net.WebUtility.HtmlEncode(statusLabel);
+
+        return $@"
+<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
+    <div style=""background: #0f172a; padding: 24px 32px; text-align: center;"">
+        <h1 style=""color: #f59e0b; margin: 0; font-size: 24px; font-weight: 800;"">⚡ SolarGrid Microgrid System</h1>
+    </div>
+    <div style=""padding: 32px; color: #1e293b;"">
+        <h2 style=""font-size: 20px; margin-top: 0; color: #0f172a;"">{safeHeading}</h2>
+        <p style=""font-size: 14px; line-height: 1.6; color: #475569;"">Hello {safeFullName},</p>
+        <p style=""font-size: 14px; line-height: 1.6; color: #475569;"">{primaryMessage}</p>
+        <div style=""background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 22px 0;"">
+            <p style=""margin: 0 0 8px; font-size: 13px; color: #64748b;""><strong>Prosumer NIC:</strong> {safeNic}</p>
+            <p style=""margin: 0; font-size: 13px; color: {statusColor};""><strong>Status:</strong> {safeStatus}</p>
+        </div>
+        <p style=""font-size: 14px; line-height: 1.6; color: #475569;"">{secondaryMessage}</p>
+    </div>
+    <div style=""background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 32px; font-size: 12px; color: #94a3b8; text-align: center;"">
+        Automated notification from Smart Solar Microgrid System. Do not reply to this email.
+    </div>
+</div>";
     }
 }

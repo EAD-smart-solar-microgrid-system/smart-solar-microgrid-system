@@ -212,12 +212,12 @@ public sealed class StationHubIdTests
     }
 
     [Fact]
-    public void StationResponse_ExposesHubId_AndNotObjectId()
+    public void StationResponse_ExposesCanonicalHubIdAndCompatibilityId()
     {
         var properties = typeof(StationResponse).GetProperties();
 
         Assert.Contains(properties, p => p.Name == "HubId");
-        Assert.DoesNotContain(properties, p => p.Name == "Id");
+        Assert.Contains(properties, p => p.Name == "Id");
     }
 
     private static CreateStationRequest CreateSampleRequest(string name) => new()

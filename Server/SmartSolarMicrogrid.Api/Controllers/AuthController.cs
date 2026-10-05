@@ -30,7 +30,13 @@ public class AuthController : ControllerBase
     {
         // Authenticate web user credentials and issue signed JWT bearer token
         var response = await _authService.LoginAsync(request);
-        if (response == null) return Unauthorized(new { message = "Invalid credentials or deactivated account." });
+        if (response == null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid username/email or password, or the account setup has not been completed."
+            });
+        }
         return Ok(response);
     }
 
@@ -97,16 +103,16 @@ public class AuthController : ControllerBase
         return Ok(new { message });
     }
 
-    [HttpPost("verify-email")]
-    public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+    [HttpPost("complete-registration")]
+    public async Task<IActionResult> CompleteRegistration([FromBody] CompleteRegistrationRequest request)
     {
-        // Verify user email address token
-        if (string.IsNullOrWhiteSpace(token))
+        if (request == null || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
         {
-            return BadRequest(new { message = "Verification token is required." });
+            return BadRequest(new { message = "Token and NewPassword are required." });
         }
 
-        var (success, message) = await _userService.VerifyEmailAsync(token.Trim());
+        var (success, message) = await _userService.CompleteRegistrationAsync(
+            request.Token.Trim(), request.NewPassword);
         if (!success)
         {
             return BadRequest(new { message });

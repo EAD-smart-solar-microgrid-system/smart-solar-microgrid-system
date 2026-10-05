@@ -6,6 +6,7 @@
  */
 using System.ComponentModel.DataAnnotations;
 using SmartSolarMicrogrid.Api.Common.Enums;
+using SmartSolarMicrogrid.Api.Common.Validation;
 
 namespace SmartSolarMicrogrid.Api.DTOs;
 
@@ -15,20 +16,20 @@ public record WebUserDto(
     WebUserRole Role,
     WebUserStatus Status,
     string? Email = null,
-    bool IsEmailVerified = false
+    bool IsEmailVerified = false,
+    bool? InvitationEmailSent = null
 );
 
 public record CreateWebUserRequest(
     [Required] string Username,
-    [Required] string Password,
-    [Required] WebUserRole Role,
-    string? Email = null
+    [Required, EnumDataType(typeof(WebUserRole))] WebUserRole Role,
+    [Required, EmailAddress, StringLength(AccountValidation.EmailMaxLength)] string Email
 );
 
 public record UpdateWebUserRequest(
     [Required] string Username,
-    [Required] WebUserRole Role,
-    string? Email = null
+    [Required, EnumDataType(typeof(WebUserRole))] WebUserRole Role,
+    [Required, EmailAddress, StringLength(AccountValidation.EmailMaxLength)] string Email
 );
 
 public record UpdateWebUserStatusRequest(
@@ -36,12 +37,17 @@ public record UpdateWebUserStatusRequest(
 );
 
 public record ForgotPasswordRequest(
-    [Required] string Email
+    [Required, EmailAddress, StringLength(AccountValidation.EmailMaxLength)] string Email
 );
 
 public record ResetPasswordRequest(
-    [Required] string Token,
-    [Required] string NewPassword
+    [Required, RegularExpression(AccountValidation.TokenPatternText)] string Token,
+    [Required, StringLength(AccountValidation.PasswordMaxLength, MinimumLength = AccountValidation.PasswordMinLength)] string NewPassword
+);
+
+public record CompleteRegistrationRequest(
+    [Required, RegularExpression(AccountValidation.TokenPatternText)] string Token,
+    [Required, StringLength(AccountValidation.PasswordMaxLength, MinimumLength = AccountValidation.PasswordMinLength)] string NewPassword
 );
 
 public record BroadcastEmailRequest(
