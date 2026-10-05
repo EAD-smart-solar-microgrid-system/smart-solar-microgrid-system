@@ -42,7 +42,13 @@ export const ReservationDetailsModal = ({
     reservation && String(reservation.status || '').toLowerCase() === 'pending';
 
   const stationName = reservation
-    ? stationNameById[reservation.stationId] || 'Unknown station'
+    ? reservation.stationName ||
+      stationNameById[reservation.stationId] ||
+      stationNameById[reservation.hubId] ||
+      'Unknown station'
+    : '—';
+  const bookingIdDisplay = reservation
+    ? reservation.bookingId || formatBookingId(reservation.id)
     : '—';
   const slotParts = reservation ? getSlotWindowParts(slotById[reservation.slotId]) : null;
 
@@ -75,7 +81,7 @@ export const ReservationDetailsModal = ({
 
               {!loading && !error && reservation && (
                 <dl className="mb-0 flex flex-col gap-3">
-                  <DetailRow label="Booking ID">{formatBookingId(reservation.id)}</DetailRow>
+                  <DetailRow label="Booking ID">{bookingIdDisplay}</DetailRow>
                   <DetailRow label="Station">{stationName}</DetailRow>
                   <DetailRow label="Slot window">
                     {slotParts ? (

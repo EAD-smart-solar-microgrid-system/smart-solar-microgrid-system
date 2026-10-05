@@ -17,11 +17,18 @@ export const mapReservationMonitoringItem = (dto) => {
     return null;
   }
 
+  const rawId = String(dto.id ?? dto.Id ?? '').trim();
+  const rawBookingId = String(dto.bookingId ?? dto.BookingId ?? '').trim();
+
   return {
-    id: String(dto.id ?? dto.Id ?? '').trim(),
+    id: rawId,
+    bookingId: rawBookingId || formatBookingId(rawId),
     stationId: String(dto.stationId ?? dto.StationId ?? '').trim(),
+    hubId: String(dto.hubId ?? dto.HubId ?? '').trim(),
+    stationName: String(dto.stationName ?? dto.StationName ?? '').trim(),
     slotId: String(dto.slotId ?? dto.SlotId ?? '').trim(),
     prosumerId: String(dto.prosumerId ?? dto.ProsumerId ?? '').trim(),
+    prosumerName: String(dto.prosumerName ?? dto.ProsumerName ?? '').trim(),
     reservationDateTime: dto.reservationDateTime ?? dto.ReservationDateTime ?? null,
     status: String(dto.status ?? dto.Status ?? '').trim(),
     reservationType: String(dto.reservationType ?? dto.ReservationType ?? '').trim(),

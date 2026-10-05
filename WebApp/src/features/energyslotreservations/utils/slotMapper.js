@@ -71,11 +71,14 @@ export const mapStation = (dto) => {
     return null;
   }
 
-  const id = (dto.hubId ?? dto.HubId ?? dto.id ?? dto.Id ?? '').trim();
+  const rawId = String(dto.id ?? dto.Id ?? '').trim();
+  const rawHubId = String(dto.hubId ?? dto.HubId ?? '').trim();
+  const id = rawId || rawHubId;
 
   return {
     id,
-    hubId: (dto.hubId ?? dto.HubId ?? id).trim(),
+    mongoId: rawId,
+    hubId: rawHubId || rawId,
     stationName: (dto.stationName ?? dto.StationName ?? '').trim(),
     status: (dto.status ?? dto.Status ?? '').trim(),
     capacityKwPerHour: Number(dto.capacityKwPerHour ?? dto.CapacityKwPerHour ?? 0),
