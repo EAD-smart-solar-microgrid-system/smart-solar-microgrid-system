@@ -172,6 +172,7 @@ public sealed class EmailService : IEmailService
     public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string username, string token)
     {
         // Compose the HTML password reset email with a time-limited token link.
+        var safeUsername = System.Net.WebUtility.HtmlEncode(username);
         var resetUrl = $"{_settings.AppBaseUrl}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
         var html = $@"
 <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">

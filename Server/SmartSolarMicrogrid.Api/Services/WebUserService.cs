@@ -67,7 +67,15 @@ public class WebUserService : IWebUserService
     public async Task<WebUserDto?> CreateUserAsync(CreateWebUserRequest request)
     {
         // Create a new web user with hashed password and optional credential email delivery.
-        var existing = await _repo.GetByUsernameAsync(request.Username);
+        if (AccountValidation.GetUsernameError(request.Username) is not null ||
+            AccountValidation.GetEmailError(request.Email) is not null ||
+            !AccountValidation.IsSupportedRole(request.Role))
+        {
+            return null;
+        }
+
+        var username = request.Username.Trim();
+        var existing = await _repo.GetByUsernameAsync(username);
         if (existing != null) return null; // Username already exists
 
         var email = request.Email.Trim();
@@ -152,7 +160,7 @@ public class WebUserService : IWebUserService
     public async Task<bool> ForgotPasswordAsync(string email)
     {
         // Issue a password reset token for matching web users or prosumers by email.
-        if (string.IsNullOrWhiteSpace(email)) return false;
+        if (AccountValidation.GetEmailError(email) is not null) return false;
 
         var user = await _repo.GetByEmailAsync(email);
         if (user == null)
@@ -174,7 +182,8 @@ public class WebUserService : IWebUserService
     public async Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword)
     {
         // Validate the reset token and persist a new hashed password.
-        if (string.IsNullOrWhiteSpace(token))
+        var tokenError = AccountValidation.GetTokenError(token);
+        if (tokenError is not null)
         {
             return (false, tokenError);
         }
@@ -212,7 +221,14 @@ public class WebUserService : IWebUserService
     public async Task<(bool Success, string Message)> CompleteRegistrationAsync(string token, string newPassword)
     {
         // Mark the user email as verified when the token is valid.
-        if (string.IsNullOrWhiteSpace(token))
+        var tokenError = AccountValidation.GetTokenError(token);
+        if (tokenError is not null)
+        {
+            return (false, tokenError);
+        }
+
+        var passwordError = AccountValidation.GetNewPasswordError(newPassword);
+        if (passwordError is not null)
         {
             return (false, passwordError);
         }
