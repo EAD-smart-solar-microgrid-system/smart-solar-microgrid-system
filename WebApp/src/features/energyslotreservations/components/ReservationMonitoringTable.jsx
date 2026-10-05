@@ -62,8 +62,12 @@ export const ReservationMonitoringTable = ({
         <tbody>
           {reservations.map((reservation) => {
             const isLoadingDetails = detailsLoadingId === reservation.id;
+            const bookingIdDisplay = reservation.bookingId || formatBookingId(reservation.id);
             const stationName =
-              stationNameById[reservation.stationId] || 'Unknown station';
+              reservation.stationName ||
+              stationNameById[reservation.stationId] ||
+              stationNameById[reservation.hubId] ||
+              'Unknown station';
 
             return (
               <tr key={reservation.id}>
