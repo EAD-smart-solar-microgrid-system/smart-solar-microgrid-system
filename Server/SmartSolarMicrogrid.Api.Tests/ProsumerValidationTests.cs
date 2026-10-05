@@ -323,7 +323,7 @@ public sealed class ProsumerValidationTests
     {
         var repo = new FakeProsumerRepository(existing);
         var accessor = new FakeCurrentProsumerAccessor(authenticatedNic);
-        return new ProsumerService(repo, accessor);
+        return new ProsumerService(repo, accessor, new NoOpProsumerNotificationService());
     }
 
     private sealed class FakeProsumerRepository : IProsumerRepository
@@ -351,5 +351,14 @@ public sealed class ProsumerValidationTests
 
         public Task<string?> GetCurrentProsumerNicAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(_nic);
+    }
+
+    private sealed class NoOpProsumerNotificationService : IProsumerNotificationService
+    {
+        public Task SendRegistrationNotificationsAsync(Prosumer prosumer, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task SendActivationNotificationsAsync(Prosumer prosumer, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 }

@@ -191,6 +191,7 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
         out int pageSize,
         out ReservationStatus? statusFilter)
     {
+        // Normalize pagination, filters, and date bounds for monitoring search queries.
         page = query.Page <= 0 ? DefaultPage : query.Page;
         pageSize = query.PageSize <= 0 ? DefaultPageSize : query.PageSize;
         statusFilter = null;
@@ -337,6 +338,7 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
         IReadOnlyDictionary<string, (string HubId, string StationName)> stationMap,
         IReadOnlyDictionary<string, string> prosumerMap)
     {
+        // Map persisted reservation fields into the monitoring response with HubId and names.
         string hubId = reservation.StationId;
         string stationName = string.Empty;
         if (stationMap.TryGetValue(reservation.StationId, out var info))
@@ -355,7 +357,6 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
             ? $"BK-{reservation.Id[^6..].ToUpperInvariant()}"
             : $"BK-{reservation.Id.ToUpperInvariant()}";
 
-        // Map persisted reservation fields into the Member 4 monitoring response shape with public HubId.
         return new ReservationMonitoringItemResponse
         {
             Id = reservation.Id,

@@ -18,6 +18,7 @@ public static class PasswordHasher
     /// </summary>
     public static string Hash(string password)
     {
+        // Hash a plaintext password with BCrypt for secure storage.
         return BCrypt.Net.BCrypt.HashPassword(password);
     }
 
@@ -26,6 +27,7 @@ public static class PasswordHasher
     /// </summary>
     public static bool Verify(string password, string storedPasswordHash)
     {
+        // Verify a password against BCrypt or legacy plaintext stored values.
         if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(storedPasswordHash))
         {
             return false;
@@ -50,11 +52,13 @@ public static class PasswordHasher
     /// </summary>
     public static bool NeedsRehash(string storedPasswordHash)
     {
+        // Detect legacy plaintext hashes that should be upgraded after login.
         return !string.IsNullOrEmpty(storedPasswordHash) && !IsBcryptHash(storedPasswordHash);
     }
 
     private static bool IsBcryptHash(string value)
     {
+        // Identify BCrypt-encoded password hashes by prefix.
         return value.StartsWith("$2a$", StringComparison.Ordinal)
                || value.StartsWith("$2b$", StringComparison.Ordinal)
                || value.StartsWith("$2y$", StringComparison.Ordinal);

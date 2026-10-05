@@ -1,3 +1,10 @@
+/*
+ * SE4040 - Enterprise Application Development
+ * Smart Solar Microgrid Trading System
+ * File: StationHubIdTests.cs
+ * Purpose: Unit tests for station HubId generation, validation, and service integration.
+ */
+
 using System.Text.RegularExpressions;
 using SmartSolarMicrogrid.Api.Common.Enums;
 using SmartSolarMicrogrid.Api.Common.Utilities;
@@ -14,6 +21,7 @@ public sealed class StationHubIdTests
     [Fact]
     public void HubIdGenerator_GeneratesValidFormat()
     {
+        // Generate many HubIds and assert format, validity, and uniqueness.
         var regex = new Regex(@"^HUB-[A-Z0-9]{8}$");
         var generatedIds = new HashSet<string>();
 
@@ -41,12 +49,14 @@ public sealed class StationHubIdTests
     [InlineData(null, false)]
     public void HubIdGenerator_ValidatesProperly(string? candidate, bool expected)
     {
+        // Assert HubId validation accepts or rejects the supplied candidate value.
         Assert.Equal(expected, HubIdGenerator.IsValid(candidate));
     }
 
     [Fact]
     public async Task CreateAsync_GeneratesHubIdAndPreservesInternalId()
     {
+        // Assert station creation assigns a valid HubId while keeping the internal Id.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker();
         var service = new StationService(repo, checker);
@@ -67,6 +77,7 @@ public sealed class StationHubIdTests
     [Fact]
     public async Task GetByHubIdAsync_ReturnsExpectedStation()
     {
+        // Assert a station can be retrieved by its public HubId.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker();
         var service = new StationService(repo, checker);
@@ -84,6 +95,7 @@ public sealed class StationHubIdTests
     [Fact]
     public async Task GetByHubIdAsync_UnknownHubId_ReturnsNotFound()
     {
+        // Assert lookup of an unknown HubId returns a not-found service result.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker();
         var service = new StationService(repo, checker);
@@ -97,6 +109,7 @@ public sealed class StationHubIdTests
     [Fact]
     public async Task GetByHubIdAsync_InvalidFormat_ReturnsValidationError()
     {
+        // Assert lookup with an invalid HubId format returns a validation error.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker();
         var service = new StationService(repo, checker);
@@ -110,6 +123,7 @@ public sealed class StationHubIdTests
     [Fact]
     public async Task UpdateDetailsAsync_UsingHubId_SucceedsAndRetainsHubId()
     {
+        // Assert station details can be updated by HubId without changing the HubId.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker();
         var service = new StationService(repo, checker);
@@ -142,6 +156,7 @@ public sealed class StationHubIdTests
     [Fact]
     public async Task UpdateDetailsAsync_AttemptingToMutateHubId_ReturnsValidationFailure()
     {
+        // Assert attempts to change HubId during update are rejected as validation errors.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker();
         var service = new StationService(repo, checker);
@@ -172,6 +187,7 @@ public sealed class StationHubIdTests
     [Fact]
     public async Task ChangeStatusAsync_UsingHubId_SucceedsAndRetainsHubId()
     {
+        // Assert station status can be changed by HubId while preserving the HubId.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker { HasActive = false };
         var service = new StationService(repo, checker);
@@ -192,6 +208,7 @@ public sealed class StationHubIdTests
     [Fact]
     public async Task ChangeStatusAsync_DeactivationWithActiveReservations_ReturnsConflict()
     {
+        // Assert deactivation is blocked when active reservations exist for the station.
         var repo = new InMemoryStationRepository();
         var checker = new FakeReservationChecker { HasActive = true };
         var service = new StationService(repo, checker);
@@ -214,6 +231,7 @@ public sealed class StationHubIdTests
     [Fact]
     public void StationResponse_ExposesCanonicalHubIdAndCompatibilityId()
     {
+        // Assert the public station response exposes HubId and hides the internal ObjectId.
         var properties = typeof(StationResponse).GetProperties();
 
         Assert.Contains(properties, p => p.Name == "HubId");
@@ -240,29 +258,34 @@ public sealed class StationHubIdTests
 
         public Task<IReadOnlyList<SolarStation>> GetAllAsync(CancellationToken cancellationToken = default)
         {
+            // Return all in-memory stations for test scenarios.
             return Task.FromResult<IReadOnlyList<SolarStation>>(Stations.ToList());
         }
 
         public Task<SolarStation?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
+            // Find one station by internal database identifier.
             var station = Stations.FirstOrDefault(s => s.Id == id);
             return Task.FromResult(station);
         }
 
         public Task<SolarStation?> GetByHubIdAsync(string hubId, CancellationToken cancellationToken = default)
         {
+            // Find one station by public HubId.
             var station = Stations.FirstOrDefault(s => s.HubId == hubId);
             return Task.FromResult(station);
         }
 
         public Task<SolarStation> CreateAsync(SolarStation station, CancellationToken cancellationToken = default)
         {
+            // Add a new station to the in-memory collection.
             Stations.Add(station);
             return Task.FromResult(station);
         }
 
         public Task<SolarStation?> UpdateDetailsAsync(SolarStation station, CancellationToken cancellationToken = default)
         {
+            // Replace station details in the in-memory collection by internal Id.
             var index = Stations.FindIndex(s => s.Id == station.Id);
             if (index == -1) return Task.FromResult<SolarStation?>(null);
             Stations[index] = station;
@@ -271,6 +294,7 @@ public sealed class StationHubIdTests
 
         public Task<SolarStation?> UpdateStatusAsync(string id, StationStatus status, DateTime updatedAt, CancellationToken cancellationToken = default)
         {
+            // Update station status and timestamp in the in-memory collection.
             var station = Stations.FirstOrDefault(s => s.Id == id);
             if (station is null) return Task.FromResult<SolarStation?>(null);
             station.Status = status;
@@ -280,6 +304,7 @@ public sealed class StationHubIdTests
 
         public Task EnsureIndexesAndBackfillAsync(CancellationToken cancellationToken = default)
         {
+            // Backfill missing HubIds for in-memory stations during tests.
             foreach (var station in Stations.Where(s => string.IsNullOrWhiteSpace(s.HubId)))
             {
                 station.HubId = HubIdGenerator.Generate();
@@ -295,6 +320,7 @@ public sealed class StationHubIdTests
 
         public Task<bool?> HasActiveReservationsAsync(string stationId, CancellationToken cancellationToken = default)
         {
+            // Record the station Id checked and return the configured active-reservation flag.
             LastCheckedStationId = stationId;
             return Task.FromResult(HasActive);
         }

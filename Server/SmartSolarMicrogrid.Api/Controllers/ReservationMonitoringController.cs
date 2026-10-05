@@ -32,6 +32,7 @@ public sealed class ReservationMonitoringController : ControllerBase
         [FromQuery] ReservationMonitoringQuery query,
         CancellationToken cancellationToken)
     {
+        // Restrict Prosumer callers to their own reservations before running the search.
         query ??= new ReservationMonitoringQuery();
         var prosumerScopeError = ApplyProsumerScope(query);
         if (prosumerScopeError is not null)
@@ -74,6 +75,7 @@ public sealed class ReservationMonitoringController : ControllerBase
 
     private ActionResult? ApplyProsumerScope(ReservationMonitoringQuery query)
     {
+        // Force Prosumer search requests to the caller's NIC and reject cross-account filters.
         if (!User.IsInRole("Prosumer"))
         {
             return null;
@@ -101,6 +103,7 @@ public sealed class ReservationMonitoringController : ControllerBase
 
     private ActionResult? DenyProsumerAccessToOtherReservation(string? prosumerId)
     {
+        // Block Prosumer access when the reservation belongs to a different account.
         if (!User.IsInRole("Prosumer"))
         {
             return null;
@@ -120,6 +123,7 @@ public sealed class ReservationMonitoringController : ControllerBase
 
     private string? GetCallerNic()
     {
+        // Resolve the authenticated Prosumer NIC from standard or custom identity claims.
         return User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? User.FindFirst("nic")?.Value;
     }

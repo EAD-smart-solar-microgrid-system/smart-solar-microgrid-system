@@ -20,12 +20,14 @@ public sealed class EmailService : IEmailService
 
     public EmailService(IOptions<EmailSettings> options, ILogger<EmailService> logger)
     {
+        // Store SMTP configuration and logging for outbound email delivery.
         _settings = options.Value;
         _logger = logger;
     }
 
     public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlContent)
     {
+        // Validate recipient and send via SMTP, simulating delivery when credentials are absent.
         if (string.IsNullOrWhiteSpace(toEmail))
         {
             _logger.LogWarning("Email sending skipped: recipient email is empty.");
@@ -81,6 +83,8 @@ public sealed class EmailService : IEmailService
 
     public async Task<bool> SendAccountInvitationEmailAsync(string toEmail, string username, string role, string token)
     {
+        // Compose the HTML credentials email and dispatch it to the new staff user.
+        var loginUrl = $"{_settings.AppBaseUrl}/login";
         var safeEmail = System.Net.WebUtility.HtmlEncode(toEmail);
         var safeUsername = System.Net.WebUtility.HtmlEncode(username);
         var safeRole = System.Net.WebUtility.HtmlEncode(role);
@@ -129,7 +133,36 @@ public sealed class EmailService : IEmailService
         </p>
     </div>
     <div style=""background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 32px; font-size: 12px; color: #94a3b8; text-align: center;"">
-        If you were not expecting this invitation, you can safely ignore this email.
+        Automated credential delivery from Smart Solar Microgrid System. Do not reply to this email.
+    </div>
+</div>";
+
+        return await SendEmailAsync(toEmail, $"Your SolarGrid Credentials ({username})", html);
+    }
+
+    public async Task<bool> SendVerificationEmailAsync(string toEmail, string username, string token)
+    {
+        // Compose the HTML verification email with a signed token link.
+        var verifyUrl = $"{_settings.AppBaseUrl}/verify-email?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
+        var html = $@"
+<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;"">
+    <div style=""background: #0f172a; padding: 24px 32px; text-align: center;"">
+        <h1 style=""color: #f59e0b; margin: 0; font-size: 24px; font-weight: 800;"">⚡ SolarGrid Microgrid System</h1>
+    </div>
+    <div style=""padding: 32px; color: #1e293b;"">
+        <h2 style=""font-size: 18px; margin-top: 0; color: #0f172a;"">Verify Your Email Address</h2>
+        <p style=""font-size: 14px; line-height: 1.6; color: #475569;"">
+            Hi {username}, please verify your email address to complete your account setup and receive notifications.
+        </p>
+        <div style=""text-align: center; margin: 30px 0;"">
+            <a href=""{verifyUrl}"" style=""background: #0f172a; color: #ffffff; font-weight: bold; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-size: 14px;"">
+                Verify Email Address →
+            </a>
+        </div>
+        <p style=""font-size: 12px; color: #94a3b8;"">
+            If the button doesn't work, copy and paste this link into your browser:<br/>
+            <a href=""{verifyUrl}"" style=""color: #d97706;"">{verifyUrl}</a>
+        </p>
     </div>
 </div>";
 
@@ -138,6 +171,7 @@ public sealed class EmailService : IEmailService
 
     public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string username, string token)
     {
+        // Compose the HTML password reset email with a time-limited token link.
         var safeUsername = System.Net.WebUtility.HtmlEncode(username);
         var resetUrl = $"{_settings.AppBaseUrl}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(toEmail)}";
         var html = $@"
@@ -238,6 +272,7 @@ public sealed class EmailService : IEmailService
 
     public async Task<int> SendBroadcastEmailAsync(IEnumerable<string> recipientEmails, string subject, string message)
     {
+        // Deduplicate recipients and send the announcement HTML to each address.
         var distinctEmails = recipientEmails
             .Where(e => !string.IsNullOrWhiteSpace(e))
             .Distinct(StringComparer.OrdinalIgnoreCase)

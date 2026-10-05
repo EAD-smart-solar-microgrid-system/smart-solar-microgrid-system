@@ -71,6 +71,7 @@ public class WebUserRepository : IWebUserRepository
 
     public async Task<WebUser?> GetByEmailAsync(string email)
     {
+        // Fetch a web user matching the given email
         if (string.IsNullOrWhiteSpace(email)) return null;
         var filter = Builders<WebUser>.Filter.And(
             Builders<WebUser>.Filter.Regex(x => x.Email, new BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(email.Trim())}$", "i")),
@@ -81,6 +82,7 @@ public class WebUserRepository : IWebUserRepository
 
     public async Task<WebUser?> GetByResetTokenAsync(string token)
     {
+        // Fetch a web user matching the given password reset token
         if (string.IsNullOrWhiteSpace(token)) return null;
         var filter = Builders<WebUser>.Filter.And(
             Builders<WebUser>.Filter.Eq(x => x.PasswordResetToken, token),
@@ -91,6 +93,7 @@ public class WebUserRepository : IWebUserRepository
 
     public async Task<WebUser?> GetByVerificationTokenAsync(string token)
     {
+        // Fetch a web user matching the given email verification token
         if (string.IsNullOrWhiteSpace(token)) return null;
         var filter = Builders<WebUser>.Filter.And(
             Builders<WebUser>.Filter.Eq(x => x.EmailVerificationToken, token),

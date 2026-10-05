@@ -136,6 +136,7 @@ public sealed class EnergyBookingSlotService : IEnergyBookingSlotService
         string? stationIdentifier,
         CancellationToken cancellationToken)
     {
+        // Resolve a station by HubId or internal MongoDB ObjectId.
         if (string.IsNullOrWhiteSpace(stationIdentifier))
         {
             return null;

@@ -28,6 +28,7 @@ public class WebUserService : IWebUserService
         IEmailService emailService,
         ILogger<WebUserService> logger)
     {
+        // Store user, prosumer, email, and logging dependencies for web account management.
         _repo = repo;
         _prosumerRepo = prosumerRepo;
         _emailService = emailService;
@@ -36,6 +37,7 @@ public class WebUserService : IWebUserService
 
     public async Task<List<WebUserDto>> GetAllUsersAsync()
     {
+        // Retrieve all web users and project them into public DTO responses.
         var users = await _repo.GetAllAsync();
         return users.Select(u => new WebUserDto(
             u.Id,
@@ -49,6 +51,7 @@ public class WebUserService : IWebUserService
 
     public async Task<WebUserDto?> GetUserByIdAsync(string id)
     {
+        // Look up a single web user by identifier and map to a DTO.
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return null;
         return new WebUserDto(
@@ -63,6 +66,7 @@ public class WebUserService : IWebUserService
 
     public async Task<WebUserDto?> CreateUserAsync(CreateWebUserRequest request)
     {
+        // Create a new web user with hashed password and optional credential email delivery.
         if (AccountValidation.GetUsernameError(request.Username) is not null ||
             AccountValidation.GetEmailError(request.Email) is not null ||
             !AccountValidation.IsSupportedRole(request.Role))
@@ -72,7 +76,7 @@ public class WebUserService : IWebUserService
 
         var username = request.Username.Trim();
         var existing = await _repo.GetByUsernameAsync(username);
-        if (existing != null) return null;
+        if (existing != null) return null; // Username already exists
 
         var email = request.Email.Trim();
         if (string.IsNullOrWhiteSpace(email) || await _repo.GetByEmailAsync(email) != null) return null;
@@ -114,6 +118,7 @@ public class WebUserService : IWebUserService
 
     public async Task<(bool Success, bool Conflict)> UpdateUserAsync(string id, UpdateWebUserRequest request)
     {
+        // Update editable profile fields for an existing web user.
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return (false, false);
 
@@ -141,6 +146,7 @@ public class WebUserService : IWebUserService
 
     public async Task<bool> UpdateUserStatusAsync(string id, UpdateWebUserStatusRequest request)
     {
+        // Apply an administrative status change to the specified web user.
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return false;
 
@@ -153,6 +159,7 @@ public class WebUserService : IWebUserService
 
     public async Task<bool> ForgotPasswordAsync(string email)
     {
+        // Issue a password reset token for matching web users or prosumers by email.
         if (AccountValidation.GetEmailError(email) is not null) return false;
 
         var user = await _repo.GetByEmailAsync(email);
@@ -174,6 +181,7 @@ public class WebUserService : IWebUserService
 
     public async Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword)
     {
+        // Validate the reset token and persist a new hashed password.
         var tokenError = AccountValidation.GetTokenError(token);
         if (tokenError is not null)
         {
@@ -212,6 +220,7 @@ public class WebUserService : IWebUserService
 
     public async Task<(bool Success, string Message)> CompleteRegistrationAsync(string token, string newPassword)
     {
+        // Mark the user email as verified when the token is valid.
         var tokenError = AccountValidation.GetTokenError(token);
         if (tokenError is not null)
         {
@@ -248,6 +257,7 @@ public class WebUserService : IWebUserService
 
     public async Task<int> BroadcastEmailAsync(string subject, string message, string? targetRole)
     {
+        // Collect recipient emails by role filter and dispatch the broadcast announcement.
         var recipientEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // 1. Gather web user emails

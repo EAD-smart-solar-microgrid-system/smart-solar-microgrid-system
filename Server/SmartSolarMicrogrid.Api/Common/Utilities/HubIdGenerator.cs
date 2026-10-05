@@ -23,6 +23,7 @@ public static class HubIdGenerator
     /// </summary>
     public static string Generate()
     {
+        // Generate a collision-resistant HubId in HUB-XXXXXXXX format.
         return $"HUB-{Guid.NewGuid():N}"[..12].ToUpperInvariant();
     }
 
@@ -31,6 +32,7 @@ public static class HubIdGenerator
     /// </summary>
     public static bool IsValid(string? hubId)
     {
+        // Verify that the hubId matches the required HUB-XXXXXXXX pattern.
         if (string.IsNullOrWhiteSpace(hubId))
         {
             return false;

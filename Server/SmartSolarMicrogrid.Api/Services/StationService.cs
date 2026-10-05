@@ -44,6 +44,7 @@ public sealed class StationService : IStationService
         string hubId,
         CancellationToken cancellationToken = default)
     {
+        // Resolve station by MongoDB ObjectId or HubId and map to response.
         var trimmed = hubId?.Trim() ?? string.Empty;
 
         // Support lookup by MongoDB ObjectId if requested
@@ -259,6 +260,7 @@ public sealed class StationService : IStationService
 
     private async Task<string> GenerateUniqueHubIdAsync(CancellationToken cancellationToken)
     {
+        // Generate collision-free HubId candidates with bounded retry attempts.
         for (var attempt = 0; attempt < MaxHubIdGenerationAttempts; attempt++)
         {
             var candidate = HubIdGenerator.Generate();

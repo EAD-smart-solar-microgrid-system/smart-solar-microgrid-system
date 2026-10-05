@@ -53,6 +53,7 @@ public sealed class ReservationService : IReservationService
         CreateReservationRequest request,
         CancellationToken cancellationToken = default)
     {
+        // Enforce prosumer ownership rules before validating reservation input and scheduling constraints.
         var httpUser = _httpContextAccessor.HttpContext?.User;
         var isProsumer = httpUser?.IsInRole("Prosumer") ?? false;
 
@@ -655,6 +656,7 @@ public sealed class ReservationService : IReservationService
         string? prosumerNic,
         CancellationToken cancellationToken = default)
     {
+        // Resolve the target prosumer NIC from auth context or query and return their reservations.
         var targetNic = prosumerNic?.Trim();
         var httpUser = _httpContextAccessor.HttpContext?.User;
         var isProsumer = httpUser?.IsInRole("Prosumer") ?? false;

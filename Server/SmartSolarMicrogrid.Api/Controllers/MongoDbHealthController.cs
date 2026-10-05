@@ -26,6 +26,7 @@ public sealed class MongoDbHealthController : ControllerBase
         IMongoDatabase database,
         IOptions<MongoDbSettings> settings)
     {
+        // Store the MongoDB database handle and settings used for connectivity probes.
         _database = database;
         _settings = settings.Value;
     }
@@ -33,6 +34,7 @@ public sealed class MongoDbHealthController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
+        // Ping MongoDB within a short timeout and report connectivity status.
         using var probeTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         probeTimeout.CancelAfter(ProbeTimeout);
 

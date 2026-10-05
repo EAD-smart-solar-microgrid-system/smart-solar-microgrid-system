@@ -27,6 +27,7 @@ public class AuthService : IAuthService
         IProsumerRepository prosumerRepo,
         IConfiguration config)
     {
+        // Store user repositories and JWT configuration for authentication flows.
         _repo = repo;
         _prosumerRepo = prosumerRepo;
         _config = config;

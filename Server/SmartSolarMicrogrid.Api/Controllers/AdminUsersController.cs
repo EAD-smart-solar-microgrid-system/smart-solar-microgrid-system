@@ -21,6 +21,7 @@ public class AdminUsersController : ControllerBase
 
     public AdminUsersController(IWebUserService userService)
     {
+        // Store the service that owns backoffice user account management.
         _userService = userService;
     }
 

@@ -154,6 +154,7 @@ public sealed class StationRepository : IStationRepository
         SolarStation station,
         CancellationToken cancellationToken)
     {
+        // Generate and persist a unique HubId when the station lacks one
         if (!string.IsNullOrWhiteSpace(station.HubId))
         {
             return station.HubId;
