@@ -25,7 +25,7 @@ import {
   updateSlotAvailability,
 } from '../services/energySlotService.js';
 import { utcIsoToLocalDateTimeInput } from '../utils/slotMapper.js';
-import { validateSlotForm } from '../utils/slotFormValidation.js';
+import { CAPACITY_MAX_DIGITS, validateSlotForm } from '../utils/slotFormValidation.js';
 
 const EMPTY_FORM = {
   slotStartLocal: '',
@@ -169,9 +169,14 @@ export const EnergySlotReservationsPage = () => {
 
   const handleFormChange = (event) => {
     const { name, value, type, checked } = event.target;
+    const nextValue =
+      name === 'capacityKw'
+        ? value.replace(/\D/g, '').slice(0, CAPACITY_MAX_DIGITS)
+        : value;
+
     setForm((previous) => ({
       ...previous,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : nextValue,
     }));
     setFieldErrors((previous) => {
       if (!previous[name]) {

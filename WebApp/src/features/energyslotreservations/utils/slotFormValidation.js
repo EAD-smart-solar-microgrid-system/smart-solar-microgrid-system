@@ -6,6 +6,10 @@
 
 import { localDateTimeInputToUtcIso } from './slotMapper.js';
 
+export const CAPACITY_MAX_DIGITS = 6;
+
+const countDigits = (value) => String(value).replace(/\D/g, '').length;
+
 /**
  * Validates slot form fields before submission.
  *
@@ -48,6 +52,8 @@ export const validateSlotForm = (form, options = {}) => {
     errors.capacityKw = 'Capacity (kW) is required.';
   } else if (!Number.isFinite(capacity) || capacity <= 0) {
     errors.capacityKw = 'Capacity (kW) must be greater than 0.';
+  } else if (countDigits(form.capacityKw) > CAPACITY_MAX_DIGITS) {
+    errors.capacityKw = `Capacity (kW) must be at most ${CAPACITY_MAX_DIGITS} digits.`;
   } else if (
     Number.isFinite(maxCapacityKw) &&
     maxCapacityKw > 0 &&

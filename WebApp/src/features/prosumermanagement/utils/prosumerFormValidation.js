@@ -29,6 +29,28 @@ export const isValidNic = (nic) => {
   return OLD_NIC_REGEX.test(normalized) || NEW_NIC_REGEX.test(normalized);
 };
 
+export const NIC_FORMAT_ERROR =
+  'Invalid NIC format. Enter 9 digits followed by V/X (e.g., 991234567V) or 12 digits (e.g., 199912345678).';
+
+/**
+ * Returns a validation error message for NIC input, or null when valid/empty.
+ *
+ * @param {string|any} nic - Raw NIC input
+ * @param {object} [options={}]
+ * @param {boolean} [options.required=false] - Whether NIC is required
+ * @returns {string|null}
+ */
+export const getNicValidationError = (nic, options = {}) => {
+  const { required = false } = options;
+  const rawNic = nic !== undefined && nic !== null ? String(nic).trim() : '';
+
+  if (!rawNic) {
+    return required ? 'National Identity Card (NIC) is required.' : null;
+  }
+
+  return isValidNic(rawNic) ? null : NIC_FORMAT_ERROR;
+};
+
 /**
  * Validates structural email format.
  *
@@ -73,8 +95,7 @@ export const validateProsumerForm = (values = {}, options = {}) => {
     if (!rawNic) {
       errors.nic = 'National Identity Card (NIC) is required.';
     } else if (!isValidNic(rawNic)) {
-      errors.nic =
-        'Invalid NIC format. Enter 9 digits followed by V/X (e.g., 123456789V) or 12 digits (e.g., 199912345678).';
+      errors.nic = NIC_FORMAT_ERROR;
     }
   }
 

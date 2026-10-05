@@ -20,6 +20,7 @@ export const ReservationMonitoringFilters = ({
   disabled,
   stations = [],
   stationsLoading = false,
+  errors = {},
 }) => {
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -88,12 +89,26 @@ export const ReservationMonitoringFilters = ({
               id="monitoring-prosumer-id"
               name="prosumerId"
               type="text"
-              className="form-control"
-              placeholder="e.g. 991234567V"
+              className={`form-control ${errors.prosumerId ? 'is-invalid' : ''}`}
+              placeholder="e.g. 991234567V or 199912345678"
               value={filters.prosumerId}
               onChange={handleChange}
               disabled={disabled}
+              autoComplete="off"
+              inputMode="text"
+              maxLength={12}
+              aria-invalid={Boolean(errors.prosumerId)}
+              aria-describedby={errors.prosumerId ? 'monitoring-prosumer-id-error' : undefined}
             />
+            {errors.prosumerId ? (
+              <div id="monitoring-prosumer-id-error" className="invalid-feedback d-block">
+                {errors.prosumerId}
+              </div>
+            ) : (
+              <div className="form-text">
+               
+              </div>
+            )}
           </div>
 
           <div>

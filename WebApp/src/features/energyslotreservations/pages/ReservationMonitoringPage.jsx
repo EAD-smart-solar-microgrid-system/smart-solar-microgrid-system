@@ -22,6 +22,8 @@ import {
   rejectReservation,
 } from '../services/reservationMonitoringService.js';
 import { getStations, getSlotsByStationId } from '../services/energySlotService.js';
+import { getNicValidationError } from '../../prosumermanagement/utils/prosumerFormValidation.js';
+import { normalizeNic } from '../../prosumermanagement/utils/prosumerMapper.js';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -63,6 +65,7 @@ export const ReservationMonitoringPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
+  const [filterErrors, setFilterErrors] = useState({});
 
   const handleApprove = async (reservation) => {
     const targetReservation = reservation?.id ? reservation : detailsReservation;
@@ -238,13 +241,33 @@ export const ReservationMonitoringPage = () => {
   }, [items]);
 
   const handleFilterChange = (name, value) => {
+    const nextValue = name === 'prosumerId' ? normalizeNic(value) : value;
+
     setDraftFilters((current) => ({
       ...current,
-      [name]: value,
+      [name]: nextValue,
     }));
+
+    if (name === 'prosumerId') {
+      setFilterErrors((current) => {
+        if (!current.prosumerId) {
+          return current;
+        }
+        const next = { ...current };
+        delete next.prosumerId;
+        return next;
+      });
+    }
   };
 
   const handleApplyFilters = () => {
+    const prosumerNicError = getNicValidationError(draftFilters.prosumerId);
+    if (prosumerNicError) {
+      setFilterErrors({ prosumerId: prosumerNicError });
+      return;
+    }
+
+    setFilterErrors({});
     setPage(1);
     setAppliedFilters({ ...draftFilters });
   };
@@ -252,6 +275,7 @@ export const ReservationMonitoringPage = () => {
   const handleResetFilters = () => {
     setDraftFilters(EMPTY_FILTERS);
     setAppliedFilters(EMPTY_FILTERS);
+    setFilterErrors({});
     setPage(1);
   };
 
@@ -367,6 +391,7 @@ export const ReservationMonitoringPage = () => {
         disabled={loading}
         stations={stations}
         stationsLoading={stationsLoading}
+        errors={filterErrors}
       />
 
       {error && (
@@ -414,10 +439,6 @@ export const ReservationMonitoringPage = () => {
               detailsLoadingId={detailsLoadingId}
               stationNameById={stationNameById}
               slotById={slotById}
-              isGridOperator={isGridOperator}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              actionLoadingId={actionLoadingId}
             />
           </div>
           <div className="card-footer bg-[#151c19] d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -454,6 +475,7 @@ export const ReservationMonitoringPage = () => {
         onClose={handleCloseDetails}
         onRetry={handleRetryDetails}
         onApprove={handleApprove}
+        onReject={handleReject}
         canApprove={canApprove}
         actionError={actionError}
         actionLoading={actionLoading}

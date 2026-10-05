@@ -28,6 +28,7 @@ export const ReservationDetailsModal = ({
   onClose,
   onRetry,
   onApprove,
+  onReject,
   canApprove = false,
   actionError,
   actionLoading = false,
@@ -126,14 +127,24 @@ export const ReservationDetailsModal = ({
             </div>
             <div className="modal-footer flex-wrap gap-2">
               {canApprove && isPending && !loading && !error && (
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={onApprove}
-                  disabled={actionLoading}
-                >
-                  {actionLoading ? 'Approving…' : 'Approve'}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={onApprove}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading ? 'Approving…' : 'Approve'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={onReject}
+                    disabled={actionLoading}
+                  >
+                    Reject
+                  </button>
+                </>
               )}
               <button
                 type="button"

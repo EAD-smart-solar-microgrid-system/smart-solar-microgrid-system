@@ -5,6 +5,7 @@
  */
 
 import { toLocalDateTimeInputValue } from '../utils/slotMapper.js';
+import { CAPACITY_MAX_DIGITS } from '../utils/slotFormValidation.js';
 
 export const SlotFormModal = ({
   show,
@@ -104,20 +105,23 @@ export const SlotFormModal = ({
                     <input
                       id="slot-capacity-kw"
                       name="capacityKw"
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={CAPACITY_MAX_DIGITS}
                       className={`form-control ${fieldErrors.capacityKw ? 'is-invalid' : ''}`}
                       value={form.capacityKw}
                       onChange={onChange}
                       disabled={submitting}
                       required
+                      aria-describedby="slot-capacity-kw-help"
                     />
-                    {Number.isFinite(stationCapacityKw) && stationCapacityKw > 0 && (
-                      <div className="form-text">
-                        Station limit: {stationCapacityKw} kW per hour.
-                      </div>
-                    )}
+                    <div id="slot-capacity-kw-help" className="form-text">
+                      Maximum {CAPACITY_MAX_DIGITS} digits.
+                      {Number.isFinite(stationCapacityKw) && stationCapacityKw > 0
+                        ? ` Station limit: ${stationCapacityKw} kW per hour.`
+                        : ''}
+                    </div>
                     {fieldErrors.capacityKw && (
                       <div className="invalid-feedback d-block text-danger">
                         {fieldErrors.capacityKw}
