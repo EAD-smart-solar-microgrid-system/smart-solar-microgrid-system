@@ -32,4 +32,12 @@ public interface IReservationService
     Task<ReservationServiceResult<QrTokenResponse>> GenerateQrTokenAsync(
         string id,
         CancellationToken cancellationToken = default);
+
+    Task<ReservationServiceResult<ReservationResponse>> GetByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default);
+
+    Task<ReservationServiceResult<IReadOnlyList<ReservationResponse>>> GetByProsumerNicAsync(
+        string? prosumerNic,
+        CancellationToken cancellationToken = default);
 }

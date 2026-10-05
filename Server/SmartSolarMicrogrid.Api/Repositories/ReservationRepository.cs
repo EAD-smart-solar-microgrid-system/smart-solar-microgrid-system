@@ -185,4 +185,18 @@ public sealed class ReservationRepository : IReservationRepository
 
         return count > 0;
     }
+
+    public async Task<List<EnergyReservation>> GetByProsumerNicAsync(
+        string prosumerNic,
+        CancellationToken cancellationToken = default)
+    {
+        // Query all reservations belonging to a prosumer ordered by reservation date descending.
+        var filter = Builders<EnergyReservation>.Filter.Eq(
+            reservation => reservation.ProsumerNic, prosumerNic.Trim());
+
+        return await _reservations
+            .Find(filter)
+            .SortByDescending(reservation => reservation.ReservationDateTime)
+            .ToListAsync(cancellationToken);
+    }
 }
