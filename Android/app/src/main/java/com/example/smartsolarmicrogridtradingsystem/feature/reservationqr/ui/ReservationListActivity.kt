@@ -114,7 +114,7 @@ class ReservationListActivity : BaseActivity() {
     }
 
     private fun loadReservationsFromCache() {
-        val nic = resolveProsumerNic()
+        val nic = resolveProsumerNic()?.trim()?.uppercase()
         if (nic.isNullOrBlank()) {
             progress.visibility = View.GONE
             adapter.submitList(emptyList())
@@ -141,58 +141,62 @@ class ReservationListActivity : BaseActivity() {
             }
         )
 
-        // 1. Immediately present cached reservations from SQLite
+        // Show cached data immediately while the authoritative server sync runs.
         AppExecutors.executeInBackground {
-            val list = localRepository.getByProsumerNic(nic)
-
+            val cachedList = localRepository.getByProsumerNic(nic)
             AppExecutors.executeOnMainThread {
-                if (list.isNotEmpty()) {
-                    progress.visibility = View.GONE
-                    adapter.submitList(list)
+                if (cachedList.isNotEmpty()) {
+                    adapter.submitList(cachedList)
                     tvEmpty.visibility = View.GONE
                     recyclerView.visibility = View.VISIBLE
                 }
+            }
+        }
 
-                // 2. Fetch fresh reservation states from API to sync status changes (such as Approved)
-                reservationRepository.getReservationsByNic(
-                    nic = nic,
-                    bearerToken = sessionManager.getToken(),
-                    callback = object : ApiCallback<List<ReservationDto>> {
-                        override fun onSuccess(result: NetworkResult.Success<List<ReservationDto>>) {
-                            val serverList = result.responseBody
-                            progress.visibility = View.GONE
+        reservationRepository.getReservationsByNic(
+            nic = nic,
+            bearerToken = sessionManager.getToken(),
+            callback = object : ApiCallback<List<ReservationDto>> {
+                override fun onSuccess(result: NetworkResult.Success<List<ReservationDto>>) {
+                    val serverList = result.responseBody
+                    progress.visibility = View.GONE
 
-                            AppExecutors.executeInBackground {
-                                for (res in serverList) {
-                                    localRepository.upsert(res)
-                                }
-                                val updatedList = localRepository.getByProsumerNic(nic)
+                    AppExecutors.executeInBackground {
+                        localRepository.upsertAll(serverList)
+                        val updatedList = localRepository.getByProsumerNic(nic)
 
-                                AppExecutors.executeOnMainThread {
-                                    adapter.submitList(updatedList)
-                                    if (updatedList.isEmpty()) {
-                                        tvEmpty.setText(R.string.reservation_list_empty)
-                                        tvEmpty.visibility = View.VISIBLE
-                                        recyclerView.visibility = View.GONE
-                                    } else {
-                                        tvEmpty.visibility = View.GONE
-                                        recyclerView.visibility = View.VISIBLE
-                                    }
-                                }
+                        AppExecutors.executeOnMainThread {
+                            adapter.submitList(updatedList)
+                            if (updatedList.isEmpty()) {
+                                tvEmpty.setText(R.string.reservation_list_empty)
+                                tvEmpty.visibility = View.VISIBLE
+                                recyclerView.visibility = View.GONE
+                            } else {
+                                tvEmpty.visibility = View.GONE
+                                recyclerView.visibility = View.VISIBLE
                             }
                         }
+                    }
+                }
 
-                        override fun onError(error: NetworkResult<Nothing>) {
-                            progress.visibility = View.GONE
-                            if (list.isEmpty()) {
+                override fun onError(error: NetworkResult<Nothing>) {
+                    progress.visibility = View.GONE
+                    AppExecutors.executeInBackground {
+                        val cachedList = localRepository.getByProsumerNic(nic)
+                        AppExecutors.executeOnMainThread {
+                            if (cachedList.isNotEmpty()) {
+                                adapter.submitList(cachedList)
+                                tvEmpty.visibility = View.GONE
+                                recyclerView.visibility = View.VISIBLE
+                            } else {
                                 tvEmpty.setText(R.string.reservation_list_empty)
                                 tvEmpty.visibility = View.VISIBLE
                                 recyclerView.visibility = View.GONE
                             }
                         }
                     }
-                )
+                }
             }
-        }
+        )
     }
 }

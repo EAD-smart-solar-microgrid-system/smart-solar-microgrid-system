@@ -188,62 +188,63 @@ class ReservationDetailActivity : BaseActivity() {
         if (!isBackgroundPoll) {
             progress.visibility = View.VISIBLE
             tvError.visibility = View.GONE
+
+            AppExecutors.executeInBackground {
+                val cached = localRepository.getById(reservationId)
+                AppExecutors.executeOnMainThread {
+                    if (cached != null) {
+                        currentReservation = cached
+                        bindReservation(cached)
+                    }
+                }
+            }
         }
 
-        AppExecutors.executeInBackground {
-            val record = localRepository.getById(reservationId)
-
-            AppExecutors.executeOnMainThread {
-                if (record != null) {
+        reservationRepository.getReservationById(
+            id = reservationId,
+            bearerToken = sessionManager.getToken(),
+            callback = object : ApiCallback<ReservationDto> {
+                override fun onSuccess(result: NetworkResult.Success<ReservationDto>) {
+                    val fresh = result.responseBody
                     val expectedNic = intent.getStringExtra(EXTRA_PROSUMER_NIC)?.trim()
                         ?: sessionManager.getUserIdentifier()?.trim()
 
-                    if (!expectedNic.isNullOrBlank() && !record.prosumerNic.equals(expectedNic, ignoreCase = true)) {
+                    if (!expectedNic.isNullOrBlank() &&
+                        !fresh.prosumerNic.equals(expectedNic, ignoreCase = true)
+                    ) {
                         progress.visibility = View.GONE
-                        Toast.makeText(this@ReservationDetailActivity, R.string.error_reservation_unauthorized, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@ReservationDetailActivity,
+                            R.string.error_reservation_unauthorized,
+                            Toast.LENGTH_SHORT
+                        ).show()
                         finish()
-                        return@executeOnMainThread
+                        return
                     }
 
-                    currentReservation = record
-                    bindReservation(record)
+                    progress.visibility = View.GONE
+                    AppExecutors.executeInBackground {
+                        localRepository.upsert(fresh)
+                    }
+
+                    currentReservation = fresh
+                    bindReservation(fresh)
+
+                    if (fresh.parsedStatus != ReservationStatus.PENDING) {
+                        stopStatusPolling()
+                    }
                 }
 
-                // Fetch latest status from backend API (detect operator approval, cancellation, etc.)
-                reservationRepository.getReservationById(
-                    id = reservationId,
-                    bearerToken = sessionManager.getToken(),
-                    callback = object : ApiCallback<ReservationDto> {
-                        override fun onSuccess(result: NetworkResult.Success<ReservationDto>) {
-                            val fresh = result.responseBody
-                            progress.visibility = View.GONE
-
-                            // Persist fresh server state into SQLite cache
-                            AppExecutors.executeInBackground {
-                                localRepository.upsert(fresh)
-                            }
-
-                            currentReservation = fresh
-                            bindReservation(fresh)
-
-                            // If reservation is no longer pending (e.g. Approved or Cancelled), stop polling
-                            if (fresh.parsedStatus != ReservationStatus.PENDING) {
-                                stopStatusPolling()
-                            }
-                        }
-
-                        override fun onError(error: NetworkResult<Nothing>) {
-                            progress.visibility = View.GONE
-                            if (currentReservation == null && record == null) {
-                                val message = ReservationRepository.extractErrorMessage(error)
-                                tvError.text = message
-                                tvError.visibility = View.VISIBLE
-                            }
-                        }
+                override fun onError(error: NetworkResult<Nothing>) {
+                    progress.visibility = View.GONE
+                    if (currentReservation == null) {
+                        val message = ReservationRepository.extractErrorMessage(error)
+                        tvError.text = message
+                        tvError.visibility = View.VISIBLE
                     }
-                )
+                }
             }
-        }
+        )
     }
 
     private fun startStatusPollingIfNeeded() {
