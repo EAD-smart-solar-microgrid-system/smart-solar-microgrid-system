@@ -136,6 +136,13 @@ public sealed class ProsumerService : IProsumerService
                 "The authenticated Prosumer profile was not found.");
         }
 
+        if (prosumer.AccountStatus == ProsumerAccountStatus.Deactivated)
+        {
+            return ProsumerServiceResult<ProsumerResponse>.Failure(
+                ProsumerServiceErrorType.Conflict,
+                "Your account has been deactivated by administration. Profile updates are not permitted.");
+        }
+
         prosumer.FullName = request.FullName!.Trim();
         prosumer.Email = request.Email!.Trim();
         prosumer.PhoneNumber = NormalizeOptionalText(request.PhoneNumber);

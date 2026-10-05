@@ -36,7 +36,9 @@ class ProsumerProfileActivity : AppCompatActivity() {
     private lateinit var etName: TextInputEditText
     private lateinit var tilEmail: TextInputLayout
     private lateinit var etEmail: TextInputEditText
+    private lateinit var tilPhone: TextInputLayout
     private lateinit var etPhone: TextInputEditText
+    private lateinit var tilAddress: TextInputLayout
     private lateinit var etAddress: TextInputEditText
 
     private lateinit var tvMessage: TextView
@@ -44,6 +46,8 @@ class ProsumerProfileActivity : AppCompatActivity() {
     private lateinit var btnSave: MaterialButton
     private lateinit var btnDeactivate: MaterialButton
     private lateinit var btnLogout: MaterialButton
+
+    private var currentAccountStatus: String = "Active"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,7 +71,9 @@ class ProsumerProfileActivity : AppCompatActivity() {
         etName = findViewById(R.id.etProfileName)
         tilEmail = findViewById(R.id.tilProfileEmail)
         etEmail = findViewById(R.id.etProfileEmail)
+        tilPhone = findViewById(R.id.tilProfilePhone)
         etPhone = findViewById(R.id.etProfilePhone)
+        tilAddress = findViewById(R.id.tilProfileAddress)
         etAddress = findViewById(R.id.etProfileAddress)
 
         tvMessage = findViewById(R.id.tvProfileMessage)
@@ -97,21 +103,97 @@ class ProsumerProfileActivity : AppCompatActivity() {
     }
 
     private fun populateProfile(profile: ProsumerProfileResponseDto) {
+        currentAccountStatus = profile.accountStatus
         etNic.setText(profile.nic)
         etName.setText(profile.fullName)
         etEmail.setText(profile.email)
         etPhone.setText(profile.phoneNumber.orEmpty())
         etAddress.setText(profile.address.orEmpty())
-        tvStatusBadge.text = profile.accountStatus
 
-        if (profile.accountStatus == "DeactivationRequested" || profile.accountStatus == "Deactivated") {
+        val isDeactivated = profile.accountStatus.equals("Deactivated", ignoreCase = true)
+        val isDeactivationRequested = profile.accountStatus.equals("DeactivationRequested", ignoreCase = true)
+
+        if (isDeactivated) {
+            tvStatusBadge.text = "Deactivated"
+            tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_cancelled)
+            tvStatusBadge.setTextColor(getColor(R.color.status_cancelled))
+
+            // Disable all profile editing inputs
+            etName.isEnabled = false
+            etEmail.isEnabled = false
+            etPhone.isEnabled = false
+            etAddress.isEnabled = false
+            tilName.isEnabled = false
+            tilEmail.isEnabled = false
+            tilPhone.isEnabled = false
+            tilAddress.isEnabled = false
+
+            // Disable and hide Update Profile button
+            btnSave.isEnabled = false
+            btnSave.visibility = View.GONE
+
+            // Deactivate button shows account is deactivated
+            btnDeactivate.isEnabled = false
+            btnDeactivate.text = "Account Deactivated"
+
+            // Inform prosumer clearly
+            tvMessage.text = "This account has been deactivated by administration. Profile updates and system activities are disabled."
+            tvMessage.setTextColor(getColor(R.color.color_error))
+            tvMessage.visibility = View.VISIBLE
+        } else if (isDeactivationRequested) {
+            tvStatusBadge.text = "Deactivation Requested"
+            tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_neutral)
+            tvStatusBadge.setTextColor(getColor(R.color.status_pending))
+
+            etName.isEnabled = true
+            etEmail.isEnabled = true
+            etPhone.isEnabled = true
+            etAddress.isEnabled = true
+            tilName.isEnabled = true
+            tilEmail.isEnabled = true
+            tilPhone.isEnabled = true
+            tilAddress.isEnabled = true
+
+            btnSave.isEnabled = true
+            btnSave.visibility = View.VISIBLE
+
             btnDeactivate.isEnabled = false
             btnDeactivate.text = "Deactivation Requested"
+
+            tvMessage.text = "Deactivation request is pending review by administration."
+            tvMessage.setTextColor(getColor(R.color.status_pending))
+            tvMessage.visibility = View.VISIBLE
+        } else {
+            val displayStatus = if (profile.accountStatus.equals("Active", ignoreCase = true) || profile.accountStatus.isBlank()) "Active" else profile.accountStatus
+            tvStatusBadge.text = displayStatus
+            tvStatusBadge.setBackgroundResource(R.drawable.bg_status_badge)
+            tvStatusBadge.setTextColor(getColor(R.color.white))
+
+            etName.isEnabled = true
+            etEmail.isEnabled = true
+            etPhone.isEnabled = true
+            etAddress.isEnabled = true
+            tilName.isEnabled = true
+            tilEmail.isEnabled = true
+            tilPhone.isEnabled = true
+            tilAddress.isEnabled = true
+
+            btnSave.isEnabled = true
+            btnSave.visibility = View.VISIBLE
+
+            btnDeactivate.isEnabled = true
+            btnDeactivate.text = getString(R.string.prosumer_deactivate_action)
+            tvMessage.visibility = View.GONE
         }
     }
 
     private fun setupListeners() {
         btnSave.setOnClickListener {
+            if (currentAccountStatus.equals("Deactivated", ignoreCase = true)) {
+                Toast.makeText(this@ProsumerProfileActivity, "Deactivated accounts cannot update their profile.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val name = etName.text?.toString()?.trim().orEmpty()
             val email = etEmail.text?.toString()?.trim().orEmpty()
             val phone = etPhone.text?.toString()?.trim()
@@ -162,6 +244,11 @@ class ProsumerProfileActivity : AppCompatActivity() {
         }
 
         btnDeactivate.setOnClickListener {
+            if (currentAccountStatus.equals("Deactivated", ignoreCase = true)) {
+                Toast.makeText(this@ProsumerProfileActivity, "This account is already deactivated.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             AlertDialog.Builder(this)
                 .setTitle(getString(R.string.prosumer_deactivate_confirm_title))
                 .setMessage(getString(R.string.prosumer_deactivate_confirm_msg))
