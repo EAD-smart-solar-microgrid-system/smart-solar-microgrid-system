@@ -10,6 +10,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
 
   // Forgot password modal state
@@ -25,8 +26,8 @@ export const LoginPage = () => {
     try {
       await login(username, password);
       navigate(ROUTES.HOME);
-    } catch {
-      setError("Invalid username or password");
+    } catch (loginError) {
+      setError(loginError.message || 'Invalid username/email or password');
     }
   };
 
@@ -91,7 +92,7 @@ export const LoginPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="login-username" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-                Username
+                Username or Email
               </label>
               <input
                 id="login-username"
@@ -99,7 +100,8 @@ export const LoginPage = () => {
                 className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter staff username"
+                placeholder="Enter staff username or email"
+                autoComplete="username"
                 required
               />
             </div>
@@ -121,15 +123,27 @@ export const LoginPage = () => {
                   Forgot password?
                 </button>
               </div>
-              <input
-                id="login-password"
-                type="password"
-                className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 pr-16 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B] focus:ring-1 focus:ring-[#E3511B]"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-3 text-[11px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
 
             <button

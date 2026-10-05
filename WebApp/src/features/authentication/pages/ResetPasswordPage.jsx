@@ -11,6 +11,7 @@ export const ResetPasswordPage = () => {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -25,8 +26,8 @@ export const ResetPasswordPage = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
 
@@ -43,7 +44,7 @@ export const ResetPasswordPage = () => {
         body: JSON.stringify({ token, newPassword: password }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (response.ok) {
         setSuccess(data.message || 'Password successfully reset!');
       } else {
@@ -93,13 +94,14 @@ export const ResetPasswordPage = () => {
                   New Password <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="password"
-                  placeholder="Minimum 6 characters"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Minimum 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-amber-500 outline-none transition"
                   required
-                  minLength={6}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -108,15 +110,26 @@ export const ResetPasswordPage = () => {
                   Confirm New Password <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Re-enter password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-amber-500 outline-none transition"
                   required
-                  minLength={6}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
               </div>
+
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={showPassword}
+                  onChange={(event) => setShowPassword(event.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 accent-amber-500"
+                />
+                Show passwords
+              </label>
 
               <button
                 type="submit"
