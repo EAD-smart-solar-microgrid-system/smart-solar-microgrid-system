@@ -14,9 +14,9 @@ import { LoadingIndicator } from '../../../components/common/LoadingIndicator.js
 import { ErrorAlert } from '../../../components/common/ErrorAlert.jsx';
 
 const DetailRow = ({ label, children }) => (
-  <div className="grid grid-cols-[minmax(9.5rem,11.5rem)_minmax(0,1fr)] gap-x-4 gap-y-1 items-start">
-    <dt className="fw-bold font-semibold text-slate-800">{label}</dt>
-    <dd className="mb-0 min-w-0 text-slate-700">{children}</dd>
+  <div className="grid grid-cols-[minmax(9.5rem,11.5rem)_minmax(0,1fr)] gap-x-4 gap-y-1.5 items-start text-sm">
+    <dt className="font-semibold text-[var(--text-muted)]">{label}</dt>
+    <dd className="mb-0 min-w-0 font-medium text-[var(--text-primary)]">{children}</dd>
   </div>
 );
 
@@ -52,7 +52,7 @@ export const ReservationDetailsModal = ({
         <div className="modal-dialog modal-dialog-centered modal-lg">
           <div className="modal-content shadow">
             <div className="modal-header">
-              <h2 className="modal-title h5 fw-bold">Reservation details</h2>
+              <h2 className="modal-title h5 font-bold text-[var(--text-primary)]">Reservation details</h2>
               <button
                 type="button"
                 className="btn-close"
@@ -79,16 +79,19 @@ export const ReservationDetailsModal = ({
                   <DetailRow label="Station">{stationName}</DetailRow>
                   <DetailRow label="Slot window">
                     {slotParts ? (
-                      <div className="leading-relaxed">
+                      <div className="leading-relaxed space-y-0.5">
                         <div className="text-nowrap">
-                          <span className="text-muted">Start:</span> {slotParts.start}
+                          <span className="text-[var(--text-muted)]">Start:</span>{' '}
+                          <span className="text-[var(--text-primary)] font-medium">{slotParts.start}</span>
                         </div>
                         <div className="text-nowrap">
-                          <span className="text-muted">End:</span> {slotParts.end}
+                          <span className="text-[var(--text-muted)]">End:</span>{' '}
+                          <span className="text-[var(--text-primary)] font-medium">{slotParts.end}</span>
                         </div>
                         {slotParts.capacity ? (
                           <div>
-                            <span className="text-muted">Capacity:</span> {slotParts.capacity}
+                            <span className="text-[var(--text-muted)]">Capacity:</span>{' '}
+                            <span className="font-semibold text-[#E3511B]">{slotParts.capacity}</span>
                           </div>
                         ) : null}
                       </div>

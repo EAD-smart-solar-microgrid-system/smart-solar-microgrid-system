@@ -722,3 +722,19 @@ select:focus-visible {
     margin: 0.75rem auto;
   }
 }
+
+.legacy-page .text-muted {
+  color: var(--text-muted) !important;
+}
+
+.dark .btn-close,
+:root.dark .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+  opacity: 0.75;
+}
+
+.dark .btn-close:hover,
+:root.dark .btn-close:hover {
+  opacity: 1;
+}
+
