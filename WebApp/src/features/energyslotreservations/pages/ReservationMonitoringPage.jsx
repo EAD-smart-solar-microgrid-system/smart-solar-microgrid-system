@@ -21,6 +21,7 @@ import {
   approveReservation,
   rejectReservation,
 } from '../services/reservationMonitoringService.js';
+import { formatBookingId } from '../utils/reservationMonitoringMapper.js';
 import { getStations, getSlotsByStationId } from '../services/energySlotService.js';
 import { getNicValidationError } from '../../prosumermanagement/utils/prosumerFormValidation.js';
 import { normalizeNic } from '../../prosumermanagement/utils/prosumerMapper.js';
@@ -73,8 +74,9 @@ export const ReservationMonitoringPage = () => {
       return;
     }
 
+    const bookingIdDisplay = targetReservation.bookingId || formatBookingId(targetReservation.id);
     const confirmed = window.confirm(
-      `Approve reservation ${targetReservation.id}? The prosumer can then request a QR token for this booking.`
+      `Approve reservation ${bookingIdDisplay}? The prosumer can then request a QR token for this booking.`
     );
     if (!confirmed) {
       return;
@@ -91,9 +93,8 @@ export const ReservationMonitoringPage = () => {
     setActionLoadingId(null);
 
     if (res.success) {
-      const msg = `Reservation ${targetReservation.id} approved successfully.`;
+      const msg = `Reservation ${bookingIdDisplay} approved successfully.`;
       setSuccessMessage(msg);
-      setActionMessage({ type: 'success', text: msg });
       await loadReservations();
       if (detailsOpen && detailsReservation?.id === targetReservation.id) {
         await loadReservationDetails(targetReservation.id);
@@ -106,10 +107,12 @@ export const ReservationMonitoringPage = () => {
   };
 
   const handleReject = async (reservation) => {
-    const targetId = reservation?.id || detailsReservation?.id;
+    const target = reservation?.id ? reservation : detailsReservation;
+    const targetId = target?.id;
     if (!targetId) return;
 
-    const reason = window.prompt(`Reject reservation ${targetId}. Enter reason:`, 'Rejected by Grid Operator');
+    const bookingIdDisplay = target?.bookingId || formatBookingId(targetId);
+    const reason = window.prompt(`Reject reservation ${bookingIdDisplay}. Enter reason:`, 'Rejected by Grid Operator');
     if (reason === null) return;
 
     setActionLoading(true);
@@ -123,9 +126,8 @@ export const ReservationMonitoringPage = () => {
     setActionLoadingId(null);
 
     if (res.success) {
-      const msg = `Reservation ${targetId} rejected successfully.`;
+      const msg = `Reservation ${bookingIdDisplay} rejected successfully.`;
       setSuccessMessage(msg);
-      setActionMessage({ type: 'success', text: msg });
       await loadReservations();
       if (detailsOpen && detailsReservation?.id === targetId) {
         await loadReservationDetails(targetId);
@@ -147,6 +149,9 @@ export const ReservationMonitoringPage = () => {
     stations.forEach((station) => {
       if (station?.id) {
         map[station.id] = station.stationName || 'Unnamed station';
+      }
+      if (station?.mongoId) {
+        map[station.mongoId] = station.stationName || 'Unnamed station';
       }
       if (station?.hubId) {
         map[station.hubId] = station.stationName || 'Unnamed station';

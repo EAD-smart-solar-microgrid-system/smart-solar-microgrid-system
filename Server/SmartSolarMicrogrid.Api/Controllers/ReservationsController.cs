@@ -123,6 +123,40 @@ public sealed class ReservationsController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Prosumer,GridOperator,Backoffice")]
+    public async Task<ActionResult<ReservationResponse>> GetById(
+        string id,
+        CancellationToken cancellationToken)
+    {
+        // Retrieve current reservation state including approved status and timestamps.
+        var result = await _reservationService.GetByIdAsync(id, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return CreateErrorResult(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Prosumer,GridOperator,Backoffice")]
+    public async Task<ActionResult<IReadOnlyList<ReservationResponse>>> GetReservations(
+        [FromQuery] string? prosumerNic,
+        CancellationToken cancellationToken)
+    {
+        // Query reservation records for a given prosumer NIC or session context.
+        var result = await _reservationService.GetByProsumerNicAsync(prosumerNic, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return CreateErrorResult(result);
+        }
+
+        return Ok(result.Value);
+    }
+
     private ActionResult CreateErrorResult<T>(ReservationServiceResult<T> result)
     {
         // Map expected reservation service outcomes into standard HTTP responses.

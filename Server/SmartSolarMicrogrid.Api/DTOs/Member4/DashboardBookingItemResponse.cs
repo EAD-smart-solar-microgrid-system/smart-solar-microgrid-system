@@ -11,9 +11,19 @@ public sealed class DashboardBookingItemResponse
 {
     public string Id { get; set; } = string.Empty;
 
+    public string BookingId { get; set; } = string.Empty;
+
     public string StationId { get; set; } = string.Empty;
 
+    public string HubId { get; set; } = string.Empty;
+
+    public string StationName { get; set; } = string.Empty;
+
     public string SlotId { get; set; } = string.Empty;
+
+    public string ProsumerId { get; set; } = string.Empty;
+
+    public string ProsumerName { get; set; } = string.Empty;
 
     public DateTime ReservationDateTime { get; set; }
 
@@ -22,4 +32,7 @@ public sealed class DashboardBookingItemResponse
     public string ReservationType { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
 }
+

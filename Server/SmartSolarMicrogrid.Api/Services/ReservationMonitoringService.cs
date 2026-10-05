@@ -26,16 +26,19 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
     private readonly IMongoCollection<EnergyReservation> _reservations;
     private readonly IReservationRepository _reservationRepository;
     private readonly IStationRepository _stationRepository;
+    private readonly IProsumerRepository _prosumerRepository;
 
     public ReservationMonitoringService(
         MongoDbContext databaseContext,
         IReservationRepository reservationRepository,
-        IStationRepository stationRepository)
+        IStationRepository stationRepository,
+        IProsumerRepository prosumerRepository)
     {
-        // Bind a read-only collection handle and repositories for station and reservation lookups.
+        // Bind a read-only collection handle and repositories for station, reservation, and prosumer lookups.
         _reservations = databaseContext.Database.GetCollection<EnergyReservation>(CollectionName);
         _reservationRepository = reservationRepository;
         _stationRepository = stationRepository;
+        _prosumerRepository = prosumerRepository;
     }
 
     public async Task<ReservationMonitoringServiceResult<ReservationMonitoringListResponse>> SearchAsync(
@@ -91,22 +94,35 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
             .ToListAsync(cancellationToken);
 
         var stationList = await _stationRepository.GetAllAsync(cancellationToken);
-        var stationMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var stationMap = new Dictionary<string, (string HubId, string StationName)>(StringComparer.OrdinalIgnoreCase);
         foreach (var s in stationList)
         {
-            if (!string.IsNullOrEmpty(s.Id) && !string.IsNullOrEmpty(s.HubId))
+            var hubId = !string.IsNullOrWhiteSpace(s.HubId) ? s.HubId : s.Id;
+            var name = !string.IsNullOrWhiteSpace(s.StationName) ? s.StationName : string.Empty;
+            if (!string.IsNullOrEmpty(s.Id))
             {
-                stationMap[s.Id] = s.HubId;
+                stationMap[s.Id] = (hubId, name);
             }
             if (!string.IsNullOrEmpty(s.HubId))
             {
-                stationMap[s.HubId] = s.HubId;
+                stationMap[s.HubId] = (hubId, name);
+            }
+        }
+
+        var prosumerNics = reservations.Select(r => r.ProsumerNic).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+        var prosumerMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var nic in prosumerNics)
+        {
+            var p = await _prosumerRepository.GetByNicAsync(nic, cancellationToken);
+            if (p != null && !string.IsNullOrEmpty(p.FullName))
+            {
+                prosumerMap[nic] = p.FullName;
             }
         }
 
         var response = new ReservationMonitoringListResponse
         {
-            Items = reservations.Select(r => MapToItem(r, stationMap)).ToList(),
+            Items = reservations.Select(r => MapToItem(r, stationMap, prosumerMap)).ToList(),
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
@@ -136,10 +152,37 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
         }
 
         var station = await _stationRepository.GetByIdAsync(reservation.StationId, cancellationToken);
-        var publicStationId = station?.HubId ?? reservation.StationId;
+        var hubId = station?.HubId ?? reservation.StationId;
+        var stationName = station?.StationName ?? string.Empty;
+
+        var prosumer = await _prosumerRepository.GetByNicAsync(reservation.ProsumerNic, cancellationToken);
+        var prosumerName = prosumer?.FullName ?? string.Empty;
+
+        var updatedAt = reservation.UpdatedAt != default
+            ? reservation.UpdatedAt
+            : (reservation.CreatedAt != default ? reservation.CreatedAt : reservation.ReservationDateTime);
+
+        var bookingId = reservation.Id.Length >= 6
+            ? $"BK-{reservation.Id[^6..].ToUpperInvariant()}"
+            : $"BK-{reservation.Id.ToUpperInvariant()}";
 
         return ReservationMonitoringServiceResult<ReservationMonitoringItemResponse>.Success(
-            MapToItem(reservation, publicStationId));
+            new ReservationMonitoringItemResponse
+            {
+                Id = reservation.Id,
+                BookingId = bookingId,
+                StationId = reservation.StationId,
+                HubId = hubId,
+                StationName = stationName,
+                SlotId = reservation.SlotId,
+                ProsumerId = reservation.ProsumerNic,
+                ProsumerName = prosumerName,
+                ReservationDateTime = reservation.ReservationDateTime,
+                Status = reservation.Status.ToString(),
+                ReservationType = reservation.ReservationType.ToString(),
+                CreatedAt = reservation.CreatedAt,
+                UpdatedAt = updatedAt
+            });
     }
 
     private static string? ValidateQuery(
@@ -291,31 +334,43 @@ public sealed class ReservationMonitoringService : IReservationMonitoringService
 
     private static ReservationMonitoringItemResponse MapToItem(
         EnergyReservation reservation,
-        IReadOnlyDictionary<string, string> stationMap)
+        IReadOnlyDictionary<string, (string HubId, string StationName)> stationMap,
+        IReadOnlyDictionary<string, string> prosumerMap)
     {
-        var publicStationId = stationMap.TryGetValue(reservation.StationId, out var hubId)
-            ? hubId
-            : reservation.StationId;
+        string hubId = reservation.StationId;
+        string stationName = string.Empty;
+        if (stationMap.TryGetValue(reservation.StationId, out var info))
+        {
+            hubId = info.HubId;
+            stationName = info.StationName;
+        }
 
-        return MapToItem(reservation, publicStationId);
-    }
+        prosumerMap.TryGetValue(reservation.ProsumerNic, out var prosumerName);
 
-    private static ReservationMonitoringItemResponse MapToItem(
-        EnergyReservation reservation,
-        string publicStationId)
-    {
+        var updatedAt = reservation.UpdatedAt != default
+            ? reservation.UpdatedAt
+            : (reservation.CreatedAt != default ? reservation.CreatedAt : reservation.ReservationDateTime);
+
+        var bookingId = reservation.Id.Length >= 6
+            ? $"BK-{reservation.Id[^6..].ToUpperInvariant()}"
+            : $"BK-{reservation.Id.ToUpperInvariant()}";
+
         // Map persisted reservation fields into the Member 4 monitoring response shape with public HubId.
         return new ReservationMonitoringItemResponse
         {
             Id = reservation.Id,
-            StationId = publicStationId,
+            BookingId = bookingId,
+            StationId = reservation.StationId,
+            HubId = hubId,
+            StationName = stationName,
             SlotId = reservation.SlotId,
             ProsumerId = reservation.ProsumerNic,
+            ProsumerName = prosumerName ?? string.Empty,
             ReservationDateTime = reservation.ReservationDateTime,
             Status = reservation.Status.ToString(),
             ReservationType = reservation.ReservationType.ToString(),
             CreatedAt = reservation.CreatedAt,
-            UpdatedAt = reservation.UpdatedAt
+            UpdatedAt = updatedAt
         };
     }
 

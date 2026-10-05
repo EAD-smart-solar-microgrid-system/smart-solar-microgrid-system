@@ -68,7 +68,7 @@ export const ReservationMonitoringTable = ({
             return (
               <tr key={reservation.id}>
                 <td>
-                  <span className="fw-semibold">{formatBookingId(reservation.id)}</span>
+                  <span className="fw-semibold">{bookingIdDisplay}</span>
                 </td>
                 <td>{stationName}</td>
                 <td>
