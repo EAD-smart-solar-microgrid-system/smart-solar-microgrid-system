@@ -253,6 +253,7 @@ try
             PasswordHash = SmartSolarMicrogrid.Api.Services.PasswordHasher.Hash("admin123"),
             Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.Backoffice,
             Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
+            IsEmailVerified = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -269,6 +270,7 @@ try
             PasswordHash = SmartSolarMicrogrid.Api.Services.PasswordHasher.Hash("operator123"),
             Role = SmartSolarMicrogrid.Api.Common.Enums.WebUserRole.GridOperator,
             Status = SmartSolarMicrogrid.Api.Common.Enums.WebUserStatus.Active,
+            IsEmailVerified = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
