@@ -36,7 +36,7 @@ public class AdminUsersController : ControllerBase
     {
         // Register a new web user account with specified administrative or operational role
         var user = await _userService.CreateUserAsync(request);
-        if (user == null) return BadRequest(new { message = "Username already exists." });
+        if (user == null) return BadRequest(new { message = "Username or email already exists." });
         return Created($"/api/admin/users/{user.Id}", user);
     }
 

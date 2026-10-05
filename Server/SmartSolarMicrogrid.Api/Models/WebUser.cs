@@ -40,6 +40,9 @@ public sealed class WebUser
     [BsonElement("EmailVerificationToken")]
     public string? EmailVerificationToken { get; set; }
 
+    [BsonElement("EmailVerificationExpiry")]
+    public DateTime? EmailVerificationExpiry { get; set; }
+
     [BsonElement("PasswordResetToken")]
     public string? PasswordResetToken { get; set; }
 

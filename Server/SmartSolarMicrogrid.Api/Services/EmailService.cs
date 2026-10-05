@@ -136,21 +136,6 @@ public sealed class EmailService : IEmailService
         return await SendEmailAsync(toEmail, $"Set Up Your SolarGrid Account ({username})", html);
     }
 
-    [Obsolete("Use SendAccountInvitationEmailAsync so passwords are never sent by email.")]
-    public Task<bool> SendCredentialsEmailAsync(string toEmail, string username, string tempPassword, string role)
-    {
-        _logger.LogWarning(
-            "Temporary-password email suppressed for {Username}; use a one-time account invitation instead.",
-            username);
-        return Task.FromResult(false);
-    }
-
-    [Obsolete("Use SendAccountInvitationEmailAsync for account setup.")]
-    public Task<bool> SendVerificationEmailAsync(string toEmail, string username, string token)
-    {
-        return SendAccountInvitationEmailAsync(toEmail, username, "Staff User", token);
-    }
-
     public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string username, string token)
     {
         var safeUsername = System.Net.WebUtility.HtmlEncode(username);

@@ -63,49 +63,34 @@ public class WebUserService : IWebUserService
     public async Task<WebUserDto?> CreateUserAsync(CreateWebUserRequest request)
     {
         var existing = await _repo.GetByUsernameAsync(request.Username);
-        if (existing != null) return null; // Username already exists
+        if (existing != null) return null;
 
-        var email = request.Email?.Trim() ?? string.Empty;
-        var verificationToken = !string.IsNullOrWhiteSpace(email)
-            ? Convert.ToHexString(RandomNumberGenerator.GetBytes(24))
-            : null;
+        var email = request.Email.Trim();
+        if (string.IsNullOrWhiteSpace(email) || await _repo.GetByEmailAsync(email) != null) return null;
+
+        var verificationToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        var unusableRandomPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
         var user = new WebUser
         {
             Id = ObjectId.GenerateNewId().ToString(),
             Username = request.Username.Trim(),
-            PasswordHash = PasswordHasher.Hash(request.Password),
+            PasswordHash = PasswordHasher.Hash(unusableRandomPassword),
             Role = request.Role,
             Status = WebUserStatus.Active,
             Email = email,
             IsEmailVerified = false,
             EmailVerificationToken = verificationToken,
+            EmailVerificationExpiry = DateTime.UtcNow.AddHours(24),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.CreateAsync(user);
 
-        // If an email address was provided, automatically send the credential notification
-        if (!string.IsNullOrWhiteSpace(user.Email))
-        {
-            var roleTitle = user.Role == WebUserRole.Backoffice ? "Administrator" : "Grid Operator";
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _emailService.SendCredentialsEmailAsync(user.Email, user.Username, request.Password, roleTitle);
-                    if (!string.IsNullOrWhiteSpace(verificationToken))
-                    {
-                        await _emailService.SendVerificationEmailAsync(user.Email, user.Username, verificationToken);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to send credential delivery email for new user {Username}", user.Username);
-                }
-            });
-        }
+        var roleTitle = user.Role == WebUserRole.Backoffice ? "Administrator" : "Grid Operator";
+        var invitationEmailSent = await _emailService.SendAccountInvitationEmailAsync(
+            user.Email, user.Username, roleTitle, verificationToken);
 
         return new WebUserDto(
             user.Id,
@@ -113,7 +98,8 @@ public class WebUserService : IWebUserService
             user.Role,
             user.Status,
             user.Email,
-            user.IsEmailVerified
+            user.IsEmailVerified,
+            invitationEmailSent
         );
     }
 

@@ -15,14 +15,14 @@ public record WebUserDto(
     WebUserRole Role,
     WebUserStatus Status,
     string? Email = null,
-    bool IsEmailVerified = false
+    bool IsEmailVerified = false,
+    bool? InvitationEmailSent = null
 );
 
 public record CreateWebUserRequest(
     [Required] string Username,
-    [Required] string Password,
     [Required] WebUserRole Role,
-    string? Email = null
+    [Required, EmailAddress] string Email
 );
 
 public record UpdateWebUserRequest(
