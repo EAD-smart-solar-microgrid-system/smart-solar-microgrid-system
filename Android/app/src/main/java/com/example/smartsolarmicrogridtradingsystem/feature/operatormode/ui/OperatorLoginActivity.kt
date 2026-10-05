@@ -7,10 +7,12 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import com.example.smartsolarmicrogridtradingsystem.R
 import com.example.smartsolarmicrogridtradingsystem.core.network.ApiClient
 import com.example.smartsolarmicrogridtradingsystem.core.session.SessionManager
 import com.example.smartsolarmicrogridtradingsystem.core.threading.AppExecutors
+import com.example.smartsolarmicrogridtradingsystem.core.validation.AccountInputValidator
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
@@ -48,23 +50,23 @@ class OperatorLoginActivity : AppCompatActivity() {
         val pbLoginLoading = findViewById<ProgressBar>(R.id.pbLoginLoading)
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
 
+        etUsername.doAfterTextChanged { tilUsername.error = null }
+        etPassword.doAfterTextChanged { tilPassword.error = null }
+
         btnLogin.setOnClickListener {
             val username = etUsername.text?.toString()?.trim().orEmpty()
-            val password = etPassword.text?.toString()?.trim().orEmpty()
+            val password = etPassword.text?.toString().orEmpty()
 
             tilUsername.error = null
             tilPassword.error = null
             tvLoginError.visibility = View.GONE
 
-            if (username.isEmpty()) {
-                tilUsername.error = "Username is required"
-                etUsername.requestFocus()
-                return@setOnClickListener
-            }
-
-            if (password.isEmpty()) {
-                tilPassword.error = "Password is required"
-                etPassword.requestFocus()
+            val usernameError = AccountInputValidator.loginIdentifierError(username)
+            val passwordError = AccountInputValidator.loginPasswordError(password)
+            tilUsername.error = usernameError
+            tilPassword.error = passwordError
+            if (usernameError != null || passwordError != null) {
+                if (usernameError != null) etUsername.requestFocus() else etPassword.requestFocus()
                 return@setOnClickListener
             }
 
