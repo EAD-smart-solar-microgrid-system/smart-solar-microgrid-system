@@ -11,11 +11,20 @@ public sealed class ReservationMonitoringItemResponse
 {
     public string Id { get; set; } = string.Empty;
 
+    public string BookingId { get; set; } = string.Empty;
+
     public string StationId { get; set; } = string.Empty;
+
+    public string HubId { get; set; } = string.Empty;
+
+    public string StationName { get; set; } = string.Empty;
 
     public string SlotId { get; set; } = string.Empty;
 
     public string ProsumerId { get; set; } = string.Empty;
+
+    public string ProsumerName { get; set; } = string.Empty;
+
 
     public DateTime ReservationDateTime { get; set; }
 

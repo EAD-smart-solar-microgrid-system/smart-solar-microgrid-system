@@ -11,6 +11,8 @@ public sealed class ProsumerDashboardResponse
 {
     public string ProsumerId { get; set; } = string.Empty;
 
+    public string ProsumerName { get; set; } = string.Empty;
+
     public int PendingReservationCount { get; set; }
 
     public int ApprovedFutureReservationCount { get; set; }

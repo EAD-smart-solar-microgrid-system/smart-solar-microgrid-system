@@ -21,14 +21,17 @@ public sealed class Member4DashboardService : IMember4DashboardService
 
     private readonly IMongoCollection<EnergyReservation> _reservations;
     private readonly IProsumerRepository _prosumerRepository;
+    private readonly IStationRepository _stationRepository;
 
     public Member4DashboardService(
         MongoDbContext databaseContext,
-        IProsumerRepository prosumerRepository)
+        IProsumerRepository prosumerRepository,
+        IStationRepository stationRepository)
     {
-        // Bind a read-only reservation collection and reuse the prosumer repository for NIC lookup.
+        // Bind a read-only reservation collection and repositories for prosumer and station lookup.
         _reservations = databaseContext.Database.GetCollection<EnergyReservation>(CollectionName);
         _prosumerRepository = prosumerRepository;
+        _stationRepository = stationRepository;
     }
 
     public async Task<Member4DashboardServiceResult<ProsumerDashboardResponse>> GetProsumerDashboardAsync(
@@ -70,32 +73,75 @@ public sealed class Member4DashboardService : IMember4DashboardService
             reservation.Status == ReservationStatus.Approved
             && NormalizeToUtc(reservation.ReservationDateTime) > nowUtc);
 
+        var stations = await _stationRepository.GetAllAsync(cancellationToken);
+        var stationMap = new Dictionary<string, (string HubId, string StationName)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var station in stations)
+        {
+            var hubId = !string.IsNullOrWhiteSpace(station.HubId) ? station.HubId : station.Id;
+            var name = !string.IsNullOrWhiteSpace(station.StationName) ? station.StationName : string.Empty;
+            if (!string.IsNullOrWhiteSpace(station.Id))
+            {
+                stationMap[station.Id] = (hubId, name);
+            }
+            if (!string.IsNullOrWhiteSpace(station.HubId))
+            {
+                stationMap[station.HubId] = (hubId, name);
+            }
+        }
+
         var response = new ProsumerDashboardResponse
         {
             ProsumerId = normalizedNic,
+            ProsumerName = prosumer.FullName,
             PendingReservationCount = pendingCount,
             ApprovedFutureReservationCount = approvedFutureCount,
             RecentBookings = reservations
                 .Take(RecentBookingLimit)
-                .Select(MapBooking)
+                .Select(r => MapBooking(r, prosumer, stationMap))
                 .ToList()
         };
 
         return Member4DashboardServiceResult<ProsumerDashboardResponse>.Success(response);
     }
 
-    private static DashboardBookingItemResponse MapBooking(EnergyReservation reservation)
+    private static DashboardBookingItemResponse MapBooking(
+        EnergyReservation reservation,
+        Prosumer prosumer,
+        IReadOnlyDictionary<string, (string HubId, string StationName)> stationMap)
     {
-        // Map a reservation document into a compact dashboard booking row.
+        string hubId = reservation.StationId;
+        string stationName = string.Empty;
+
+        if (stationMap.TryGetValue(reservation.StationId, out var stationInfo))
+        {
+            hubId = stationInfo.HubId;
+            stationName = stationInfo.StationName;
+        }
+
+        var updatedAt = reservation.UpdatedAt != default
+            ? reservation.UpdatedAt
+            : (reservation.CreatedAt != default ? reservation.CreatedAt : reservation.ReservationDateTime);
+
+        var bookingId = reservation.Id.Length >= 6
+            ? $"BK-{reservation.Id[^6..].ToUpperInvariant()}"
+            : $"BK-{reservation.Id.ToUpperInvariant()}";
+
+        // Map a reservation document into a compact dashboard booking row with Hub ID and Prosumer details.
         return new DashboardBookingItemResponse
         {
             Id = reservation.Id,
+            BookingId = bookingId,
             StationId = reservation.StationId,
+            HubId = hubId,
+            StationName = stationName,
             SlotId = reservation.SlotId,
+            ProsumerId = reservation.ProsumerNic,
+            ProsumerName = prosumer.FullName,
             ReservationDateTime = reservation.ReservationDateTime,
             Status = reservation.Status.ToString(),
             ReservationType = reservation.ReservationType.ToString(),
-            CreatedAt = reservation.CreatedAt
+            CreatedAt = reservation.CreatedAt,
+            UpdatedAt = updatedAt
         };
     }
 
