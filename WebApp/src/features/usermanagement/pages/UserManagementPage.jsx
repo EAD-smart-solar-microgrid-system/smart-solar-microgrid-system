@@ -4,12 +4,21 @@ import { AuthContext } from '../../authentication/context/AuthContextValue.js';
 import { ProsumerManagementPage } from '../../prosumermanagement/pages/ProsumerManagementPage.jsx';
 import { MaterialIcon } from '../../../components/common/MaterialIcon.jsx';
 
+const getRequestedCreateRole = () => {
+  if (typeof window === 'undefined') return 'Backoffice';
+
+  const requestedRole = new URLSearchParams(window.location.search).get('role');
+  return requestedRole?.toLowerCase() === 'gridoperator' || requestedRole?.toLowerCase() === 'grid-operator'
+    ? 'GridOperator'
+    : 'Backoffice';
+};
+
 export const UserManagementPage = () => {
   const { token } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [pendingProsumerCount, setPendingProsumerCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ username: '', password: '', role: 'Backoffice', email: '' });
+  const [form, setForm] = useState({ username: '', role: getRequestedCreateRole(), email: '' });
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -41,6 +50,23 @@ export const UserManagementPage = () => {
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('tab', newTab);
+      url.searchParams.delete('action');
+      if (newTab !== 'create') url.searchParams.delete('role');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  const startCreateAccount = (role) => {
+    setEditingId(null);
+    setForm({ username: '', role, email: '' });
+    setError('');
+    setSuccessMsg('');
+    setActiveTab('create');
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'create');
+      url.searchParams.set('role', role);
       url.searchParams.delete('action');
       window.history.replaceState({}, '', url.toString());
     }
@@ -83,7 +109,7 @@ export const UserManagementPage = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setForm({ username: '', password: '', role: 'Backoffice', email: '' });
+    setForm({ username: '', role: 'Backoffice', email: '' });
     setError('');
   };
 
@@ -122,10 +148,13 @@ export const UserManagementPage = () => {
           body: JSON.stringify(form),
         });
         if (response.ok) {
+          const createdUser = await response.json();
           const roleTitle = form.role === 'Backoffice' ? 'Administrator (Full Admin Privileges)' : 'Grid Operator';
-          const emailNotice = form.email ? ` Credentials email sent to ${form.email}.` : '';
+          const emailNotice = createdUser.invitationEmailSent
+            ? ` An account setup invitation was sent to ${form.email}.`
+            : ' Account created, but the invitation email was not delivered. Check the API SMTP configuration.';
           setSuccessMsg(`New ${roleTitle} account '${form.username}' created successfully!${emailNotice}`);
-          setForm({ username: '', password: '', role: 'Backoffice', email: '' });
+          setForm({ username: '', role: form.role, email: '' });
           fetchUsers();
         } else {
           const errData = await response.json().catch(() => null);
@@ -207,7 +236,6 @@ export const UserManagementPage = () => {
     setEditingId(user.id);
     setForm({
       username: user.username,
-      password: '',
       role: isBackofficeRole(user.role) ? 'Backoffice' : 'GridOperator',
       email: user.email || '',
     });
@@ -300,30 +328,44 @@ export const UserManagementPage = () => {
             )}
           </button>
 
-          {/* Tab 3: Create New Administrator Account */}
-          <button
-            type="button"
-            onClick={() => handleTabChange('create')}
-            className={`flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs ${
-              activeTab === 'create'
-                ? 'bg-[#E3511B] text-white font-black'
-                : 'border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {editingId ? (
-              <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                <span>Edit Account: {form.username}</span>
-              </>
-            ) : (
-              <>
-                <MaterialIcon name="add" size={15} className="text-white" />
-                <span>Create New Administrator</span>
-              </>
-            )}
-          </button>
+          {/* Staff account registration shortcuts */}
+          {editingId ? (
+            <button
+              type="button"
+              onClick={() => handleTabChange('create')}
+              className="flex items-center gap-2.5 rounded-xl bg-[#E3511B] px-4 py-2.5 text-xs font-black text-white shadow-xs transition"
+            >
+              <MaterialIcon name="edit" size={15} />
+              <span>Edit Account: {form.username}</span>
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => startCreateAccount('Backoffice')}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs ${
+                  activeTab === 'create' && form.role === 'Backoffice'
+                    ? 'bg-[#E3511B] text-white'
+                    : 'border border-[#E3511B]/40 bg-[#E3511B]/10 text-[#E3511B] hover:bg-[#E3511B]/15'
+                }`}
+              >
+                <MaterialIcon name="add" size={15} />
+                <span>Create Administrator</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => startCreateAccount('GridOperator')}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs ${
+                  activeTab === 'create' && form.role === 'GridOperator'
+                    ? 'bg-[var(--text-primary)] text-[var(--bg-app)]'
+                    : 'border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <MaterialIcon name="person_add" size={15} />
+                <span>Register Grid Operator</span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* SUMMARY STAT BADGES */}
@@ -411,13 +453,20 @@ export const UserManagementPage = () => {
                   <span>Refresh</span>
                 </button>
 
-                {/* Create shortcut button */}
+                {/* Staff registration shortcut buttons */}
                 <button
                   type="button"
-                  onClick={() => handleTabChange('create')}
+                  onClick={() => startCreateAccount('Backoffice')}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#E3511B] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-[#F05A20] shadow-xs"
                 >
                   <span>+ Create Admin</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startCreateAccount('GridOperator')}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-1.5 text-xs font-bold text-[var(--text-primary)] transition hover:bg-[var(--bg-hover)] shadow-xs"
+                >
+                  <span>+ Register Grid Operator</span>
                 </button>
               </div>
             </div>
@@ -572,7 +621,7 @@ export const UserManagementPage = () => {
         </div>
       )}
 
-      {/* SECTION 3: CREATE NEW ADMINISTRATOR ACCOUNT ONLY */}
+      {/* SECTION 3: CREATE OR EDIT A STAFF ACCOUNT */}
       {activeTab === 'create' && (
         <div className="space-y-4">
           {successMsg && (
@@ -601,15 +650,21 @@ export const UserManagementPage = () => {
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4 mb-5">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#E3511B]">
-                  Admin Setting
+                  Staff Account Registration
                 </span>
                 <h2 className="text-base font-bold text-[var(--text-primary)] mt-0.5">
-                  {editingId ? `Edit Account Credentials` : 'Create New Administrator Account'}
+                  {editingId
+                    ? 'Edit Account Credentials'
+                    : form.role === 'Backoffice'
+                      ? 'Create New Administrator Account'
+                      : 'Register New Grid Operator'}
                 </h2>
                 <p className="text-xs text-[var(--text-muted)]">
                   {editingId
                     ? `Updating profile and role permissions for '${form.username}'`
-                    : 'Create an administrator with full platform control or a station grid operator.'}
+                    : form.role === 'Backoffice'
+                      ? 'Invite an administrator with full platform governance permissions.'
+                      : 'Invite a station operator to verify their email, create a password, and access Operator Mode.'}
                 </p>
               </div>
               <div>
@@ -725,7 +780,7 @@ export const UserManagementPage = () => {
                 </div>
               </div>
 
-              {/* STEP 2: CREDENTIALS */}
+              {/* STEP 2: ACCOUNT IDENTITY */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Username */}
                 <div>
@@ -743,27 +798,10 @@ export const UserManagementPage = () => {
                   />
                 </div>
 
-                {/* Password */}
-                <div>
-                  <label htmlFor="user-password" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-                    {editingId ? 'Password (Leave blank to keep unchanged)' : 'Initial Password'} <span className="text-[#EF4444]">*</span>
-                  </label>
-                  <input
-                    id="user-password"
-                    type="password"
-                    placeholder={editingId ? '••••••••' : 'Enter secure password'}
-                    className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B]"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    required={!editingId}
-                    disabled={Boolean(editingId)}
-                  />
-                </div>
-
                 {/* Email Address */}
-                <div className="sm:col-span-2">
+                <div>
                   <label htmlFor="user-email" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-                    Email Address (For Credential Delivery &amp; Notifications)
+                    Email Address <span className="text-[#EF4444]">*</span>
                   </label>
                   <input
                     id="user-email"
@@ -772,11 +810,15 @@ export const UserManagementPage = () => {
                     className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition focus:border-[#E3511B]"
                     value={form.email || ''}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    required
                   />
-                  <span className="text-[11px] text-[var(--text-muted)] mt-1 block">
-                    When provided, an automated email with their role, username, and temporary password will be dispatched to this address.
-                  </span>
                 </div>
+
+                {!editingId && (
+                  <div className="sm:col-span-2 rounded-xl border border-[#3B82F6]/30 bg-[#3B82F6]/10 p-3 text-xs text-[#60A5FA]">
+                    The user will receive their username and a secure one-time link. They will create their own password after verifying this email address.
+                  </div>
+                )}
               </div>
 
               {/* ACTION BUTTONS */}
@@ -800,9 +842,9 @@ export const UserManagementPage = () => {
                   {editingId ? (
                     <span>Save Account Changes</span>
                   ) : form.role === 'Backoffice' ? (
-                    <span>Create Administrator Account</span>
+                    <span>Create &amp; Invite Administrator</span>
                   ) : (
-                    <span>Create Grid Operator Account</span>
+                    <span>Create &amp; Invite Grid Operator</span>
                   )}
                 </button>
               </div>
