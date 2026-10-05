@@ -42,16 +42,16 @@
     <string name="action_reset">Reset</string>
 
     <string name="booking_type_label">Type: %1$s</string>
-    <string name="booking_station_label">Station: %1$s</string>
-    <string name="booking_id_label">Reservation: %1$s</string>
+    <string name="booking_station_label">Hub ID: %1$s</string>
+    <string name="booking_id_label">Booking ID: %1$s</string>
 
     <string name="detail_title">Reservation details</string>
-    <string name="detail_id">ID: %1$s</string>
+    <string name="detail_id">Booking ID: %1$s</string>
     <string name="detail_status">Status: %1$s</string>
     <string name="detail_type">Type: %1$s</string>
     <string name="detail_datetime">Date / time: %1$s</string>
     <string name="detail_prosumer">Prosumer: %1$s</string>
-    <string name="detail_station">Station ID: %1$s</string>
+    <string name="detail_station">Hub ID: %1$s</string>
     <string name="detail_station_name">Station name: %1$s</string>
     <string name="detail_station_name_unknown">Station name: not cached</string>
     <string name="detail_slot">Slot ID: %1$s</string>
