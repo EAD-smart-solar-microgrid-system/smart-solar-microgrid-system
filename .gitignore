@@ -1,8 +1,17 @@
-
 # Local Planning
 commit_plan.md
 Smart_Solar_Microgrid_Member_Breakdown.html
 
+# IDE / editor
+.idea/
+
+# Build and deployment output (regenerate via deploy/iis scripts)
+publish/
+
+# Stray local tooling files
+Server/SmartSolarMicrogrid.Api/Library/
+
 # Local API credentials and development overrides
 Server/SmartSolarMicrogrid.Api/.env
 Server/SmartSolarMicrogrid.Api/appsettings.Local.json
+WebApp/.env
