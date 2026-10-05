@@ -14,6 +14,7 @@ import com.example.smartsolarmicrogridtradingsystem.core.network.NetworkResult
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.request.RegisterProsumerRequestDto
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.ProsumerProfileResponseDto
 import com.example.smartsolarmicrogridtradingsystem.feature.prosumeraccount.data.ProsumerAccountRepository
+import com.example.smartsolarmicrogridtradingsystem.feature.prosumeraccount.util.ProsumerValidationUtil
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
@@ -56,31 +57,60 @@ class ProsumerRegisterActivity : AppCompatActivity() {
         }
 
         btnSubmit.setOnClickListener {
-            val nic = etNic.text?.toString()?.trim().orEmpty()
-            val name = etName.text?.toString()?.trim().orEmpty()
-            val email = etEmail.text?.toString()?.trim().orEmpty()
-            val phone = etPhone.text?.toString()?.trim()
-            val address = etAddress.text?.toString()?.trim()
+            val rawNic = etNic.text?.toString()?.trim().orEmpty()
+            val rawName = etName.text?.toString()?.trim().orEmpty()
+            val rawEmail = etEmail.text?.toString()?.trim().orEmpty()
+            val rawPhone = etPhone.text?.toString()?.trim().orEmpty()
+            val rawAddress = etAddress.text?.toString()?.trim().orEmpty()
 
             tilNic.error = null
             tilName.error = null
             tilEmail.error = null
+            tilPhone.error = null
+            tilAddress.error = null
             tvError.visibility = View.GONE
 
             var hasError = false
-            if (nic.isEmpty()) {
-                tilNic.error = "NIC is required"
+
+            // NIC validation (required, Sri Lankan old/new NIC format)
+            if (rawNic.isEmpty()) {
+                tilNic.error = getString(R.string.error_nic_required)
+                hasError = true
+            } else if (!ProsumerValidationUtil.isValidNic(rawNic)) {
+                tilNic.error = getString(R.string.error_nic_invalid)
                 hasError = true
             }
-            if (name.isEmpty()) {
-                tilName.error = "Full Name is required"
+
+            // Full Name validation (required, length >= 2, valid human name characters)
+            if (rawName.isEmpty()) {
+                tilName.error = getString(R.string.error_name_required)
+                hasError = true
+            } else if (rawName.length < 2) {
+                tilName.error = getString(R.string.error_name_too_short)
+                hasError = true
+            } else if (!ProsumerValidationUtil.isValidFullName(rawName)) {
+                tilName.error = getString(R.string.error_name_invalid)
                 hasError = true
             }
-            if (email.isEmpty()) {
-                tilEmail.error = "Email is required"
+
+            // Email validation (required, valid email address)
+            if (rawEmail.isEmpty()) {
+                tilEmail.error = getString(R.string.error_email_required)
                 hasError = true
-            } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                tilEmail.error = "Enter a valid email address"
+            } else if (!ProsumerValidationUtil.isValidEmail(rawEmail)) {
+                tilEmail.error = getString(R.string.error_email_invalid)
+                hasError = true
+            }
+
+            // Phone validation (optional field, validated when provided)
+            if (rawPhone.isNotEmpty() && !ProsumerValidationUtil.isValidPhoneNumber(rawPhone)) {
+                tilPhone.error = getString(R.string.error_phone_invalid)
+                hasError = true
+            }
+
+            // Address validation (optional field, max length check)
+            if (rawAddress.isNotEmpty() && !ProsumerValidationUtil.isValidAddress(rawAddress)) {
+                tilAddress.error = getString(R.string.error_address_too_long)
                 hasError = true
             }
 
@@ -89,12 +119,13 @@ class ProsumerRegisterActivity : AppCompatActivity() {
             btnSubmit.isEnabled = false
             pbLoading.visibility = View.VISIBLE
 
+            val normalizedNic = ProsumerValidationUtil.normalizeNic(rawNic)
             val request = RegisterProsumerRequestDto(
-                nic = nic,
-                fullName = name,
-                email = email,
-                phoneNumber = if (phone.isNullOrBlank()) null else phone,
-                address = if (address.isNullOrBlank()) null else address
+                nic = normalizedNic,
+                fullName = rawName,
+                email = rawEmail,
+                phoneNumber = if (rawPhone.isBlank()) null else rawPhone,
+                address = if (rawAddress.isBlank()) null else rawAddress
             )
 
             repository.registerProsumer(request, object : ApiCallback<ProsumerProfileResponseDto> {

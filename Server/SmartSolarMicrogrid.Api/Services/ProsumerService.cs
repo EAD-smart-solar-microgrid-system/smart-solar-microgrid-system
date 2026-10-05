@@ -6,6 +6,7 @@
  */
 
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using MongoDB.Driver;
 using SmartSolarMicrogrid.Api.Common.Enums;
 using SmartSolarMicrogrid.Api.DTOs.Prosumers;
@@ -16,6 +17,9 @@ namespace SmartSolarMicrogrid.Api.Services;
 
 public sealed class ProsumerService : IProsumerService
 {
+    private static readonly Regex FullNameRegex =
+        new(@"^[\p{L}\p{M} .'-]+$", RegexOptions.Compiled);
+
     private readonly ICurrentProsumerAccessor _currentProsumerAccessor;
     private readonly IProsumerRepository _prosumerRepository;
 
@@ -34,7 +38,7 @@ public sealed class ProsumerService : IProsumerService
     {
         // Validate and normalize public registration data before creating server fields.
         var nic = NormalizeNic(request.Nic);
-        var validationMessage = ValidateRegistration(nic, request.FullName, request.Email);
+        var validationMessage = ValidateRegistration(nic, request.FullName, request.Email, request.PhoneNumber, request.Address);
 
         if (validationMessage is not null)
         {
@@ -118,7 +122,7 @@ public sealed class ProsumerService : IProsumerService
             return UnauthorizedResult();
         }
 
-        var validationMessage = ValidateProfile(request.FullName, request.Email);
+        var validationMessage = ValidateProfile(request.FullName, request.Email, request.PhoneNumber, request.Address);
 
         if (validationMessage is not null)
         {
@@ -245,6 +249,17 @@ public sealed class ProsumerService : IProsumerService
                    @"^\d{12}$");
     }
 
+    public static bool IsValidFullName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        var trimmed = name.Trim();
+        return trimmed.Length >= 2 && trimmed.Length <= 100 && FullNameRegex.IsMatch(trimmed);
+    }
+
     private static string? NormalizeOptionalText(string? value)
     {
         // Trim optional profile text and represent whitespace-only input as absent.
@@ -254,7 +269,9 @@ public sealed class ProsumerService : IProsumerService
     private static string? ValidateRegistration(
         string? nic,
         string? fullName,
-        string? email)
+        string? email,
+        string? phoneNumber = null,
+        string? address = null)
     {
         // Apply registration validation without inventing a strict national NIC format.
         if (string.IsNullOrWhiteSpace(nic))
@@ -262,15 +279,40 @@ public sealed class ProsumerService : IProsumerService
             return "Nic is required.";
         }
 
-        return ValidateProfile(fullName, email);
+        if (!IsValidNic(nic))
+        {
+            return "Enter a valid NIC number.";
+        }
+
+        return ValidateProfile(fullName, email, phoneNumber, address);
     }
 
-    private static string? ValidateProfile(string? fullName, string? email)
+    private static string? ValidateProfile(
+        string? fullName,
+        string? email,
+        string? phoneNumber = null,
+        string? address = null)
     {
         // Validate required profile fields and use a standard reasonable email check.
         if (string.IsNullOrWhiteSpace(fullName))
         {
             return "FullName is required.";
+        }
+
+        var trimmedName = fullName.Trim();
+        if (trimmedName.Length < 2)
+        {
+            return "FullName must be at least 2 characters.";
+        }
+
+        if (trimmedName.Length > 100)
+        {
+            return "FullName cannot exceed 100 characters.";
+        }
+
+        if (!FullNameRegex.IsMatch(trimmedName))
+        {
+            return "FullName contains invalid characters.";
         }
 
         if (string.IsNullOrWhiteSpace(email))
@@ -281,6 +323,20 @@ public sealed class ProsumerService : IProsumerService
         if (!new EmailAddressAttribute().IsValid(email.Trim()))
         {
             return "Email must be a valid email address.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            var cleaned = phoneNumber.Trim().Replace(" ", string.Empty).Replace("-", string.Empty);
+            if (!Regex.IsMatch(cleaned, @"^(0\d{9}|\+94\d{9})$"))
+            {
+                return "Phone number must be a valid Sri Lankan phone number (e.g. 07XXXXXXXX or +947XXXXXXXX).";
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(address) && address.Trim().Length > 250)
+        {
+            return "Address cannot exceed 250 characters.";
         }
 
         return null;

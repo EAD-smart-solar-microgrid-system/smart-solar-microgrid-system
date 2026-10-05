@@ -16,6 +16,7 @@ import com.example.smartsolarmicrogridtradingsystem.core.session.SessionManager
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.request.UpdateProsumerProfileRequestDto
 import com.example.smartsolarmicrogridtradingsystem.data.remote.dto.response.ProsumerProfileResponseDto
 import com.example.smartsolarmicrogridtradingsystem.feature.prosumeraccount.data.ProsumerAccountRepository
+import com.example.smartsolarmicrogridtradingsystem.feature.prosumeraccount.util.ProsumerValidationUtil
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
@@ -36,7 +37,9 @@ class ProsumerProfileActivity : AppCompatActivity() {
     private lateinit var etName: TextInputEditText
     private lateinit var tilEmail: TextInputLayout
     private lateinit var etEmail: TextInputEditText
+    private lateinit var tilPhone: TextInputLayout
     private lateinit var etPhone: TextInputEditText
+    private lateinit var tilAddress: TextInputLayout
     private lateinit var etAddress: TextInputEditText
 
     private lateinit var tvMessage: TextView
@@ -67,7 +70,9 @@ class ProsumerProfileActivity : AppCompatActivity() {
         etName = findViewById(R.id.etProfileName)
         tilEmail = findViewById(R.id.tilProfileEmail)
         etEmail = findViewById(R.id.etProfileEmail)
+        tilPhone = findViewById(R.id.tilProfilePhone)
         etPhone = findViewById(R.id.etProfilePhone)
+        tilAddress = findViewById(R.id.tilProfileAddress)
         etAddress = findViewById(R.id.etProfileAddress)
 
         tvMessage = findViewById(R.id.tvProfileMessage)
@@ -112,25 +117,49 @@ class ProsumerProfileActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         btnSave.setOnClickListener {
-            val name = etName.text?.toString()?.trim().orEmpty()
-            val email = etEmail.text?.toString()?.trim().orEmpty()
-            val phone = etPhone.text?.toString()?.trim()
-            val address = etAddress.text?.toString()?.trim()
+            val rawName = etName.text?.toString()?.trim().orEmpty()
+            val rawEmail = etEmail.text?.toString()?.trim().orEmpty()
+            val rawPhone = etPhone.text?.toString()?.trim().orEmpty()
+            val rawAddress = etAddress.text?.toString()?.trim().orEmpty()
 
             tilName.error = null
             tilEmail.error = null
+            tilPhone.error = null
+            tilAddress.error = null
             tvMessage.visibility = View.GONE
 
             var hasError = false
-            if (name.isEmpty()) {
-                tilName.error = "Name is required"
+
+            // Full Name validation (required, length >= 2, valid human name characters)
+            if (rawName.isEmpty()) {
+                tilName.error = getString(R.string.error_name_required)
+                hasError = true
+            } else if (rawName.length < 2) {
+                tilName.error = getString(R.string.error_name_too_short)
+                hasError = true
+            } else if (!ProsumerValidationUtil.isValidFullName(rawName)) {
+                tilName.error = getString(R.string.error_name_invalid)
                 hasError = true
             }
-            if (email.isEmpty()) {
-                tilEmail.error = "Email is required"
+
+            // Email validation (required, valid email address)
+            if (rawEmail.isEmpty()) {
+                tilEmail.error = getString(R.string.error_email_required)
                 hasError = true
-            } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                tilEmail.error = "Enter a valid email"
+            } else if (!ProsumerValidationUtil.isValidEmail(rawEmail)) {
+                tilEmail.error = getString(R.string.error_email_invalid)
+                hasError = true
+            }
+
+            // Phone validation (optional field, validated when provided)
+            if (rawPhone.isNotEmpty() && !ProsumerValidationUtil.isValidPhoneNumber(rawPhone)) {
+                tilPhone.error = getString(R.string.error_phone_invalid)
+                hasError = true
+            }
+
+            // Address validation (optional field, max length check)
+            if (rawAddress.isNotEmpty() && !ProsumerValidationUtil.isValidAddress(rawAddress)) {
+                tilAddress.error = getString(R.string.error_address_too_long)
                 hasError = true
             }
 
@@ -138,10 +167,10 @@ class ProsumerProfileActivity : AppCompatActivity() {
 
             setLoading(true)
             val request = UpdateProsumerProfileRequestDto(
-                fullName = name,
-                email = email,
-                phoneNumber = if (phone.isNullOrBlank()) null else phone,
-                address = if (address.isNullOrBlank()) null else address
+                fullName = rawName,
+                email = rawEmail,
+                phoneNumber = if (rawPhone.isBlank()) null else rawPhone,
+                address = if (rawAddress.isBlank()) null else rawAddress
             )
 
             repository.updateProfile(sessionManager.getToken(), request, object : ApiCallback<ProsumerProfileResponseDto> {
