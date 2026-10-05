@@ -33,9 +33,15 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        // Authenticate credentials against active user database and generate signed JWT token
-        var user = await _repo.GetByUsernameAsync(request.Username);
+        // Accept either username or registered email, ignoring case and surrounding whitespace.
+        var identifier = request.Username?.Trim() ?? string.Empty;
+        var user = await _repo.GetByUsernameAsync(identifier)
+            ?? await _repo.GetByEmailAsync(identifier);
         if (user == null || user.Status != WebUserStatus.Active) return null;
+
+        // New invitations use an expiring setup marker. Legacy accounts without that
+        // marker remain usable so this deployment does not lock out existing team users.
+        if (!user.IsEmailVerified && user.EmailVerificationExpiry.HasValue) return null;
 
         if (!PasswordHasher.Verify(request.Password, user.PasswordHash))
         {

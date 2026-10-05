@@ -30,7 +30,13 @@ public class AuthController : ControllerBase
     {
         // Authenticate web user credentials and issue signed JWT bearer token
         var response = await _authService.LoginAsync(request);
-        if (response == null) return Unauthorized(new { message = "Invalid credentials or deactivated account." });
+        if (response == null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid username/email or password, or the account setup has not been completed."
+            });
+        }
         return Ok(response);
     }
 
