@@ -9,6 +9,7 @@ import com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.model.
 import com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.model.QrTokenDto
 import com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.model.ReservationDto
 import com.example.smartsolarmicrogridtradingsystem.feature.reservationqr.model.UpdateReservationRequest
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -222,6 +223,82 @@ class ReservationRepository {
                     } catch (ex: Exception) {
                         callback.onError(
                             NetworkResult.NetworkError(ex, "Failed to parse QR token response.")
+                        )
+                    }
+                }
+
+                override fun onError(error: NetworkResult<Nothing>) {
+                    callback.onError(error)
+                }
+            }
+        )
+    }
+
+    /**
+     * Retrieves the latest reservation details from the server to reflect operator approvals or status updates.
+     *
+     * @param id Unique reservation identifier.
+     * @param bearerToken Optional Bearer authorization token.
+     * @param callback Callback delivering the updated [ReservationDto] on the main UI thread.
+     */
+    fun getReservationById(
+        id: String,
+        bearerToken: String? = null,
+        callback: ApiCallback<ReservationDto>
+    ) {
+        val endpoint = "reservations/${encode(id)}"
+
+        ApiClient.sendRequest(
+            method = HttpMethod.GET,
+            endpoint = endpoint,
+            bearerToken = bearerToken,
+            callback = object : ApiCallback<String> {
+                override fun onSuccess(result: NetworkResult.Success<String>) {
+                    try {
+                        val json = JSONObject(result.responseBody)
+                        val dto = ReservationDto.fromJson(json)
+                        callback.onSuccess(NetworkResult.Success(result.statusCode, dto))
+                    } catch (ex: Exception) {
+                        callback.onError(
+                            NetworkResult.NetworkError(ex, "Failed to parse reservation response.")
+                        )
+                    }
+                }
+
+                override fun onError(error: NetworkResult<Nothing>) {
+                    callback.onError(error)
+                }
+            }
+        )
+    }
+
+    /**
+     * Retrieves reservations associated with a prosumer NIC.
+     *
+     * @param nic Prosumer National Identity Card.
+     * @param bearerToken Optional Bearer authorization token.
+     * @param callback Callback delivering the list of [ReservationDto] on the main UI thread.
+     */
+    fun getReservationsByNic(
+        nic: String,
+        bearerToken: String? = null,
+        callback: ApiCallback<List<ReservationDto>>
+    ) {
+        val endpoint = "reservations?prosumerNic=${encode(nic)}"
+
+        ApiClient.sendRequest(
+            method = HttpMethod.GET,
+            endpoint = endpoint,
+            bearerToken = bearerToken,
+            callback = object : ApiCallback<String> {
+                override fun onSuccess(result: NetworkResult.Success<String>) {
+                    try {
+                        val array = JSONArray(result.responseBody)
+                        val list = ReservationDto.fromJsonArray(array)
+                        callback.onSuccess(NetworkResult.Success(result.statusCode, list))
+                    } catch (ex: Exception) {
+                        callback.onError(
+                            NetworkResult.NetworkError(ex, "Failed to parse reservations list.")
                         )
                     }
                 }

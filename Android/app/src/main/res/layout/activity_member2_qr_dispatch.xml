@@ -220,8 +220,7 @@
                     <FrameLayout
                         android:layout_width="260dp"
                         android:layout_height="260dp"
-                        android:background="@drawable/bg_badge_neutral"
-                        android:padding="12dp">
+                        android:background="@android:color/white">
 
                         <ImageView
                             android:id="@+id/ivQrCode"

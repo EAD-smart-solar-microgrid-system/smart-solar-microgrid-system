@@ -66,11 +66,19 @@ class ReservationAdapter(
 
             val statusColor = when (status) {
                 ReservationStatus.PENDING -> ContextCompat.getColor(itemView.context, R.color.status_pending)
-                ReservationStatus.APPROVED -> ContextCompat.getColor(itemView.context, R.color.status_approved)
+                ReservationStatus.APPROVED -> ContextCompat.getColor(itemView.context, R.color.member2_status_approved_text)
                 ReservationStatus.CANCELLED -> ContextCompat.getColor(itemView.context, R.color.status_cancelled)
                 ReservationStatus.COMPLETED -> ContextCompat.getColor(itemView.context, R.color.status_completed)
             }
             tvStatus.setTextColor(statusColor)
+
+            val statusBg = when (status) {
+                ReservationStatus.APPROVED -> R.drawable.bg_badge_approved
+                ReservationStatus.CANCELLED -> R.drawable.bg_badge_cancelled
+                ReservationStatus.COMPLETED -> R.drawable.bg_badge_solar
+                else -> R.drawable.bg_badge_neutral
+            }
+            tvStatus.setBackgroundResource(statusBg)
 
             tvDateTime.text = DashboardUiFormatter.formatDateTime(item.reservationDateTime)
 
@@ -84,7 +92,7 @@ class ReservationAdapter(
                         tvStation.text = if (!stationName.isNullOrBlank()) {
                             "Station: $stationName"
                         } else {
-                            "Station: Central Solar Hub"
+                            "Station: Solar Station"
                         }
                     }
             } else {
@@ -94,8 +102,10 @@ class ReservationAdapter(
             // Friendly slot label instead of raw 24-character hex MongoDB ID
             tvSlot.text = "Slot: Charging Slot 1"
 
-            // Do not display cryptic raw MongoDB reservation ID in UI
-            tvId.visibility = View.GONE
+            // Friendly Booking ID instead of raw MongoDB ID
+            val displayBookingId = DashboardUiFormatter.formatBookingId(item.id)
+            tvId.visibility = View.VISIBLE
+            tvId.text = itemView.context.getString(R.string.booking_id_label, displayBookingId)
 
             if (!item.cancellationReason.isNullOrBlank()) {
                 tvCancellation.visibility = View.VISIBLE

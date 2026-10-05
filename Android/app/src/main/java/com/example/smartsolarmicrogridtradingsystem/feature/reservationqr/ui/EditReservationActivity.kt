@@ -145,6 +145,22 @@ class EditReservationActivity : BaseActivity() {
         }
     }
 
+    private fun isBookedWithShortNotice(record: ReservationDto): Boolean {
+        return try {
+            val createdDate = ReservationTimeHelper.parseUtcInstant(record.createdAt)
+            val slotDate = ReservationTimeHelper.parseUtcInstant(record.reservationDateTime)
+            if (createdDate != null && slotDate != null) {
+                val windowMs = slotDate.time - createdDate.time
+                val ageMs = System.currentTimeMillis() - createdDate.time
+                windowMs < ReservationTimeHelper.TWELVE_HOURS_MILLIS || ageMs < 2 * 60 * 60 * 1000L
+            } else {
+                false
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun loadExistingReservation() {
         progress.visibility = View.VISIBLE
         btnSubmit.isEnabled = false
@@ -153,28 +169,49 @@ class EditReservationActivity : BaseActivity() {
             val record = localRepository.getById(reservationId)
 
             AppExecutors.executeOnMainThread {
-                progress.visibility = View.GONE
+                if (record != null) {
+                    processLoadedReservation(record)
+                } else {
+                    // Fallback to API if SQLite cache is not yet populated
+                    reservationRepository.getReservationById(
+                        id = reservationId,
+                        bearerToken = sessionManager.getToken(),
+                        callback = object : ApiCallback<ReservationDto> {
+                            override fun onSuccess(result: NetworkResult.Success<ReservationDto>) {
+                                val fresh = result.responseBody
+                                AppExecutors.executeInBackground {
+                                    localRepository.upsert(fresh)
+                                }
+                                processLoadedReservation(fresh)
+                            }
 
-                if (record == null) {
-                    Toast.makeText(this@EditReservationActivity, R.string.error_reservation_not_found, Toast.LENGTH_SHORT).show()
-                    finish()
-                    return@executeOnMainThread
+                            override fun onError(error: NetworkResult<Nothing>) {
+                                progress.visibility = View.GONE
+                                Toast.makeText(this@EditReservationActivity, R.string.error_reservation_not_found, Toast.LENGTH_SHORT).show()
+                                finish()
+                            }
+                        }
+                    )
                 }
-
-                // Security / scoping check against session or intent context
-                val expectedNic = intent.getStringExtra(EXTRA_PROSUMER_NIC)?.trim()
-                    ?: sessionManager.getUserIdentifier()?.trim()
-
-                if (!expectedNic.isNullOrBlank() && !record.prosumerNic.equals(expectedNic, ignoreCase = true)) {
-                    Toast.makeText(this@EditReservationActivity, R.string.error_reservation_unauthorized, Toast.LENGTH_SHORT).show()
-                    finish()
-                    return@executeOnMainThread
-                }
-
-                existingReservation = record
-                bindExistingRecord(record)
             }
         }
+    }
+
+    private fun processLoadedReservation(record: ReservationDto) {
+        progress.visibility = View.GONE
+
+        // Security / scoping check against session or intent context
+        val expectedNic = intent.getStringExtra(EXTRA_PROSUMER_NIC)?.trim()
+            ?: sessionManager.getUserIdentifier()?.trim()
+
+        if (!expectedNic.isNullOrBlank() && !record.prosumerNic.equals(expectedNic, ignoreCase = true)) {
+            Toast.makeText(this@EditReservationActivity, R.string.error_reservation_unauthorized, Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        existingReservation = record
+        bindExistingRecord(record)
     }
 
     private fun bindExistingRecord(record: ReservationDto) {
@@ -183,17 +220,19 @@ class EditReservationActivity : BaseActivity() {
         if (record.stationId.isNotBlank()) {
             com.example.smartsolarmicrogridtradingsystem.feature.dashboardmaps.data.StationCacheRepository(this)
                 .getStationName(record.stationId) { name ->
-                    etStation.setText(name ?: "Central Solar Hub")
+                    etStation.setText(name ?: "Solar Station")
                 }
         } else {
-            etStation.setText("Central Solar Hub")
+            etStation.setText("Solar Station")
         }
         selectedSlotId = record.slotId
 
         // Check if modification is permitted under the 12-hour rule
+        val isShortNotice = isBookedWithShortNotice(record)
+        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
         val canModify = record.parsedStatus != ReservationStatus.CANCELLED
                 && record.parsedStatus != ReservationStatus.COMPLETED
-                && ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)
+                && has12Hours
 
         if (!canModify) {
             btnSubmit.isEnabled = false
@@ -201,6 +240,7 @@ class EditReservationActivity : BaseActivity() {
             tvError.visibility = View.VISIBLE
         } else {
             btnSubmit.isEnabled = true
+            tvError.visibility = View.GONE
         }
 
         // Parse scheduled time
@@ -343,8 +383,10 @@ class EditReservationActivity : BaseActivity() {
 
         val record = existingReservation ?: return
 
-        // 12-hour rule check on existing reservation time
-        if (!ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime)) {
+        // 12-hour rule check on existing reservation time (unless booked with short notice)
+        val isShortNotice = isBookedWithShortNotice(record)
+        val has12Hours = ReservationTimeHelper.hasTwelveHoursNotice(record.reservationDateTime) || isShortNotice
+        if (!has12Hours) {
             tvError.text = getString(R.string.error_edit_twelve_hours)
             tvError.visibility = View.VISIBLE
             return
