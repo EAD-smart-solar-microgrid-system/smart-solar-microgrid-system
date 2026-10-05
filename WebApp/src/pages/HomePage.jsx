@@ -13,7 +13,6 @@ export const HomePage = () => {
   const [stations, setStations] = useState([]);
   const [selectedStation, setSelectedStation] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [chartView, setChartView] = useState('monthly'); // 'monthly' | 'yearly'
   const [showMap, setShowMap] = useState(false);
   const [activitySearch, setActivitySearch] = useState('');
   const [stats, setStats] = useState({
@@ -90,28 +89,6 @@ export const HomePage = () => {
         (s.hubId || '').toLowerCase().includes(q)
     );
   }, [stations, activitySearch]);
-
-  // Synthetic monthly/yearly generation bar data for the chart directly inspired by reference
-  const chartBars = useMemo(() => {
-    if (chartView === 'yearly') {
-      return [
-        { label: '2021', value: 95, height: '28%' },
-        { label: '2022', value: 140, height: '42%' },
-        { label: '2023', value: 210, height: '58%' },
-        { label: '2024', value: 310, height: '72%' },
-        { label: '2025', value: 420, height: '86%' },
-        { label: '2026', value: 540, height: '98%' },
-      ];
-    }
-    return [
-      { label: 'May', value: 180, height: '45%' },
-      { label: 'Jun', value: 240, height: '60%' },
-      { label: 'Jul', value: 310, height: '75%' },
-      { label: 'Aug', value: 380, height: '82%' },
-      { label: 'Sep', value: 450, height: '90%' },
-      { label: 'Oct', value: 540, height: '98%' },
-    ];
-  }, [chartView]);
 
   return (
     <div className="space-y-6">
@@ -192,11 +169,10 @@ export const HomePage = () => {
         />
       </div>
 
-      {/* 3. MAIN SECTION: FLEET HUBS (LEFT) + GENERATION FLOW BAR CHART (RIGHT) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-        {/* LEFT COLUMN (~55%): FLEET HUBS (Inspired by "My Wallet" in reference) */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-[var(--shadow-card)]">
+      {/* 3. MAIN SECTION: FLEET HUBS + SELECTED HUB DETAILS */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-stretch">
+        <div className="lg:col-span-7 flex">
+          <div className="flex h-full w-full flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-[var(--shadow-card)]">
             <div className="flex items-center justify-between pb-4 border-b border-[var(--border-subtle)]">
               <div>
                 <h3 className="text-base font-bold text-[var(--text-primary)]">
@@ -237,8 +213,8 @@ export const HomePage = () => {
               </div>
             )}
 
-            {/* Grid of 4 Hub mini cards (Translates the 4 currency wallet cards in reference image) */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-4">
+            {/* Grid of 4 Hub mini cards */}
+            <div className="grid flex-1 grid-cols-1 content-start gap-3 sm:grid-cols-2 pt-4">
               {stations.slice(0, 4).map((st) => {
                 const isActive = (st.status || '').toLowerCase() === 'active';
                 const isSelected = selectedStation?.hubId === st.hubId;
@@ -292,84 +268,9 @@ export const HomePage = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN (~45%): GENERATION FLOW BAR CHART (Inspired by "Cash Flow" in reference) */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-[var(--shadow-card)]">
-            <div className="flex items-center justify-between pb-3">
-              <div>
-                <h3 className="text-base font-bold text-[var(--text-primary)]">
-                  Energy Yield Flow
-                </h3>
-                <div className="mt-1 text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  540,323 <span className="text-xs font-bold text-[#E3511B]">kWh</span>
-                </div>
-              </div>
-
-              {/* Monthly / Yearly Toggle Pill */}
-              <div className="inline-flex rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setChartView('monthly')}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                    chartView === 'monthly'
-                      ? 'bg-[#E3511B] text-white font-bold'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChartView('yearly')}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                    chartView === 'yearly'
-                      ? 'bg-[#E3511B] text-white font-bold'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  Yearly
-                </button>
-              </div>
-            </div>
-
-            {/* Custom Bar Chart (Vivid Orange Bars directly styled after reference) */}
-            <div className="mt-4 pt-2">
-              <div className="flex items-end justify-between gap-3 h-48 px-2 border-b border-[var(--border-subtle)]">
-                {chartBars.map((bar) => (
-                  <div key={bar.label} className="group flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                    {/* Tooltip on hover */}
-                    <span className="text-[10px] font-bold text-[#E3511B] opacity-0 group-hover:opacity-100 transition">
-                      {bar.value}k
-                    </span>
-                    {/* The vivid orange bar */}
-                    <div
-                      className="w-full max-w-[38px] rounded-t-lg bg-[#E3511B] transition-all duration-300 hover:bg-[#F05A20] shadow-sm shadow-[#E3511B]/20"
-                      style={{ height: bar.height }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* X Axis Labels */}
-              <div className="flex justify-between px-2 pt-2 text-[11px] font-medium text-[var(--text-muted)]">
-                {chartBars.map((bar) => (
-                  <span key={bar.label} className="flex-1 text-center">
-                    {bar.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Chart Summary Footnote */}
-            <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
-              <span>Peak Clean Output: <strong>1,240 kW</strong></span>
-              <span className="text-[#22C55E] font-semibold">+18.4% vs Grid Baseline</span>
-            </div>
-          </div>
-
-          {/* Selected Station Mini Telemetry */}
+        <div className="lg:col-span-5 flex">
           {selectedStation && (
-            <SelectedHubDetailsPanel station={selectedStation} />
+            <SelectedHubDetailsPanel station={selectedStation} className="h-full w-full" />
           )}
         </div>
       </div>
