@@ -20,8 +20,15 @@ using SmartSolarMicrogrid.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Local credentials are intentionally kept out of tracked appsettings files.
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// Local credentials are intentionally kept out of tracked appsettings files and
+// must never override deployed configuration.
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddJsonFile(
+        "appsettings.Local.json",
+        optional: true,
+        reloadOnChange: false);
+}
 
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection(MongoDbSettings.SectionName));
